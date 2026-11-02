@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GBG",
+    "GGG",
+    "I I"
+  ],
+  "key": {
+    "G": "minecraft:gold_block",
+    "B": "minecraft:book",
+    "I": "minecraft:iron_block"
+  },
+  "result": {
+    "id": "khazuk:throne_of_power",
+    "count": 1
+  }
+}

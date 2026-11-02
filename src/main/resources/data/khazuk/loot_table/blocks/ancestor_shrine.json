@@ -3,7 +3,7 @@
   "pools": [
     {
       "rolls": 1,
-      "entries": [{"type": "minecraft:item", "name": "khazuk:heart"}],
+      "entries": [{"type": "minecraft:item", "name": "khazuk:ancestor_shrine"}],
       "conditions": [{"condition": "minecraft:survives_explosion"}]
     }
   ],

@@ -4,5 +4,8 @@
   "entity.khazuk.dwarf_warrior": "Dwarf Warrior",
   "item.khazuk.miner_spawn_egg": "Dwarf Miner Spawn Egg",
   "item.khazuk.dwarf_warrior_spawn_egg": "Dwarf Warrior Spawn Egg",
-  "itemGroup.khazuk": "Khazuk!"
+  "itemGroup.khazuk": "Khazuk!",
+  "item.khazuk.plan_hold_gate": "Ancestors' Plan: Hold Gate",
+  "entity.khazuk.throne_of_power": "Throne of Power",
+  "item.khazuk.throne_of_power": "Thorgrim's Throne of Power"
 }

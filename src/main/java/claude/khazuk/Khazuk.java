@@ -33,6 +33,7 @@ public final class Khazuk {
         KRegistry.register(modBus);
         Currencies.register(() -> Items.GOLD_INGOT, () -> Items.GOLD_BLOCK, null, () -> Blocks.GOLD_ORE, () -> Blocks.DEEPSLATE_GOLD_ORE);
         Settlements.ownedBy(ShrineBlockEntity::ownedBy);
+        claude.khazuk.hold.HoldRooms.register();
         GameTests.register(container, modBus);
     }
 }

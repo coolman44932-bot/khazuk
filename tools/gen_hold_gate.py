@@ -19,10 +19,23 @@ OUT = os.path.join(HERE, "..", "build", "hold_gate.json")
 
 R = random.Random(1291)
 B = {}
+# --template: the raised building the Miners put up (Settlement Core's surface builder): no stair below the ground (a raised building
+# has no cellar: the dug hold meets the passage from behind), no road past the steps, and a crag narrow enough for the builder's 64-column
+# site. Written turned, as the engine's templates are: the door on the x = 0 face, facing west; y 0 the ground layer.
+RAISED = "--template" in sys.argv
+
+
+ROCK = set()      # the cells whose last word is the mountain's rock (the crag the god raises, not the Miners' masonry)
 
 
 def put(x, y, z, block):
     B[(x, y, z)] = block
+    ROCK.discard((x, y, z))
+
+
+def rock_put(x, y, z, block):
+    put(x, y, z, block)
+    ROCK.add((x, y, z))
 
 
 def box(x0, y0, z0, x1, y1, z1, block):
@@ -78,7 +91,7 @@ BEARD, BEARD_LINE = "minecraft:calcite", "minecraft:polished_diorite"
 
 # ------------------------------------------------------------------ the mountain: strata, ledges, cliffs
 
-W = 30
+W = 26 if RAISED else 30
 DEEP = 18
 GH = 15           # the gatehouse's half-width
 for x in range(-W, W + 1):
@@ -89,25 +102,29 @@ for x in range(-W, W + 1):
     for z in range(0, DEEP):
         h = top - max(0, z - 12)
         for y in range(0, h):
-            put(x, y, z, rock(x, y, z))
+            rock_put(x, y, z, rock(x, y, z))
     if abs(x) > GH:                                              # the shoulders: cliffs stepping forward either side of the gatehouse
         reach = int(2 + 5 * (abs(x) - GH) / (W - GH))
         for z in range(-reach, 0):
             # the cliff's face steps back as it rises: a ledge at every other band, the overhang of the harder band above it
             lift = (-z) * 6 + (3 if (abs(x) + z) % 4 == 0 else 0)
             for y in range(0, max(0, int(top * 0.9) - lift)):
-                put(x, y, z, rock(x, y, z))
+                rock_put(x, y, z, rock(x, y, z))
 # moss on the ledges' tops and the crag's crown, and the odd tuft of moss carpet
 for (x, y, z), b in list(B.items()):
     if b != "minecraft:air" and (x, y + 1, z) not in B and R.random() < 0.45:
-        put(x, y, z, "minecraft:moss_block")
+        rock_put(x, y, z, "minecraft:moss_block")
         if R.random() < 0.15:
-            put(x, y + 1, z, "minecraft:moss_carpet")
+            rock_put(x, y + 1, z, "minecraft:moss_carpet")
 
 # ------------------------------------------------------------------ the gatehouse
 
 TW, TOP, MID = 9, 38, 30           # the towers' width, their top, the middle's top
-box(-GH, 0, -1, GH, TOP, 8, wall)
+box(-GH, 0, -1, GH, TOP, 1, wall)                                # the facade, three thick: the Miners' masonry
+for x in range(-GH, GH + 1):                                     # behind it the mountain's own rock, which the god raises
+    for y in range(0, TOP + 1):
+        for z in range(2, 9):
+            rock_put(x, y, z, rock(x, y, z))
 clear(-GH + TW, MID + 1, -1, GH - TW, TOP + 3, 3)                # the middle stands lower, set between the towers
 for x in (-GH, -GH + TW - 1, GH - TW + 1, GH):                   # the towers' edges: pilasters standing proud
     box(x, 0, -2, x, TOP, -2, TRIM)
@@ -176,6 +193,9 @@ clear(-2, DOOR_Y, -1, 2, DOOR_Y + DH - 1, 16)
 clear(-1, DOOR_Y + DH, -1, 1, DOOR_Y + DH, 16)
 box(-2, DOOR_Y - 1, -1, 2, DOOR_Y - 1, 7, "minecraft:polished_deepslate")
 for i, z in enumerate(range(8, 17)):
+    if RAISED:
+        box(-2, DOOR_Y - 1, z, 2, DOOR_Y - 1, z, "minecraft:polished_deepslate")   # the passage runs on, level, to the hold's way in
+        continue
     box(-2, DOOR_Y - 2 - i, z, 2, DOOR_Y - 2 - i, z, "minecraft:polished_deepslate")
     clear(-2, DOOR_Y - 1 - i, z, 2, DOOR_Y + DH - 1, z)
     for x in range(-2, 3):
@@ -258,7 +278,7 @@ for side in (-1, 1):                                             # braziers by t
 for x in range(-4, 5):                                           # the steps up to it, the road's width
     put(x, 1, -12, "minecraft:stone_brick_stairs[facing=south]")
     put(x, 0, -13, "minecraft:stone_brick_stairs[facing=south]")
-for z in range(-34, -13):                                        # the road, paved and walled low, lanterns on posts along it
+for z in range(-14 if RAISED else -34, -13):                     # the road, paved and walled low, lanterns on posts along it
     for x in range(-4, 5):
         put(x, -1, z, TRIM if (x * 3 + z) % 5 == 0 else "minecraft:stone_bricks")
     for wx in (-5, 5):
@@ -314,6 +334,60 @@ guardian(-11, -1)
 guardian(11, 1)
 
 
+FACING_TURN = {"south": "east", "north": "west", "east": "north", "west": "south"}   # local -> template: x' = z, z' = x
+
+
+CRAG_OUT = os.path.join(HERE, "..", "src", "main", "resources", "data", "khazuk", "hold", "hold_gate_crag.json")
+
+
+def turn(b):
+    for k, v in FACING_TURN.items():
+        if f"facing={k}" in b:
+            return b.replace(f"facing={k}", f"facing={v}")
+    return b
+
+
+def template_cells():
+    """The Miners' building, turned as the engine's templates are (x' = z + 14, z' = x + GH, y' = y + 1): the gatehouse, its terrace,
+    the guardians and the passage, every cell of its box (air too) but the mountain's rock, which the god raises round it once it stands
+    (crag_cells). The ground layer (y' 0) is paving before the gate, plain stone under it. The door at (0, 1, GH). Returns (cells, size)."""
+    z0 = -14
+    sx = 17 - z0 + 1
+    sz = 2 * GH + 1
+    sy = max(y for (x, y, z), b in B.items() if (x, y, z) not in ROCK and abs(x) <= GH) + 2
+    cells = {}
+    for x in range(sx):
+        for z in range(sz):
+            cells[(x, 0, z)] = "minecraft:stone_bricks" if x < 12 else "minecraft:stone"
+            for y in range(1, sy):
+                cells[(x, y, z)] = "minecraft:air"
+    for (x, y, z), b in B.items():
+        if y < -1 or (x, y, z) in ROCK or abs(x) > GH or z < z0 or z > 17:
+            continue
+        cells[(z - z0, y + 1, x + GH)] = turn(b)
+    return cells, (sx, sy, sz)
+
+
+def crag_cells():
+    """The crag, in the template's frame (z' runs past the box either side), lowest first: [x', y', z', block]."""
+    out = []
+    for (x, y, z) in ROCK:
+        if y >= -1:
+            out.append([z + 14, y + 1, x + GH, B[(x, y, z)]])
+    out.sort(key=lambda c: (c[1], c[0], c[2]))
+    return out
+
+
+def write_crag():
+    cells = crag_cells()
+    palette = sorted({c[3] for c in cells})
+    idx = {b: i for i, b in enumerate(palette)}
+    os.makedirs(os.path.dirname(CRAG_OUT), exist_ok=True)
+    with open(CRAG_OUT, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"palette": palette, "cells": [[x, y, z, idx[b]] for x, y, z, b in cells]}, f, separators=(",", ":"))
+    print(f"crag: {len(cells)} cells -> {os.path.relpath(CRAG_OUT)}")
+
+
 def ops(origin):
     blocks = [[x, y, z, b] for (x, y, z), b in sorted(B.items())]
     return [{"op": "blocks", "origin": list(origin), "blocks": blocks}]
@@ -327,6 +401,18 @@ def main():
     ys = [k[1] for k in B]
     zs = [k[2] for k in B]
     print(f"{len(B)} cells, x {min(xs)}..{max(xs)}, y {min(ys)}..{max(ys)}, z {min(zs)}..{max(zs)}")
+    if RAISED:
+        cells, size = template_cells()
+        print(f"template {size}, door at (0, 1, {GH})")
+        write_crag()
+        if "--at" in sys.argv:
+            i = sys.argv.index("--at")
+            o = [int(v) for v in sys.argv[i + 1:i + 4]]
+            sys.path.insert(0, os.path.join(HERE, "..", "..", "devbridge", "tools"))
+            import devbridge
+            r = devbridge.call("build", ops=[{"op": "blocks", "origin": o, "blocks": [[x, y, z, b] for (x, y, z), b in sorted(cells.items())]}])
+            print(json.dumps(r)[:200], "size", size)
+        return
     if len(sys.argv) >= 5 and sys.argv[1] == "--build":
         sys.path.insert(0, os.path.join(HERE, "..", "..", "devbridge", "tools"))
         import devbridge

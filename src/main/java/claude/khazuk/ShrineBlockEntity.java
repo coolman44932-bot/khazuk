@@ -1,5 +1,6 @@
 package claude.khazuk;
 
+import claude.khazuk.hold.HoldCrag;
 import claude.settlementcore.room.PlanPlacement;
 import claude.settlementcore.settlement.Brood;
 import claude.settlementcore.settlement.Settlement;
@@ -7,6 +8,7 @@ import claude.settlementcore.settlement.SettlementBlockEntity;
 import claude.settlementcore.settlement.Spawning;
 import claude.settlementcore.unit.SettlerMob;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -15,6 +17,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -30,13 +34,16 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     public static final int ROUND_SECONDS = 30;
     public static final int UP_AT_ONCE = 8;
     public static final int RESERVE_CAP = 24;
-    public static final int RADIUS = 24;
+    /** A hold's land reaches 40 blocks round its Shrine: room for its gate (53 across) and its halls. */
+    public static final int RADIUS = 40;
     /** A worker costs 4 food points, a guard 6. */
     static final Brood.Cost WORKER_COST = new Brood.Cost(4, 0, "Workers raised");
     static final Brood.Cost GUARD_COST = new Brood.Cost(6, 0, "Guards raised");
 
     /** Rounds of spawning so far, for the tests. */
     public int rounds;
+    /** The mountains the god raises round the hold's gates. */
+    private final HoldCrag crags = new HoldCrag();
 
     public ShrineBlockEntity(BlockPos pos, BlockState state) {
         super(KRegistry.SHRINE_ENTITY.get(), pos, state, KEYS);
@@ -44,13 +51,56 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
 
     /** The Shrine {@code p} owns, among the loaded ones of its level. */
     @Nullable
-    static ShrineBlockEntity ownedBy(ServerPlayer p) {
+    public static ShrineBlockEntity ownedAt(ServerPlayer p, BlockPos at) {
+        ShrineBlockEntity inLand = null, nearest = null;
+        double inLandD = Double.MAX_VALUE, nearestD = Double.MAX_VALUE;
         for (Settlement s : claude.settlementcore.settlement.SettlementSpawns.loaded(p.level())) {
             if (s instanceof ShrineBlockEntity h && p.getUUID().equals(h.owner())) {
-                return h;
+                double d = h.getBlockPos().distSqr(at);
+                if (d < nearestD) {
+                    nearest = h;
+                    nearestD = d;
+                }
+                if (d < inLandD && h.inSettlement(at)) {
+                    inLand = h;
+                    inLandD = d;
+                }
             }
         }
-        return null;
+        return inLand != null ? inLand : nearest;
+    }
+
+    /** The hold {@code p} owns: the one whose land they stand in, else the nearest. */
+    @Nullable
+    static ShrineBlockEntity ownedBy(ServerPlayer p) {
+        return ownedAt(p, p.blockPosition());
+    }
+
+    public HoldCrag crags() {
+        return crags;
+    }
+
+    /** The engine's second, then a second's rise of a gate's mountain. */
+    @Override
+    public void second(ServerLevel level) {
+        super.second(level);
+        if (crags.second(level, this, HoldCrag.PER_SECOND)) {
+            setChanged();
+        }
+    }
+
+    @Override
+    protected void saveAdditional(ValueOutput out) {
+        super.saveAdditional(out);
+        CompoundTag tag = new CompoundTag();
+        crags.save(tag);
+        out.store("khazuk", CompoundTag.CODEC, tag);
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput in) {
+        super.loadAdditional(in);
+        crags.load(in.read("khazuk", CompoundTag.CODEC).orElseGet(CompoundTag::new));
     }
 
     @Override

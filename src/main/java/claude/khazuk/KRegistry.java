@@ -44,16 +44,31 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Warrior::new, MobCategory.CREATURE).sized(0.7f, 1.8f).eyeHeight(1.6f).clientTrackingRange(10)
                     .build(key("dwarf_warrior")));
 
+    /** Thorgrim's Throne of Power, the god's mount: 2.4 across the bearers' shields, the seat 2 up (a rider sits above its box). */
+    public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.throne.ThroneOfPower>> THRONE = ENTITIES.register("throne_of_power",
+            () -> EntityType.Builder.of(claude.khazuk.throne.ThroneOfPower::new, MobCategory.MISC).sized(2.4f, 2.1f).eyeHeight(1.8f)
+                    .passengerAttachments(new net.minecraft.world.phys.Vec3(0.0, 1.85, -0.5)).fireImmune().clientTrackingRange(10)
+                    .build(key("throne_of_power")));
+    /** The Throne folded up: set it down on the ground, facing the way you face. */
+    public static final DeferredItem<claude.khazuk.throne.ThroneItem> THRONE_ITEM = ITEMS.registerItem("throne_of_power",
+            p -> new claude.khazuk.throne.ThroneItem(p.stacksTo(1).fireResistant()));
+
     public static final DeferredItem<SpawnEggItem> MINER_EGG = ITEMS.registerItem("miner_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(MINER.get())));
     public static final DeferredItem<SpawnEggItem> WARRIOR_EGG = ITEMS.registerItem("dwarf_warrior_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(WARRIOR.get())));
+
+    /** The Ancestors' Plan of the Hold Gate: set out on the ground, the Miners raise it. */
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_HOLD_GATE = ITEMS.registerItem("plan_hold_gate",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_hold_gate"));
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("khazuk", () -> CreativeModeTab.builder()
             .title(Component.literal("Khazuk!"))
             .icon(() -> SHRINE_ITEM.get().getDefaultInstance())
             .displayItems((params, out) -> {
                 out.accept(SHRINE_ITEM.get());
+                out.accept(PLAN_HOLD_GATE.get());
+                out.accept(THRONE_ITEM.get());
                 out.accept(MINER_EGG.get());
                 out.accept(WARRIOR_EGG.get());
             })
@@ -78,5 +93,6 @@ public final class KRegistry {
     private static void attributes(EntityAttributeCreationEvent e) {
         e.put(MINER.get(), Miner.createAttributes().build());
         e.put(WARRIOR.get(), Warrior.createAttributes().build());
+        e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }
 }

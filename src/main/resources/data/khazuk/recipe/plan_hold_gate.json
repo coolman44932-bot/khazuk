@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:stone_bricks",
+    "minecraft:gold_ingot",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "khazuk:plan_hold_gate",
+    "count": 1
+  }
+}
