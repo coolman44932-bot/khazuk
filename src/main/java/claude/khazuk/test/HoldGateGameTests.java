@@ -101,10 +101,10 @@ public class HoldGateGameTests {
         hold.crags().save(saved);
         HoldCrag again = new HoldCrag();
         again.load(saved);
-        h.assertTrue(!again.risen(h.getLevel(), door), "a half-risen mountain reads back as risen");
+        h.assertTrue(again.raised(door) == 1000 && !again.risen(h.getLevel(), door), "a half-risen mountain reads back at "
+                + again.raised(door) + " cells, not 1000");
         int halfway = solid(h);
         h.assertTrue(halfway - before >= 900 && halfway - before <= 1000, "a 1000-cell second raised " + (halfway - before));
-        hold.crags().load(saved);
         int seconds = 0;
         while (hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND) && seconds < 100) {
             seconds++;
@@ -115,6 +115,10 @@ public class HoldGateGameTests {
         h.assertBlockPresent(Blocks.AIR, DOOR_GROUND.above(3).east(14));
         h.assertBlockPresent(Blocks.AIR, DOOR_GROUND.above(3).east(24));   // 10 into the passage, through the mountain
         h.assertTrue(!hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND), "a risen mountain rose again");
+        // a gate whose mountain would cover the Shrine is refused: the Shrine just behind the gatehouse
+        var pl = AncestorPlan.placement(room, h.absolutePos(DOOR_GROUND), Direction.EAST);
+        h.assertTrue(HoldCrag.buries(h.getLevel(), pl, h.absolutePos(new BlockPos(30, 3, 36))), "a Shrine inside the mountain isn't buried");
+        h.assertTrue(!HoldCrag.buries(h.getLevel(), pl, h.absolutePos(SHRINE)), "the Shrine 5 behind the mountain counts as buried");
         h.succeed();
     }
 

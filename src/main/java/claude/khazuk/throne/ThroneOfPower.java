@@ -61,7 +61,11 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
     static final float WALK_SPEED = 0.07f, RUN_SPEED = 0.13f;
     /** The clips' own ground speeds at 1x (their planted boots), blocks a second. */
     static final double WALK_CLIP = 1.125, RUN_CLIP = 2.25;
+    /** Above this ground speed (blocks a second) the bearers run: between the walk (about 3.1) and the sprint (about 5.7). */
+    static final double RUN_ABOVE = 4.3;
     static final int KICK_TICKS = 12, KICK_IMPACT = 5;
+    /** Thrones in the server's levels: a death is checked against grudges only while there is one. */
+    static int live;
 
     static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.throne_of_power.idle");
     static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.throne_of_power.walk");
@@ -198,10 +202,25 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
         }
     }
 
+    /** Off to the left, else the right, behind or in front: the first spot a player can stand. */
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
-        Vec3 side = new Vec3(1.6, 0, 0).yRot(-getYRot() * Mth.DEG_TO_RAD);
-        return position().add(side);
+        for (Vec3 off : new Vec3[]{new Vec3(1.8, 0, 0), new Vec3(-1.8, 0, 0), new Vec3(0, 0, -2.2), new Vec3(0, 0, 2.2)}) {
+            Vec3 at = position().add(off.yRot(-getYRot() * Mth.DEG_TO_RAD));
+            for (int dy = 0; dy <= 1; dy++) {
+                Vec3 safe = net.minecraft.world.entity.vehicle.DismountHelper.findSafeDismountLocation(passenger.getType(), level(),
+                        net.minecraft.core.BlockPos.containing(at).above(dy), true);
+                if (safe != null) {
+                    return safe;
+                }
+            }
+        }
+        return super.getDismountLocationForPassenger(passenger);
+    }
+
+    @Override
+    public boolean canBreatheUnderwater() {
+        return true;                                             // the bearers hold their breath: dwarfs are stubborn
     }
 
     @Override
@@ -218,8 +237,11 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
 
     /** The rider has struck {@code target}: the bearer on its side kicks it, landing {@value #KICK_IMPACT} ticks on. */
     public void kick(LivingEntity target) {
-        if (kickTick >= 0 && kickTick < KICK_TICKS || target == this || hasPassenger(target)) {
-            return;
+        if (kickTick >= 0 && kickTick < KICK_TICKS || target == this || hasPassenger(target)
+                || getControllingPassenger() instanceof Player rider && (target.isAlliedTo(rider) || rider.isAlliedTo(target)
+                || target instanceof claude.settlementcore.unit.SettlerMob s && s.settlement() != null && rider.getUUID().equals(s.settlement().owner())
+                || target instanceof net.minecraft.world.entity.OwnableEntity pet && rider.getUUID().equals(pet.getOwnerReference() == null ? null : pet.getOwnerReference().getUUID()))) {
+            return;                                              // never the god's own: his Dawi, his pets, his allies
         }
         Vec3 to = target.position().subtract(position());
         Vec3 right = new Vec3(-1, 0, 0).yRot(-getYRot() * Mth.DEG_TO_RAD);   // +x in the model is the bearers' right
@@ -272,9 +294,11 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
         }
         if (kickTick >= 0) {
             kickTick++;
-            if (kickTick == KICK_IMPACT && kickAt != null && kickAt.isAlive() && kickAt.distanceTo(this) < 4.0f) {
+            if (kickTick == KICK_IMPACT && kickAt != null && kickAt.isAlive() && getBoundingBox().inflate(2.0).intersects(kickAt.getBoundingBox())) {
                 float dmg = kickAt.getUUID().equals(grudge) ? KICK_DAMAGE * 2 : KICK_DAMAGE;
-                kickAt.hurtServer(level, damageSources().mobAttack(this), dmg);
+                kickAt.invulnerableTime = 0;                     // the rider's own blow 5 ticks ago would swallow it
+                DamageSource src = getControllingPassenger() instanceof Player rider ? damageSources().playerAttack(rider) : damageSources().mobAttack(this);
+                kickAt.hurtServer(level, src, dmg);
                 Vec3 away = kickAt.position().subtract(position()).normalize();
                 kickAt.knockback(1.4, -away.x, -away.z);
             }
@@ -296,10 +320,41 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
         }
     }
 
+    /** Broken, it goes back to its god: into his pack if he's on the server (whatever killed it, the void too), else dropped where it fell. */
     @Override
-    protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean killedByPlayer) {
-        super.dropCustomDeathLoot(level, source, killedByPlayer);
-        spawnAtLocation(level, new ItemStack(KRegistry.THRONE_ITEM.get()));   // broken, never lost
+    public void die(DamageSource source) {
+        boolean was = isDeadOrDying() || isRemoved();
+        super.die(source);
+        if (was || !(level() instanceof ServerLevel level)) {
+            return;
+        }
+        ItemStack item = new ItemStack(KRegistry.THRONE_ITEM.get());
+        ServerPlayer god = owner == null ? null : level.getServer().getPlayerList().getPlayer(owner);
+        if (god != null && god.getInventory().add(item)) {
+            god.sendSystemMessage(Component.literal("Your Throne of Power is broken; its bearers bring it back to you.").withStyle(ChatFormatting.GOLD));
+            return;
+        }
+        if (getY() > level.getMinY()) {
+            spawnAtLocation(level, item);
+        } else if (god != null) {
+            god.drop(item, false);
+        }
+    }
+
+    @Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+        if (!level().isClientSide()) {
+            live++;
+        }
+    }
+
+    @Override
+    public void onRemovedFromLevel() {
+        super.onRemovedFromLevel();
+        if (!level().isClientSide()) {
+            live--;
+        }
     }
 
     @Override
@@ -340,7 +395,7 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
             }
             double v = t.groundSpeed();
             if (v > 0.15) {
-                boolean run = v > 2.0;
+                boolean run = v > RUN_ABOVE;
                 test.setControllerSpeed((float) Mth.clamp(v / (run ? RUN_CLIP : WALK_CLIP), 0.5, 3.0));
                 return test.setAndContinue(run ? RUN : WALK);
             }

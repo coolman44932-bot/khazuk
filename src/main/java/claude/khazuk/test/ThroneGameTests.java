@@ -10,7 +10,10 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * Thorgrim's Throne of Power, the god's mount: its owner gets on and a stranger doesn't; the bearers kick what the rider strikes, landing on
@@ -34,15 +37,21 @@ public class ThroneGameTests {
         t.interact(god, InteractionHand.MAIN_HAND, t.position());
         h.assertTrue(god.getVehicle() == t && t.getControllingPassenger() == god, "the god didn't get on");
 
-        Husk foe = h.spawn(EntityType.HUSK, AT.offset(1, 0, 2));
+        // a blow far stronger than the kick (Strength V): without the kick clearing its i-frames, the kick would add nothing
+        IronGolem foe = h.spawn(EntityType.IRON_GOLEM, AT.offset(1, 0, 3));
         foe.setNoAi(true);
-        float was = foe.getHealth();
-        t.kick(foe);
+        god.addEffect(new MobEffectInstance(MobEffects.STRENGTH, 200, 4));
+        god.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
+        god.attack(foe);                                         // the real path: the god's blow, then his bearers' kick through its i-frames
+        float hit = foe.getHealth();
+        h.assertTrue(hit < foe.getMaxHealth(), "the god's own blow didn't land");
         h.startSequence()
-                .thenExecuteAfter(3, () -> h.assertTrue(foe.getHealth() == was, "the kick landed before the clip's impact"))
-                .thenExecuteAfter(4, () -> h.assertTrue(was - foe.getHealth() >= 6f, "the kick took " + (was - foe.getHealth())
-                        + " health, not about " + ThroneOfPower.KICK_DAMAGE))
+                .thenExecuteAfter(3, () -> h.assertTrue(foe.getHealth() == hit, "the kick landed before the clip's impact"))
+                .thenExecuteAfter(4, () -> h.assertTrue(hit - foe.getHealth() >= 6f, "the kick took " + (hit - foe.getHealth())
+                        + " health after the blow, not about " + ThroneOfPower.KICK_DAMAGE))
                 .thenExecute(() -> {
+                    god.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                    god.removeEffect(MobEffects.STRENGTH);
                     t.wrong(foe);
                     h.assertTrue(foe.getUUID().equals(t.grudge()), "the wrong wasn't written in the Book");
                     foe.kill(h.getLevel());

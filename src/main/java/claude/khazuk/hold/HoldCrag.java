@@ -31,6 +31,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.Nullable;
 
@@ -46,8 +47,11 @@ import java.util.Optional;
  * stands, the god raises the crag it is cut into, {@value #PER_SECOND} cells a second, the lowest course first, rock pushed up under
  * anyone standing where it comes. Its cells are tools/gen_hold_gate.py's (data/khazuk/hold/hold_gate_crag.json, in the template's frame,
  * running past its box either side); each column's foot is filled down to the ground where the land falls away. Only air and the land
- * itself (Siting#mayReplace) are taken: a player's blocks stand. Kept per gate by its door, so a save mid-rise carries on.
+ * itself (Siting#mayReplace) are taken, never a block entity, never inside the hold's other buildings or round its Shrine; a plan whose
+ * mountain would cover the Shrine is refused ({@link #buries}). Someone standing where the rock comes is lifted onto it if there is room
+ * above, else that cell is left open; a rider or his mount is never moved. Kept per gate by its door, so a save mid-rise carries on.
  */
+@net.neoforged.fml.common.EventBusSubscriber(modid = Khazuk.MODID)
 public final class HoldCrag {
 
     public static final int PER_SECOND = 1500;
@@ -68,6 +72,14 @@ public final class HoldCrag {
 
     /** Cells raised so far, per gate (its door's position). */
     private final Long2IntMap done = new Long2IntOpenHashMap();
+    /** Whether {@link #done} changed since the hold last saved. */
+    private boolean dirty;
+
+    /** A new server (or a reload) reads the cells afresh: a datapack may have changed them. */
+    @net.neoforged.bus.api.SubscribeEvent
+    static void serverStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent e) {
+        cells = null;
+    }
 
     static Cells cells(ServerLevel level) {
         if (cells == null) {
@@ -120,6 +132,43 @@ public final class HoldCrag {
         return r != null && r.function() == HoldRooms.GATE;
     }
 
+    /** Cells raised so far round the gate at {@code door}. */
+    public int raised(BlockPos door) {
+        return done.getOrDefault(door.asLong(), 0);
+    }
+
+    /** True once if the rise moved since the last call: the hold saves then. */
+    public boolean takeDirty() {
+        boolean d = dirty;
+        dirty = false;
+        return d;
+    }
+
+    /** The whole mountain's box in the world for {@code pl} (a gate's placement), its feet included. */
+    public static BoundingBox footprint(ServerLevel level, PlanPlacement pl) {
+        Cells c = cells(level);
+        if (c.size() == 0) {
+            return pl.box();
+        }
+        int x0 = Integer.MAX_VALUE, y0 = Integer.MAX_VALUE, z0 = Integer.MAX_VALUE;
+        int x1 = Integer.MIN_VALUE, y1 = Integer.MIN_VALUE, z1 = Integer.MIN_VALUE;
+        for (int i = 0; i < c.size(); i++) {
+            x0 = Math.min(x0, c.xs[i]);
+            y0 = Math.min(y0, c.ys[i]);
+            z0 = Math.min(z0, c.zs[i]);
+            x1 = Math.max(x1, c.xs[i]);
+            y1 = Math.max(y1, c.ys[i]);
+            z1 = Math.max(z1, c.zs[i]);
+        }
+        return BoundingBox.fromCorners(pl.world(new BlockPos(x0, y0 - FOOTING, z0)), pl.world(new BlockPos(x1, y1, z1)));
+    }
+
+    /** Whether {@code pl}'s mountain would come within 2 of the Shrine at {@code shrine}. */
+    public static boolean buries(ServerLevel level, PlanPlacement pl, BlockPos shrine) {
+        BoundingBox f = footprint(level, pl).inflatedBy(2);
+        return f.isInside(shrine);
+    }
+
     /** Whether the gate at {@code door} has its whole mountain. */
     public boolean risen(ServerLevel level, BlockPos door) {
         return done.getOrDefault(door.asLong(), 0) >= cells(level).size();
@@ -141,13 +190,16 @@ public final class HoldCrag {
                 }
             }
         }
-        done.keySet().removeIf(k -> !gates.contains(k));
+        if (done.keySet().removeIf(k -> !gates.contains(k))) {
+            dirty = true;
+        }
         if (rising == null || c.size() == 0) {
             return false;
         }
         PlanPlacement pl = BuildingBook.placementOf(rising);
         if (pl == null) {
             done.put(rising.door().asLong(), c.size());
+            dirty = true;
             return false;
         }
         long key = rising.door().asLong();
@@ -155,8 +207,16 @@ public final class HoldCrag {
         if (i == 0) {
             hold.tellOwner("Grungni raises the mountain round the " + pl.room().displayName() + "!", ChatFormatting.GOLD);
         }
-        List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, new AABB(pl.box().minX() - 16, pl.box().minY() - 2,
-                pl.box().minZ() - 16, pl.box().maxX() + 17, pl.box().maxY() + 12, pl.box().maxZ() + 17));
+        List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, new AABB(pl.box().minX() - 16, pl.box().minY() - 2 - FOOTING,
+                pl.box().minZ() - 16, pl.box().maxX() + 17, pl.box().maxY() + 12, pl.box().maxZ() + 17), e -> !e.isSpectator());
+        List<BoundingBox> keepOut = new ArrayList<>();
+        for (Building b : hold.buildings()) {
+            if (b != rising) {
+                keepOut.add(b.box());                            // the hold's other buildings keep their air
+            }
+        }
+        BlockPos shrine = hold.getBlockPos();
+        keepOut.add(new BoundingBox(shrine.getX() - 2, shrine.getY() - 1, shrine.getZ() - 2, shrine.getX() + 2, shrine.getY() + 3, shrine.getZ() + 2));
         int end = Math.min(c.size(), i + budget);
         BlockPos last = null;
         for (; i < end; i++) {
@@ -168,11 +228,11 @@ public final class HoldCrag {
             if (s.getBlock() instanceof FallingBlock && level.getBlockState(p.below()).isAir()) {
                 s = Blocks.COBBLESTONE.defaultBlockState();       // nothing loose over a hollow
             }
-            if (place(level, p, s, near) && c.foot[i]) {
+            if (place(level, p, s, near, keepOut) && c.foot[i]) {
                 BlockState fill = s.is(Blocks.MOSS_CARPET) || s.getBlock() instanceof FallingBlock ? Blocks.STONE.defaultBlockState() : s;
                 BlockPos q = p.below();
                 for (int d = 0; d < FOOTING && level.isLoaded(q) && hollow(level.getBlockState(q)); d++, q = q.below()) {
-                    place(level, q, fill, near);
+                    place(level, q, fill, near, keepOut);
                 }
             }
             if ((i & 63) == 0) {
@@ -181,7 +241,9 @@ public final class HoldCrag {
                 last = p;
             }
         }
-        done.put(key, i);
+        if (done.put(key, i) != i) {
+            dirty = true;
+        }
         if (last != null) {
             level.playSound(null, last, SoundEvents.DEEPSLATE_BREAK, SoundSource.BLOCKS, 2.0f, 0.5f);
         }
@@ -202,16 +264,27 @@ public final class HoldCrag {
         return !s.hasBlockEntity() && (s.isAir() || s.canBeReplaced());
     }
 
-    private static boolean place(ServerLevel level, BlockPos p, BlockState s, List<LivingEntity> near) {
+    /** One cell of the mountain: not in {@code keepOut}, only where it {@link #takes}, and never on anyone it can't lift. */
+    private static boolean place(ServerLevel level, BlockPos p, BlockState s, List<LivingEntity> near, List<BoundingBox> keepOut) {
+        for (BoundingBox b : keepOut) {
+            if (b.isInside(p)) {
+                return false;
+            }
+        }
         if (!takes(level.getBlockState(p))) {
             return false;
         }
+        AABB cell = new AABB(p);
         for (LivingEntity e : near) {
-            if (!e.isSpectator() && e.getBoundingBox().intersects(new AABB(p))) {
+            if (e.getBoundingBox().intersects(cell)) {
+                AABB lifted = e.getBoundingBox().move(0, p.getY() + 1.0 - e.getY(), 0);
+                if (e.isPassenger() || e.isVehicle() || !level.noCollision(e, lifted)) {
+                    return false;                                // left open rather than bury or unseat anyone
+                }
                 e.teleportTo(e.getX(), p.getY() + 1.0, e.getZ());  // lifted on the rising rock
             }
         }
-        level.setBlock(p, s, Block.UPDATE_CLIENTS);
+        level.setBlock(p, s, Block.UPDATE_ALL);
         return true;
     }
 

@@ -18,9 +18,10 @@ public final class ThroneEvents {
     private ThroneEvents() {
     }
 
-    @SubscribeEvent
+    /** Last, so a mod that cancels the blow (a claim, a no-PvP rule) stops the kick too. */
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
     static void attack(AttackEntityEvent e) {
-        if (!e.getEntity().level().isClientSide() && e.getEntity().getVehicle() instanceof ThroneOfPower t && e.getTarget() instanceof LivingEntity target) {
+        if (!e.isCanceled() && !e.getEntity().level().isClientSide() && e.getEntity().getVehicle() instanceof ThroneOfPower t && e.getTarget() instanceof LivingEntity target) {
             t.kick(target);
         }
     }
@@ -36,7 +37,7 @@ public final class ThroneEvents {
     @SubscribeEvent
     static void death(LivingDeathEvent e) {
         LivingEntity dead = e.getEntity();
-        if (dead.level() instanceof ServerLevel level && !(dead instanceof Player)) {
+        if (ThroneOfPower.live > 0 && dead.level() instanceof ServerLevel level) {
             for (ThroneOfPower t : level.getEntitiesOfClass(ThroneOfPower.class, new AABB(dead.blockPosition()).inflate(64))) {
                 t.settle(dead);
             }

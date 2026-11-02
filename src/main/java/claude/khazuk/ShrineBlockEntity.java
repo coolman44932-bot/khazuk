@@ -84,8 +84,9 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     @Override
     public void second(ServerLevel level) {
         super.second(level);
-        if (crags.second(level, this, HoldCrag.PER_SECOND)) {
-            setChanged();
+        crags.second(level, this, HoldCrag.PER_SECOND);
+        if (crags.takeDirty()) {
+            setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
     }
 

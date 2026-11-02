@@ -59,7 +59,13 @@ public class AncestorPlan extends Item {
      *  raise it; else begun, its gold taken by the engine. {@code free}: a creative god pays nothing. True if begun. */
     public static boolean setOut(ShrineBlockEntity hold, ServerLevel level, Rooms.Room room, BlockPos ground, Direction facing, boolean free,
                                  java.util.function.Consumer<Component> tell) {
-        String no = hold.works().raise(level, placement(room, ground, facing), free);
+        PlanPlacement pl = placement(room, ground, facing);
+        if (room.function() == HoldRooms.GATE && HoldCrag.buries(level, pl, hold.getBlockPos())) {
+            tell.accept(Component.literal("The mountain round the " + room.displayName() + " would bury the Shrine: set it out further away, "
+                    + "or facing away from it.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+        String no = hold.works().raise(level, pl, free);
         if (no != null) {
             tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
             return false;
