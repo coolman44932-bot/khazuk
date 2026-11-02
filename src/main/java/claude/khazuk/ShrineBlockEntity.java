@@ -215,11 +215,18 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return keep.toLongArray();
     }
 
-    /** Gold ore a dig cuts through goes to the hold's gold, two to the ore (a dwarf gets more out of it than a player's pick). */
+    /**
+     * Gold ore a dig cuts through goes to the hold's gold, two to the ore (a dwarf gets more out of it than a player's pick). A container
+     * it cuts (one set down in the way after the dig began: the ones there before are left standing, keepOutCells) spills what it held
+     * where it stood, before the dig empties it.
+     */
     @Override
     public void takeSpoils(ServerLevel level, BlockPos pos, BlockState was, @Nullable BlockEntity be) {
         if (was.is(net.minecraft.tags.BlockTags.GOLD_ORES)) {
             addCurrency(GOLD_PER_ORE, "Gold dug out");
+        }
+        if (be instanceof net.minecraft.world.Container c && !c.isEmpty()) {
+            net.minecraft.world.Containers.dropContents(level, pos, c);
         }
     }
 

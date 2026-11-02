@@ -100,6 +100,10 @@ public class HallGameTests {
         int gold = hold.currency();
         List<String> told = new ArrayList<>();
         h.assertTrue(AncestorPlan.dig(hold, h.getLevel(), pl, true, c -> told.add(c.getString())), "the dig was refused: " + told);
+        // a barrel set down in the rock after the dig began: cut out by the dig, its things spilt where it stood, not lost
+        BlockPos late = pl.world(new BlockPos(14, 4, 9));
+        h.getLevel().setBlockAndUpdate(late, Blocks.BARREL.defaultBlockState());
+        ((net.minecraft.world.level.block.entity.BarrelBlockEntity) h.getLevel().getBlockEntity(late)).setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.EMERALD, 5));
         h.startSequence()
                 .thenWaitUntil(() -> h.assertTrue(hold.works().digs().isEmpty(), "still digging: "
                         + hold.works().digs().stream().map(d -> Math.round(d.job().progress() * 100) + "%").toList() + ", "
@@ -117,6 +121,11 @@ public class HallGameTests {
                     h.assertTrue(h.getLevel().getBlockState(pl.world(new BlockPos(3, 2, 1))).is(Blocks.RED_WOOL), "a bunk's bedding isn't in");
                     h.assertTrue(h.getLevel().getBlockEntity(chest) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity c
                             && c.getItem(0).is(net.minecraft.world.item.Items.DIAMOND), "the chest in the way was dug out, or emptied");
+                    int spilt = 0;
+                    for (var it : h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(late).inflate(6))) {
+                        spilt += it.getItem().is(net.minecraft.world.item.Items.EMERALD) ? it.getItem().getCount() : 0;
+                    }
+                    h.assertTrue(spilt == 5, "the barrel set down after the dig began spilt " + spilt + " of its 5 emeralds");
                     h.assertTrue(hold.currency() >= gold + ShrineBlockEntity.GOLD_PER_ORE, "the gold ore dug out paid " + (hold.currency() - gold)
                             + ", not " + ShrineBlockEntity.GOLD_PER_ORE);
                 })

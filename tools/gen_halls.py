@@ -179,7 +179,7 @@ def great_hall():
     h.put(24, 3, 9, "minecraft:gold_block")
     h.put(24, 3, 11, "minecraft:gold_block")
     h.face(25, 10, 5)
-    for z in (6, 14):                                                    # braziers either side of the seat, on iron bars
+    for z in (6, 14):                                                    # braziers either side of the seat, on the dais
         h.put(23, 2, z, FIRE)
     for y in range(2, 10):                                               # banners of runes on the side walls: tuff panels
         for x in range(8, 20, 6):
