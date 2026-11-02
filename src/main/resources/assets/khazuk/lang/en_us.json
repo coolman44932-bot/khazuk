@@ -1,0 +1,8 @@
+{
+  "block.khazuk.ancestor_shrine": "Ancestor Shrine",
+  "entity.khazuk.miner": "Dwarf Miner",
+  "entity.khazuk.dwarf_warrior": "Dwarf Warrior",
+  "item.khazuk.miner_spawn_egg": "Dwarf Miner Spawn Egg",
+  "item.khazuk.dwarf_warrior_spawn_egg": "Dwarf Warrior Spawn Egg",
+  "itemGroup.khazuk": "Khazuk!"
+}

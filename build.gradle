@@ -1,0 +1,120 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+// Khazuk!: the Dwarfs on Settlement Core (docs/plan.md). The player is the Ancestor Gods.
+version = project.mod_version
+group = 'claude.khazuk'
+base { archivesName = 'khazuk' }
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content { includeGroup 'com.geckolib' }
+    }
+}
+
+// Settlement Core, the engine the Dwarfs run on: the deployed jar pinned in libs/ (libs/settlementcore.pin), so a commit is built
+// and tested against exactly the engine the user's game has. -PcoreJar=<path> swaps in an engine jar not yet deployed, for engine work
+// in progress.
+def coreJar = project.findProperty('coreJar') ? file(project.findProperty('coreJar')) : file("libs/settlementcore-${settlementcore_version}.jar")
+
+dependencies {
+    implementation files(coreJar)
+    implementation "com.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+}
+
+neoForge {
+    version = project.neo_version
+    // GeckoLib 5 makes every EntityRenderState a GeoRenderState by interface injection; its jar doesn't carry the file
+    // (the engine's copy, settlementcore/geckolib_interface_injections.json)
+    interfaceInjectionData {
+        from(file('geckolib_interface_injections.json'))
+    }
+
+    runs {
+        configureEach {
+            // -Ptestns=khazuk : only those mods' GameTests (the engine's test/GameTests reads it)
+            systemProperty 'settlementcore.testns', project.findProperty('testns') ?: 'khazuk'
+        }
+        client {
+            client()
+            gameDirectory = project.file('runs/client')
+        }
+        // ./gradlew runBridgeClient : the Dwarfs in a hidden dev game with devbridge (block bench/devbridge; devbridge.py start
+        // --project khazuk puts its jar in runs/bridge/mods); the debug port is its hot swap
+        bridgeClient {
+            client()
+            gameDirectory = project.file('runs/bridge')
+            systemProperty 'devbridge', 'true'
+            systemProperty 'devbridge.visible', project.hasProperty('visible') ? 'true' : 'false'
+            systemProperty 'devbridge.world', project.findProperty('bridgeworld') ?: 'bridge'
+            systemProperty 'devbridge.root', project.findProperty('devbridgeroot') ?: ''
+            systemProperty 'devbridge.structures', project.findProperty('devbridgestructures') ?: ''
+            jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=127.0.0.1:5005'
+            programArguments.addAll('--width', '1280', '--height', '720')
+        }
+        // ./gradlew runGameTestServer [-Ponly=<batch,test>] : the Khazuk!'s GameTests, then the server stops
+        gameTestServer {
+            type = 'gameTestServer'
+            gameDirectory = project.file('runs/gametest')
+            systemProperty 'settlementcore.only', project.findProperty('only') ?: ''
+            systemProperty 'settlementcore.deterministic', 'true'
+        }
+    }
+
+    mods {
+        khazuk {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    def props = [version: project.version, minecraft_version: project.minecraft_version, neo_version: project.neo_version,
+                 geckolib_version: project.geckolib_version, settlementcore_version: project.settlementcore_version]
+    inputs.properties props
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand props
+    }
+}
+
+// The pinned engine jar is the one libs/settlementcore.pin names (its sha256), unless -PcoreJar swaps it
+tasks.register('checkCorePin') {
+    group = 'verification'
+    description = 'Fails if libs/ holds an engine jar other than the pinned one.'
+    def pin = file('libs/settlementcore.pin')
+    inputs.file(pin)
+    doLast {
+        if (project.findProperty('coreJar')) {
+            return
+        }
+        def want = new groovy.json.JsonSlurper().parse(pin).sha256
+        def got = java.security.MessageDigest.getInstance('SHA-256').digest(coreJar.bytes).encodeHex().toString()
+        if (want != got) {
+            throw new GradleException("libs/ engine jar ${coreJar.name} is ${got.take(8)}, the pin says ${want.take(8)}")
+        }
+    }
+}
+tasks.named('compileJava') { dependsOn 'checkCorePin' }
+
+jar {
+    manifest {
+        attributes([
+                'Specification-Title'   : 'Khazuk!',
+                'Specification-Version' : project.version,
+                'Implementation-Title'  : 'Khazuk!',
+                'Implementation-Version': project.version
+        ])
+    }
+}

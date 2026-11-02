@@ -1,0 +1,26 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "All rights reserved"
+
+[[mods]]
+    modId = "khazuk"
+    version = "${version}"
+    displayName = "Khazuk!"
+    authors = "built with Claude"
+    description = """
+The Dwarfs on Settlement Core. You are the Ancestor Gods: set down an Ancestor Shrine, and Miners and Dwarf Warriors come up from
+the deeps to dig your hold, mine its gold and fight for it."""
+
+[[dependencies.khazuk]]
+    modId = "settlementcore"
+    type = "required"
+    versionRange = "[${settlementcore_version}]"
+    ordering = "AFTER"
+    side = "BOTH"
+
+[[dependencies.khazuk]]
+    modId = "geckolib"
+    type = "required"
+    versionRange = "[${geckolib_version},6)"
+    ordering = "NONE"
+    side = "BOTH"
