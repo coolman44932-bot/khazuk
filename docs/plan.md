@@ -66,6 +66,14 @@ The god's powers, paid from the hold's devotion (prayers at the Shrine, grown by
   - Irondrakes;
   - the war machines: the Grudge Thrower, the Cannon, the Organ Gun, the Flame Cannon;
   - the Gyrocopter and Gyrobomber.
+- **The first showpiece (the user's pick, 2026-11-01): Thorgrim's Throne of Power, as the player's own mount** ("his throne would be
+  first, but as a rideable for me"):
+  - the player sits where Thorgrim sits, four Throne Bearers carry it, and the Book of Grudges rides on it;
+  - the detail session models it. The mod gives a rideable entity the player steers like a horse, at the seat point the model's
+    contract names;
+  - its clips are idle, walk and run (the bearers in step), kneel and rise (to mount and dismount), a bearer's kick or barge when the
+    rider attacks, and the Book opening when a grudge is written or settled (D4);
+  - its size is the user's to pick.
 - **Heroes and lords:** the Thane, the Runesmith, the Master Engineer, the Dragon Slayer; the Dwarf Lord, the Runelord; a King for a hold
   that grows into a capital.
 - **Strength:** per stat, the higher of the army book and TWW3's battle stats (the user's rule). A Dwarf is short, broad, tough and
@@ -95,6 +103,7 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   - its GameTests, a devbridge project and a ship.py entry.
 - **D1, the hold dug.** The god's plans for the first halls (the Great Hall, the mine, the barracks), dug by the Miners on the engine's
   dig side; the stair the Dwarfs come up by.
+- **The Throne of Power** goes in as soon as the detail session's model and contract are ready, whichever D step that falls in.
 - **D2, Miners and Dwarf Warriors modelled** (fast models from Blockbench scripts), their stats, the floor tests. **Ship 1** (D0-D2).
 - **D3, gold and ale:** the mine and the treasury, the brewery, ale as morale.
 - **D4, the Book of Grudges.**
