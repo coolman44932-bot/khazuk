@@ -151,15 +151,14 @@ def great_hall():
     for x in range(7, 21):                                               # the hearth: a stone trench, its fires every third block
         h.put(x, 0, 9, DARK)
         h.put(x, 0, 11, DARK)
-        h.put(x, 0, 10, "minecraft:ochre_froglight" if x % 3 else DARK)
+        h.put(x, 0, 10, FIRE if x % 3 == 0 else "minecraft:ochre_froglight")     # the fires sunk in the floor
         h.put(x, 1, 9, "minecraft:polished_blackstone_slab[type=bottom]")
         h.put(x, 1, 11, "minecraft:polished_blackstone_slab[type=bottom]")
-        if x % 3 == 0:
-            h.put(x, 1, 10, FIRE)
+        h.put(x, 1, 10, "minecraft:iron_bars[east=true,west=true]")                # a grate over them: nobody steps in
     for z, bench in ((7, "minecraft:spruce_stairs[facing=north]"), (13, "minecraft:spruce_stairs[facing=south]")):
         for x in range(7, 21):                                           # a long table either side of the hearth, benches beside
             h.put(x, 1, z, "minecraft:dark_oak_fence" if x in (7, 13, 20) else AIR)
-            h.put(x, 2, z, "minecraft:dark_oak_slab[type=bottom]")
+            h.put(x, 2, z, "minecraft:dark_oak_slab[type=top]")
             bz = z - 1 if z == 7 else z + 1
             h.put(x, 1, bz, bench)
         for x in range(8, 20, 3):
@@ -180,8 +179,8 @@ def great_hall():
     h.put(24, 3, 9, "minecraft:gold_block")
     h.put(24, 3, 11, "minecraft:gold_block")
     h.face(25, 10, 5)
-    for z in (6, 14):                                                    # braziers either side of the seat
-        h.put(23, 3, z, FIRE)
+    for z in (6, 14):                                                    # braziers either side of the seat, on iron bars
+        h.put(23, 2, z, FIRE)
     for y in range(2, 10):                                               # banners of runes on the side walls: tuff panels
         for x in range(8, 20, 6):
             for z in (1, 19):
@@ -191,7 +190,7 @@ def great_hall():
 
 
 def barracks():
-    """The barracks, 17 long, 8 high, 13 wide: bunks two high along both walls, a weapon wall with anvils, a grindstone and a smithing
+    """The barracks, 17 long, 8 high, 13 wide: bunks two high along both walls, a weapon wall with stonecutters, grindstones and a smithing
     table, barrels of kit, a brazier in the middle and lanterns on chains."""
     h = Hall(17, 8, 13, 6, 3, 4, 11)
     h.shell()
@@ -206,11 +205,11 @@ def barracks():
             h.put(x - 1, 2, z, "minecraft:dark_oak_fence")
             h.put(x - 1, 3, z, "minecraft:dark_oak_fence")
     for z in range(2, 11):                                               # the weapon wall at the far end
-        h.put(15, 1, z, ["minecraft:anvil[facing=north]", "minecraft:grindstone[face=floor,facing=north]", "minecraft:smithing_table",
+        h.put(15, 1, z, ["minecraft:stonecutter[facing=west]", "minecraft:grindstone[face=floor,facing=north]", "minecraft:smithing_table",
                          "minecraft:barrel[facing=up]"][z % 4])
         h.put(15, 3, z, BRONZE if z % 2 else GOLD)
-    h.put(8, 0, 6, DARK)
-    h.put(8, 1, 6, FIRE)
+    h.put(8, 0, 6, FIRE)                                                 # the brazier sunk in the floor, a grate over it
+    h.put(8, 1, 6, "minecraft:iron_bars")
     h.lamp(5, 6, 2)
     h.lamp(11, 6, 2)
     return h
@@ -233,7 +232,7 @@ def mine():
     h.put(12, 1, 8, 'minecraft:barrel[facing=up]{CustomName:"Ore Cart"}')
     h.put(12, 1, 5, 'minecraft:barrel[facing=up]{CustomName:"Stone Bin"}')
     h.put(12, 1, 9, 'minecraft:barrel[facing=up]{CustomName:"Stone Bin"}')
-    h.put(12, 2, 7, "minecraft:lantern")
+    h.put(12, 1, 7, "minecraft:lantern")
     h.lamp(7, 4, 1)
     h.lamp(7, 10, 1)
     # the drift mouths: an opening 1 wide, 2 high in the far wall and each side wall, a station where each drift begins, running outward

@@ -92,6 +92,12 @@ public class HallGameTests {
         Rooms.Room room = HoldRooms.room("dawi_barracks");
         BlockPos door = h.absolutePos(POCKET.offset(4, 1, 0));   // the pocket's east wall, at its floor's level
         PlanPlacement pl = PlanPlacement.compute(room, door, Direction.EAST);
+        // a chest of the player's in the way (left standing, its things kept), and a vein of gold the dig cuts (the hold's gold)
+        BlockPos chest = pl.world(new BlockPos(5, 2, 4));
+        h.getLevel().setBlockAndUpdate(chest, Blocks.CHEST.defaultBlockState());
+        ((net.minecraft.world.level.block.entity.ChestBlockEntity) h.getLevel().getBlockEntity(chest)).setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND));
+        h.getLevel().setBlockAndUpdate(pl.world(new BlockPos(10, 3, 8)), Blocks.GOLD_ORE.defaultBlockState());
+        int gold = hold.currency();
         List<String> told = new ArrayList<>();
         h.assertTrue(AncestorPlan.dig(hold, h.getLevel(), pl, true, c -> told.add(c.getString())), "the dig was refused: " + told);
         h.startSequence()
@@ -109,12 +115,20 @@ public class HallGameTests {
                     h.assertTrue(has, "the hold hasn't the barracks");
                     h.assertTrue(h.getLevel().getBlockState(pl.world(new BlockPos(8, 3, 6))).isAir(), "the barracks' middle is still rock");
                     h.assertTrue(h.getLevel().getBlockState(pl.world(new BlockPos(3, 2, 1))).is(Blocks.RED_WOOL), "a bunk's bedding isn't in");
+                    h.assertTrue(h.getLevel().getBlockEntity(chest) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity c
+                            && c.getItem(0).is(net.minecraft.world.item.Items.DIAMOND), "the chest in the way was dug out, or emptied");
+                    h.assertTrue(hold.currency() >= gold + ShrineBlockEntity.GOLD_PER_ORE, "the gold ore dug out paid " + (hold.currency() - gold)
+                            + ", not " + ShrineBlockEntity.GOLD_PER_ORE);
                 })
                 .thenSucceed();
     }
 
-    /** A dug mine is the engine's Ore Mine: handed over, the hold's works have its MineWork, its three drift mouths. */
-    @GameTest(template = "digsite", timeoutTicks = 100, batch = "khazuk")
+    /**
+     * A dug mine is the engine's Ore Mine: handed over, the hold's works have its MineWork, its three drift mouths, and its Miners drive a
+     * drift out into the rock (the review of 06cd0cf: the hold's land, a cube round the Shrine, counted as "another room" to the mine,
+     * and every drift stopped at its first cell).
+     */
+    @GameTest(template = "digsite", timeoutTicks = 2400, batch = "khazuk")
     public static void aDugMineIsAnOreMine(GameTestHelper h) {
         ShrineBlockEntity hold = hold(h);
         Rooms.Room room = HoldRooms.room("dawi_mine");
@@ -130,6 +144,16 @@ public class HallGameTests {
                 + mines.size() + " Ore Mine(s)");
         h.assertTrue(mines.get(0).mouths().size() == 3, "the mine has " + mines.get(0).mouths().size() + " drift mouths, not 3");
         h.assertTrue(mines.get(0).carts(h.getLevel()).size() == 2, "the mine's Ore Carts weren't found");
-        h.succeed();
+        hold.addToReserve(3, 0);
+        MineWork mine = mines.get(0);
+        h.succeedWhen(() -> {
+            int cut = 0;
+            for (var s : mine.mouths()) {
+                for (int d = 1; d <= 3; d++) {
+                    cut += h.getLevel().getBlockState(s.pos().relative(s.facing(), d)).isAir() ? 1 : 0;
+                }
+            }
+            h.assertTrue(cut >= 3, "the Miners have cut " + cut + " cells of drift past the mouths, not 3");
+        });
     }
 }

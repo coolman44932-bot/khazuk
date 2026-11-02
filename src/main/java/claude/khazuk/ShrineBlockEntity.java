@@ -206,13 +206,24 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
                 }
             }
         }
+        for (BlockPos p : BlockPos.betweenClosed(area.minX(), area.minY(), area.minZ(), area.maxX(), area.maxY(), area.maxZ())) {
+            if (level.isLoaded(p) && level.getBlockEntity(p) != null) {
+                keep.add(p.asLong());                             // a chest, a furnace, a sign in the way: left standing, never emptied
+            }
+        }
         keep.add(getBlockPos().asLong());
         return keep.toLongArray();
     }
 
+    /** Gold ore a dig cuts through goes to the hold's gold, two to the ore (a dwarf gets more out of it than a player's pick). */
     @Override
     public void takeSpoils(ServerLevel level, BlockPos pos, BlockState was, @Nullable BlockEntity be) {
+        if (was.is(net.minecraft.tags.BlockTags.GOLD_ORES)) {
+            addCurrency(GOLD_PER_ORE, "Gold dug out");
+        }
     }
+
+    public static final int GOLD_PER_ORE = 2;
 
     /** Tests: one round of spawning now, whatever its clock says. */
     public void roundForTests(ServerLevel level) {

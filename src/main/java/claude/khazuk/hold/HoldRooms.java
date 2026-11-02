@@ -35,7 +35,7 @@ public final class HoldRooms {
                     "The hold's heart under the mountain: pillars banded in gold, a long hearth between the tables, the god's seat on the dais.",
                     27, 13, 21, 0, 1, 10, List.of(), List.of(), List.of()),
             new Rooms.Room("dawi_barracks", "Barracks", 15, BARRACKS,
-                    "Bunks for the hold's warriors, their anvils and grindstones, and a brazier to sit by.",
+                    "Bunks for the hold's warriors, their grindstones and smithing tables, and a brazier to sit by.",
                     17, 8, 13, 0, 1, 6, List.of(), List.of(), List.of()),
             new Rooms.Room("dawi_mine", "Mine", 20, Rooms.Function.OREMINE,
                     "Timber props and rails: the Miners drive drifts out from its three mouths after ore, and fill its Ore Carts.",
