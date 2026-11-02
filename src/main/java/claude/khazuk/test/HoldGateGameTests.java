@@ -103,6 +103,7 @@ public class HoldGateGameTests {
         again.load(saved);
         h.assertTrue(again.raised(door) == 1000 && !again.risen(h.getLevel(), door), "a half-risen mountain reads back at "
                 + again.raised(door) + " cells, not 1000");
+        h.assertTrue(hold.crags().takeDirty() && !hold.crags().takeDirty(), "a second's rise wasn't marked for saving (once)");
         int halfway = solid(h);
         h.assertTrue(halfway - before >= 900 && halfway - before <= 1000, "a 1000-cell second raised " + (halfway - before));
         int seconds = 0;
@@ -110,11 +111,13 @@ public class HoldGateGameTests {
             seconds++;
         }
         h.assertTrue(hold.crags().risen(h.getLevel(), door), "the mountain hasn't finished after " + seconds + " seconds");
+        h.assertTrue(hold.crags().takeDirty(), "the last step of the rise wasn't marked for saving (a restart would raise the summit again)");
         int risen = solid(h) - before;
         h.assertTrue(risen >= 34000, "the mountain is only " + risen + " blocks");
         h.assertBlockPresent(Blocks.AIR, DOOR_GROUND.above(3).east(14));
         h.assertBlockPresent(Blocks.AIR, DOOR_GROUND.above(3).east(24));   // 10 into the passage, through the mountain
-        h.assertTrue(!hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND), "a risen mountain rose again");
+        h.assertTrue(!hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND) && !hold.crags().takeDirty(),
+                "a risen mountain rose again, or a second with nothing to do was marked for saving");
         // a gate whose mountain would cover the Shrine is refused: the Shrine just behind the gatehouse
         var pl = AncestorPlan.placement(room, h.absolutePos(DOOR_GROUND), Direction.EAST);
         h.assertTrue(HoldCrag.buries(h.getLevel(), pl, h.absolutePos(new BlockPos(30, 3, 36))), "a Shrine inside the mountain isn't buried");

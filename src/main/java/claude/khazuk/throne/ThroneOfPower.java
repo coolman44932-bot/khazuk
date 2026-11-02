@@ -296,9 +296,8 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
             kickTick++;
             if (kickTick == KICK_IMPACT && kickAt != null && kickAt.isAlive() && getBoundingBox().inflate(2.0).intersects(kickAt.getBoundingBox())) {
                 float dmg = kickAt.getUUID().equals(grudge) ? KICK_DAMAGE * 2 : KICK_DAMAGE;
-                kickAt.invulnerableTime = 0;                     // the rider's own blow 5 ticks ago would swallow it
                 DamageSource src = getControllingPassenger() instanceof Player rider ? damageSources().playerAttack(rider) : damageSources().mobAttack(this);
-                kickAt.hurtServer(level, src, dmg);
+                besideTheBlow(kickAt, () -> kickAt.hurtServer(level, src, dmg));
                 Vec3 away = kickAt.position().subtract(position()).normalize();
                 kickAt.knockback(1.4, -away.x, -away.z);
             }
@@ -320,14 +319,51 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
         }
     }
 
-    /** Broken, it goes back to its god: into his pack if he's on the server (whatever killed it, the void too), else dropped where it fell. */
-    @Override
-    public void die(DamageSource source) {
-        boolean was = isDeadOrDying() || isRemoved();
-        super.die(source);
-        if (was || !(level() instanceof ServerLevel level)) {
-            return;
+    private static final java.lang.reflect.Field LAST_HURT = lastHurtField();
+
+    private static java.lang.reflect.Field lastHurtField() {
+        try {
+            java.lang.reflect.Field f = LivingEntity.class.getDeclaredField("lastHurt");
+            f.setAccessible(true);
+            return f;
+        } catch (ReflectiveOperationException e) {
+            claude.khazuk.Khazuk.LOG.error("Khazuk: no LivingEntity.lastHurt; the bearers' kick will cut into the rider's next blow", e);
+            return null;
         }
+    }
+
+    /**
+     * Lands {@code hit} on {@code target} beside the rider's own blow, not instead of part of it: the target's i-frames (up from the blow 5
+     * ticks ago) are cleared for the kick and then put back as the blow left them, so the kick does its whole damage and the rider's next
+     * swing is judged against his own last blow, not the kick's (the review of 68f3100: else each kick took 8 off the next blow).
+     */
+    static void besideTheBlow(LivingEntity target, Runnable hit) {
+        int frames = target.invulnerableTime;
+        float last = 0f;
+        try {
+            last = LAST_HURT == null ? 0f : LAST_HURT.getFloat(target);
+        } catch (IllegalAccessException ignored) {
+        }
+        target.invulnerableTime = 0;
+        hit.run();
+        if (frames > 0 && target.isAlive()) {
+            target.invulnerableTime = frames;
+            try {
+                if (LAST_HURT != null) {
+                    LAST_HURT.setFloat(target, last);
+                }
+            } catch (IllegalAccessException ignored) {
+            }
+        }
+    }
+
+    /**
+     * Broken, it goes back to its god: into his pack if he's on the server, else dropped where it fell (or at his feet, if it fell out of the
+     * world). Here, not in die(): this runs once, only for a death that happened (no mod cancelled it), whatever the loot gamerule.
+     */
+    @Override
+    protected void dropAllDeathLoot(ServerLevel level, DamageSource source) {
+        super.dropAllDeathLoot(level, source);
         ItemStack item = new ItemStack(KRegistry.THRONE_ITEM.get());
         ServerPlayer god = owner == null ? null : level.getServer().getPlayerList().getPlayer(owner);
         if (god != null && god.getInventory().add(item)) {

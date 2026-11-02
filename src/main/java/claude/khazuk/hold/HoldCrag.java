@@ -75,7 +75,12 @@ public final class HoldCrag {
     /** Whether {@link #done} changed since the hold last saved. */
     private boolean dirty;
 
-    /** A new server (or a reload) reads the cells afresh: a datapack may have changed them. */
+    /** Cells left open because someone stood there, per gate: tried again each second once the rest is up, for {@value #RETRY_SECONDS} s. */
+    private final it.unimi.dsi.fastutil.longs.Long2ObjectMap<it.unimi.dsi.fastutil.ints.IntArrayList> waiting = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+    private final Long2IntMap retried = new Long2IntOpenHashMap();
+    static final int RETRY_SECONDS = 60;
+
+    /** A new server reads the cells afresh: a datapack may have changed them. */
     @net.neoforged.bus.api.SubscribeEvent
     static void serverStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent e) {
         cells = null;
@@ -169,9 +174,9 @@ public final class HoldCrag {
         return f.isInside(shrine);
     }
 
-    /** Whether the gate at {@code door} has its whole mountain. */
+    /** Whether the gate at {@code door} has its whole mountain (every cell placed or given up on, none waiting for someone to move). */
     public boolean risen(ServerLevel level, BlockPos door) {
-        return done.getOrDefault(door.asLong(), 0) >= cells(level).size();
+        return done.getOrDefault(door.asLong(), 0) >= cells(level).size() && !waiting.containsKey(door.asLong());
     }
 
     /**
@@ -185,7 +190,7 @@ public final class HoldCrag {
         for (Building b : hold.buildings()) {
             if (b.door() != null && gate(b)) {
                 gates.add(b.door().asLong());
-                if (rising == null && done.getOrDefault(b.door().asLong(), 0) < c.size()) {
+                if (rising == null && (done.getOrDefault(b.door().asLong(), 0) < c.size() || waiting.containsKey(b.door().asLong()))) {
                     rising = b;
                 }
             }
@@ -193,6 +198,7 @@ public final class HoldCrag {
         if (done.keySet().removeIf(k -> !gates.contains(k))) {
             dirty = true;
         }
+        waiting.keySet().removeIf(k -> !gates.contains(k));
         if (rising == null || c.size() == 0) {
             return false;
         }
@@ -219,24 +225,22 @@ public final class HoldCrag {
         keepOut.add(new BoundingBox(shrine.getX() - 2, shrine.getY() - 1, shrine.getZ() - 2, shrine.getX() + 2, shrine.getY() + 3, shrine.getZ() + 2));
         int end = Math.min(c.size(), i + budget);
         BlockPos last = null;
+        it.unimi.dsi.fastutil.ints.IntArrayList held = waiting.get(key);
         for (; i < end; i++) {
             BlockPos p = pl.world(new BlockPos(c.xs[i], c.ys[i], c.zs[i]));
             if (!level.isLoaded(p)) {
                 break;                                           // wait for its chunk
             }
-            BlockState s = c.states[i];
-            if (s.getBlock() instanceof FallingBlock && level.getBlockState(p.below()).isAir()) {
-                s = Blocks.COBBLESTONE.defaultBlockState();       // nothing loose over a hollow
-            }
-            if (place(level, p, s, near, keepOut) && c.foot[i]) {
-                BlockState fill = s.is(Blocks.MOSS_CARPET) || s.getBlock() instanceof FallingBlock ? Blocks.STONE.defaultBlockState() : s;
-                BlockPos q = p.below();
-                for (int d = 0; d < FOOTING && level.isLoaded(q) && hollow(level.getBlockState(q)); d++, q = q.below()) {
-                    place(level, q, fill, near, keepOut);
+            int r = cell(level, c, i, p, near, keepOut);
+            if (r == OCCUPIED) {
+                if (held == null) {
+                    held = new it.unimi.dsi.fastutil.ints.IntArrayList();
+                    waiting.put(key, held);
                 }
+                held.add(i);                                     // someone there: tried again once the rest is up
             }
             if ((i & 63) == 0) {
-                level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, s), p.getX() + 0.5, p.getY() + 1.0, p.getZ() + 0.5,
+                level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, c.states[i]), p.getX() + 0.5, p.getY() + 1.0, p.getZ() + 0.5,
                         12, 0.6, 0.3, 0.6, 0.05);
                 last = p;
             }
@@ -244,14 +248,50 @@ public final class HoldCrag {
         if (done.put(key, i) != i) {
             dirty = true;
         }
+        if (i >= c.size() && held != null) {
+            int tries = retried.merge(key, 1, Integer::sum);
+            it.unimi.dsi.fastutil.ints.IntArrayList still = new it.unimi.dsi.fastutil.ints.IntArrayList();
+            for (int k = 0; k < held.size(); k++) {
+                int j = held.getInt(k);
+                BlockPos p = pl.world(new BlockPos(c.xs[j], c.ys[j], c.zs[j]));
+                if (level.isLoaded(p) && cell(level, c, j, p, near, keepOut) == OCCUPIED) {
+                    still.add(j);
+                }
+            }
+            if (still.isEmpty() || tries >= RETRY_SECONDS) {
+                waiting.remove(key);                             // all in, or a minute's wait for whoever stands there: let them keep their hollow
+                retried.remove(key);
+            } else {
+                waiting.put(key, still);
+            }
+        }
         if (last != null) {
             level.playSound(null, last, SoundEvents.DEEPSLATE_BREAK, SoundSource.BLOCKS, 2.0f, 0.5f);
         }
-        if (i >= c.size()) {
+        if (i >= c.size() && !waiting.containsKey(key)) {
             hold.tellOwner("The " + pl.room().displayName() + " stands in its mountain.", ChatFormatting.GOLD);
             return false;
         }
         return true;
+    }
+
+    static final int PLACED = 1, REFUSED = 0, OCCUPIED = -1;
+
+    /** Cell {@code i} of the mountain at {@code p}, and its column's foot if it is the lowest: {@link #PLACED}, {@link #REFUSED} or {@link #OCCUPIED}. */
+    private static int cell(ServerLevel level, Cells c, int i, BlockPos p, List<LivingEntity> near, List<BoundingBox> keepOut) {
+        BlockState s = c.states[i];
+        if (s.getBlock() instanceof FallingBlock && level.getBlockState(p.below()).isAir()) {
+            s = Blocks.COBBLESTONE.defaultBlockState();           // nothing loose over a hollow
+        }
+        int r = place(level, p, s, near, keepOut);
+        if (r == PLACED && c.foot[i]) {
+            BlockState fill = s.is(Blocks.MOSS_CARPET) || s.getBlock() instanceof FallingBlock ? Blocks.STONE.defaultBlockState() : s;
+            BlockPos q = p.below();
+            for (int d = 0; d < FOOTING && level.isLoaded(q) && hollow(level.getBlockState(q)); d++, q = q.below()) {
+                place(level, q, fill, near, keepOut);
+            }
+        }
+        return r;
     }
 
     /** What the mountain may take: air, the land and its cover, water; never a block entity. */
@@ -265,27 +305,27 @@ public final class HoldCrag {
     }
 
     /** One cell of the mountain: not in {@code keepOut}, only where it {@link #takes}, and never on anyone it can't lift. */
-    private static boolean place(ServerLevel level, BlockPos p, BlockState s, List<LivingEntity> near, List<BoundingBox> keepOut) {
+    private static int place(ServerLevel level, BlockPos p, BlockState s, List<LivingEntity> near, List<BoundingBox> keepOut) {
         for (BoundingBox b : keepOut) {
             if (b.isInside(p)) {
-                return false;
+                return REFUSED;
             }
         }
         if (!takes(level.getBlockState(p))) {
-            return false;
+            return REFUSED;
         }
         AABB cell = new AABB(p);
         for (LivingEntity e : near) {
             if (e.getBoundingBox().intersects(cell)) {
                 AABB lifted = e.getBoundingBox().move(0, p.getY() + 1.0 - e.getY(), 0);
                 if (e.isPassenger() || e.isVehicle() || !level.noCollision(e, lifted)) {
-                    return false;                                // left open rather than bury or unseat anyone
+                    return OCCUPIED;                             // left open for now rather than bury or unseat anyone
                 }
                 e.teleportTo(e.getX(), p.getY() + 1.0, e.getZ());  // lifted on the rising rock
             }
         }
         level.setBlock(p, s, Block.UPDATE_ALL);
-        return true;
+        return PLACED;
     }
 
     public void save(CompoundTag tag) {
