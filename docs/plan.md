@@ -101,8 +101,19 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   - gold the currency, mined from gold ore;
   - spawning out of the deeps by the Shrine;
   - its GameTests, a devbridge project and a ship.py entry.
-- **D1, the hold dug.** The god's plans for the first halls (the Great Hall, the mine, the barracks), dug by the Miners on the engine's
-  dig side; the stair the Dwarfs come up by.
+- **D1, the hold dug, behind a real hold's gate** (the user's picture, 2026-11-01: "i want it the entrances to look like actual holds"):
+  - **the Hold Gate**, cut into a crag that comes with it, so it reads as a mountain face even on flat ground. It has:
+    - a tall gatehouse;
+    - great carved ancestor faces high on its towers: bronze helms, braided stone beards ending in gold beads;
+    - a stepped door frame under a rune medallion;
+    - a carved frieze and battlements;
+    - two bronze ancestors with shields on plinths;
+    - a terrace, steps and a walled road;
+    - a passage and stair down into the hold.
+    It's built by tools/gen_hold_gate.py and saved as structures/khazuk/hold_gate.nbt. The Miners raise it from a plan, as Gork's Grots
+    raise his Scrawls.
+  - **The god's plans for the first halls** (the Great Hall, the mine, the barracks), dug by the Miners on the engine's dig side behind
+    the gate's stair.
 - **The Throne of Power** goes in as soon as the detail session's model and contract are ready, whichever D step that falls in.
 - **D2, Miners and Dwarf Warriors modelled** (fast models from Blockbench scripts), their stats, the floor tests. **Ship 1** (D0-D2).
 - **D3, gold and ale:** the mine and the treasury, the brewery, ale as morale.
