@@ -43,11 +43,13 @@ public final class KhazukClient {
         if (mc.player != null && mc.level != null && mc.player.getMainHandItem().getItem() instanceof claude.khazuk.hold.AncestorPlan plan
                 && plan.room() != null && mc.hitResult instanceof net.minecraft.world.phys.BlockHitResult hit
                 && hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
-            String key = plan.room().id() + " " + hit.getBlockPos().asLong() + " " + mc.player.getDirection();
+            String key = plan.room().id() + " " + hit.getBlockPos().asLong() + " " + mc.player.getDirection() + " " + mc.player.getBlockY();
             long now = mc.level.getGameTime();
             if (!outlining || !key.equals(outlinedFor) || now - outlinedAt >= 20) {
-                var pl = claude.khazuk.hold.AncestorPlan.placement(plan.room(), hit.getBlockPos(), mc.player.getDirection());
-                claude.settlementcore.client.PlanOutline.show(claude.settlementcore.room.Siting.preview(mc.level, pl));
+                var pl = claude.khazuk.hold.AncestorPlan.aimed(plan.room(), hit.getBlockPos(), mc.player.getBlockY(), mc.player.getDirection());
+                claude.settlementcore.client.PlanOutline.show(claude.settlementcore.room.Rooms.isRaised(plan.room().id())
+                        ? claude.settlementcore.room.Siting.preview(mc.level, pl)
+                        : new claude.settlementcore.room.Siting.Preview(pl, null, java.util.List.of()));   // a dug hall: its box in the rock
                 outlinedFor = key;
                 outlinedAt = now;
                 outlining = true;

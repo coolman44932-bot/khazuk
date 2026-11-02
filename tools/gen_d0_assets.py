@@ -50,34 +50,48 @@ def out(rel, obj):
         f.write(chr(10))
 
 
+PLANS = {
+    # id: (name, the gold drawing (10 wide, 7 tall at 3,5), the shapeless recipe beside the paper)
+    "plan_hold_gate": ("Hold Gate", ["..gggggg..", ".g......g.", ".g.gggg.g.", ".g.g..g.g.", ".g.g..g.g.", ".g.g..g.g.", "gg.g..g.gg"],
+                       ["minecraft:stone_bricks", "minecraft:gold_ingot"]),
+    "plan_great_hall": ("Great Hall", ["gggggggggg", "g.g....g.g", "g.g.gg.g.g", "g.g....g.g", "g.g....g.g", "g.g.gg.g.g", "gggggggggg"],
+                        ["minecraft:deepslate_bricks", "minecraft:gold_ingot"]),
+    "plan_barracks": ("Barracks", ["gggggggggg", "g........g", "g.gg..gg.g", "g........g", "g.gg..gg.g", "g........g", "gggggggggg"],
+                      ["minecraft:stone_bricks", "minecraft:iron_ingot"]),
+    "plan_mine": ("Mine", ["...gggg...", "..g....g..", ".g..gg..g.", "....gg....", "....gg....", "....gg....", "....gg...."],
+                  ["minecraft:stone_bricks", "minecraft:rail"]),
+}
+
+
 def plan_item():
-    """The Ancestors' Plan: a stone tablet with a gold gate drawn on it, its corners chipped. Its item files, recipe and name too."""
-    r = random.Random(13)
-    im = Image.new("RGBA", (16, 16))
-    for y in range(2, 15):
-        for x in range(2, 14):
-            if (x, y) in ((2, 2), (13, 2), (2, 14), (13, 14)):
-                continue
-            edge = x in (2, 13) or y in (2, 14)
-            c = STONE_D if edge else STONE_L
-            f = 0.9 + 0.2 * r.random()
-            im.putpixel((x, y), tuple(int(v * f) for v in c) + (255,))
-    gate = ["..gggggg..", ".g......g.", ".g.gggg.g.", ".g.g..g.g.", ".g.g..g.g.", ".g.g..g.g.", "gg.g..g.gg"]
-    for dy, row in enumerate(gate):
-        for dx, ch in enumerate(row):
-            if ch == "g":
-                im.putpixel((3 + dx, 5 + dy), (GOLD if dy else GOLD_L) + (255,))
-    im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "plan_hold_gate.png"))
-    out("assets/khazuk/items/plan_hold_gate.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/plan_hold_gate"}})
-    out("assets/khazuk/models/item/plan_hold_gate.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/plan_hold_gate"}})
-    out("data/khazuk/recipe/plan_hold_gate.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
-                                                   "ingredients": ["minecraft:stone_bricks", "minecraft:gold_ingot", "minecraft:paper"],
-                                                   "result": {"id": "khazuk:plan_hold_gate", "count": 1}})
+    """The Ancestors' Plans: a stone tablet with the building drawn on it in gold, its corners chipped (the gate, the Great Hall's
+    pillars, the barracks' bunks, the mine's pick). Their item files, recipes and names too."""
     import json
     lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
     with open(lang, encoding="utf-8") as f:
         d = json.load(f)
-    d["item.khazuk.plan_hold_gate"] = "Ancestors' Plan: Hold Gate"
+    for pid, (name, drawing, needs) in PLANS.items():
+        r = random.Random(13)
+        im = Image.new("RGBA", (16, 16))
+        for y in range(2, 15):
+            for x in range(2, 14):
+                if (x, y) in ((2, 2), (13, 2), (2, 14), (13, 14)):
+                    continue
+                edge = x in (2, 13) or y in (2, 14)
+                c = STONE_D if edge else STONE_L
+                f = 0.9 + 0.2 * r.random()
+                im.putpixel((x, y), tuple(int(v * f) for v in c) + (255,))
+        for dy, row in enumerate(drawing):
+            for dx, ch in enumerate(row):
+                if ch == "g":
+                    im.putpixel((3 + dx, 5 + dy), (GOLD if dy else GOLD_L) + (255,))
+        im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", pid + ".png"))
+        out(f"assets/khazuk/items/{pid}.json", {"model": {"type": "minecraft:model", "model": f"khazuk:item/{pid}"}})
+        out(f"assets/khazuk/models/item/{pid}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"khazuk:item/{pid}"}})
+        out(f"data/khazuk/recipe/{pid}.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+                                              "ingredients": needs + ["minecraft:paper"],
+                                              "result": {"id": f"khazuk:{pid}", "count": 1}})
+        d[f"item.khazuk.{pid}"] = "Ancestors' Plan: " + name
     out("assets/khazuk/lang/en_us.json", d)
 
 

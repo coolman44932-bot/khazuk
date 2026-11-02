@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:deepslate_bricks",
+    "minecraft:gold_ingot",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "khazuk:plan_great_hall",
+    "count": 1
+  }
+}

@@ -14,10 +14,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 
 /**
- * The Ancestors' Plan: the god's own plan of one of the hold's buildings, drawn in gold on a stone tablet. Used on the ground in its
- * owner's hold, it sets the building out there, its door toward you and running away from you, and the hold's Miners raise it, paid in
- * gold (Settlement Core's surface builder). Held, it outlines where the building would go (KhazukClient). Never used up: the gold is the
- * price.
+ * The Ancestors' Plan: the god's own plan of one of the hold's buildings, drawn in gold on a stone tablet. Never used up: the gold is the
+ * price. Held, it outlines where the building would go (KhazukClient).
+ * <ul>
+ * <li>A raised building (the Hold Gate): used on the ground in its owner's hold, it sets the building out there, its door toward you and
+ * running away from you, and the Miners raise it (Settlement Core's surface builder).</li>
+ * <li>A dug hall (the Great Hall, the barracks, the mine): used on a wall you stand before (the gate's passage, a hall), its door is cut
+ * there at your feet's level and the hall runs on into the rock away from you; the Miners dig it out (the engine's dig side).</li>
+ * </ul>
  */
 public class AncestorPlan extends Item {
 
@@ -37,6 +41,18 @@ public class AncestorPlan extends Item {
         return PlanPlacement.onGround(room, ground, facing);
     }
 
+    /**
+     * Where the building would go, aimed at {@code hit} by someone standing with their feet at {@code feetY} and facing {@code facing}: a
+     * raised one on the ground hit ({@link #placement(Rooms.Room, BlockPos, Direction)}); a dug one with its door in the wall hit, at the
+     * feet's level (so the hall's floor is the floor you stand on), running away from you.
+     */
+    public static PlanPlacement aimed(Rooms.Room room, BlockPos hit, int feetY, Direction facing) {
+        if (Rooms.isRaised(room.id())) {
+            return placement(room, hit, facing);
+        }
+        return PlanPlacement.compute(room, new BlockPos(hit.getX(), feetY, hit.getZ()), facing);
+    }
+
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
         if (ctx.getLevel().isClientSide()) {
@@ -51,8 +67,28 @@ public class AncestorPlan extends Item {
             p.sendSystemMessage(Component.literal("No hold of yours is here: set down an Ancestor Shrine first.").withStyle(ChatFormatting.RED));
             return InteractionResult.FAIL;
         }
+        if (!Rooms.isRaised(room.id())) {
+            return dig(hold, level, aimed(room, ctx.getClickedPos(), p.getBlockY(), p.getDirection()), p.isCreative(), p::sendSystemMessage)
+                    ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+        }
         return setOut(hold, level, room, ctx.getClickedPos(), p.getDirection(), p.isCreative(), p::sendSystemMessage)
                 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+    }
+
+    /** Begins digging the hall at {@code pl} for {@code hold}: refused (and told why) where the engine won't dig it; else begun, paid. True if begun. */
+    public static boolean dig(ShrineBlockEntity hold, ServerLevel level, PlanPlacement pl, boolean free, java.util.function.Consumer<Component> tell) {
+        if (pl.box().inflatedBy(1).isInside(hold.getBlockPos())) {
+            tell.accept(Component.literal("The " + pl.room().displayName() + " would be dug round the Shrine: aim it further off.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+        String no = hold.works().dig(level, pl, free);
+        if (no != null) {
+            tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
+            return false;
+        }
+        tell.accept(Component.literal("The Miners will dig out the " + pl.room().displayName() + (free ? "." : " for " + pl.room().cost() + " gold."))
+                .withStyle(ChatFormatting.GOLD));
+        return true;
     }
 
     /** Sets {@code room} out for {@code hold} on {@code ground}, running toward {@code facing}: refused (and told why) where the engine won't

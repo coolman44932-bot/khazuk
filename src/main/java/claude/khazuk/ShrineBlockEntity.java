@@ -184,9 +184,30 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return List.of(new BoundingBox(c.getX() - RADIUS, c.getY() - RADIUS, c.getZ() - RADIUS, c.getX() + RADIUS, c.getY() + RADIUS, c.getZ() + RADIUS));
     }
 
+    /**
+     * A dig leaves the Shrine itself, and the hold's other buildings, as they are: their open space (halls dug off each other open into each
+     * other) and their masonry (a cell their own template sets a block in). Anything else inside another building's box may be dug: the
+     * mountain Grungni raised round the Hold Gate stands in the gate's box where its template is air, and a hall dug off the end of its
+     * passage cuts its door and its walls there.
+     */
     @Override
     public long[] keepOutCells(ServerLevel level, PlanPlacement pl) {
-        return new long[]{getBlockPos().asLong()};               // never dig out the Shrine itself
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet keep = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        BoundingBox area = pl.box();
+        for (claude.settlementcore.settlement.Building b : buildings()) {
+            PlanPlacement other = claude.settlementcore.settlement.BuildingBook.placementOf(b);
+            if (other == null || b.box().equals(area) || !b.box().intersects(area)) {
+                continue;
+            }
+            for (claude.settlementcore.room.RoomTemplates.Entry e : claude.settlementcore.room.RoomTemplates.get(level, other.room().id())) {
+                BlockPos w = other.world(e.local());
+                if (area.isInside(w) && (!e.state().isAir() || level.getBlockState(w).isAir())) {
+                    keep.add(w.asLong());
+                }
+            }
+        }
+        keep.add(getBlockPos().asLong());
+        return keep.toLongArray();
     }
 
     @Override

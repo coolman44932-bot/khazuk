@@ -44,6 +44,14 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Warrior::new, MobCategory.CREATURE).sized(0.7f, 1.8f).eyeHeight(1.6f).clientTrackingRange(10)
                     .build(key("dwarf_warrior")));
 
+    /** The Ancestors' Plans of the dug halls: used on a wall of the hold's open space, the Miners dig the hall out behind it. */
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_GREAT_HALL = ITEMS.registerItem("plan_great_hall",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_great_hall"));
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_BARRACKS = ITEMS.registerItem("plan_barracks",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_barracks"));
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_MINE = ITEMS.registerItem("plan_mine",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_mine"));
+
     /** Thorgrim's Throne of Power, the god's mount: 2.4 across the bearers' shields, the seat 2 up (a rider sits above its box). */
     public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.throne.ThroneOfPower>> THRONE = ENTITIES.register("throne_of_power",
             () -> EntityType.Builder.of(claude.khazuk.throne.ThroneOfPower::new, MobCategory.MISC).sized(2.4f, 2.1f).eyeHeight(1.8f)
@@ -68,6 +76,9 @@ public final class KRegistry {
             .displayItems((params, out) -> {
                 out.accept(SHRINE_ITEM.get());
                 out.accept(PLAN_HOLD_GATE.get());
+                out.accept(PLAN_GREAT_HALL.get());
+                out.accept(PLAN_BARRACKS.get());
+                out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
                 out.accept(MINER_EGG.get());
                 out.accept(WARRIOR_EGG.get());
