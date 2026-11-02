@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SGS",
+    "GBG",
+    "SSS"
+  ],
+  "key": {
+    "S": "minecraft:stone_bricks",
+    "G": "minecraft:gold_ingot",
+    "B": "minecraft:book"
+  },
+  "result": {
+    "id": "khazuk:ancestor_shrine",
+    "count": 1
+  }
+}
