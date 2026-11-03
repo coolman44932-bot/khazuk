@@ -1,0 +1,77 @@
+package claude.khazuk.test;
+
+import claude.khazuk.KRegistry;
+import claude.khazuk.Khazuk;
+import claude.khazuk.ShrineBlockEntity;
+import claude.khazuk.god.Waking;
+import claude.settlementcore.test.GameTest;
+import claude.settlementcore.test.GameTestHolder;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * The waking of the Dawi (god/Waking): gold struck on the deep rock cracks it, and the first Dawi step out, hand their god the Shrine and
+ * the kit and are named; the Shrine takes root only for a god who woke them; the first one set down brings them up and takes the hold's
+ * name. On the arena's floor (the GameTest world is deep: its floor is below y 0).
+ */
+@GameTestHolder(Khazuk.MODID)
+public class WakingGameTests {
+
+    private static final BlockPos ROCK = new BlockPos(12, 1, 12);
+
+    @GameTest(template = "arena", timeoutTicks = 200, batch = "khazuk")
+    public static void goldStruckOnTheDeepRockWakesTheDawi(GameTestHelper h) {
+        h.setBlock(ROCK, Blocks.DEEPSLATE);
+        h.setBlock(ROCK.above(), Blocks.DEEPSLATE);
+        BlockPos at = h.absolutePos(ROCK);
+        h.assertTrue(at.getY() < Waking.DEEP_Y && Waking.deepRock(h.getLevel().getBlockState(at), at), "the test's rock isn't deep rock at y " + at.getY());
+        var god = h.makeMockServerPlayerInLevel();
+        h.assertTrue(!Waking.god(god).woke(), "a new player has woken the Dawi already");
+        Waking.begin(h.getLevel(), god, at);
+        h.startSequence()
+                .thenExecuteAfter(Waking.WAKE_TICKS / 2, () -> h.assertTrue(!Waking.god(god).woke(), "the Dawi woke before the rock had cracked"))
+                .thenWaitUntil(() -> h.assertTrue(Waking.god(god).woke(), "the Dawi never woke"))
+                .thenExecute(() -> {
+                    h.assertTrue(h.getLevel().getBlockState(at).isAir() && h.getLevel().getBlockState(at.above()).isAir(), "the rock didn't open");
+                    var inv = god.getInventory();
+                    h.assertTrue(inv.countItem(KRegistry.SHRINE_ITEM.get()) == 1 && inv.countItem(KRegistry.PLAN_HOLD_GATE.get()) == 1
+                            && inv.countItem(KRegistry.PLAN_GREAT_HALL.get()) == 1 && inv.countItem(KRegistry.PLAN_MINE.get()) == 1
+                            && inv.countItem(Items.GOLD_INGOT) >= Waking.KIT_GOLD, "the kit isn't all there");
+                    Waking.named(god, "  Karak Azgal  ");
+                    h.assertTrue(Waking.god(god).holdName().equals("Karak Azgal"), "the hold is called " + Waking.god(god).holdName());
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
+    public static void theShrineTakesRootOnlyForTheDawisGod(GameTestHelper h) {
+        // the rule itself (26.1's mock player is always creative, so a survival stranger can't be stood up here)
+        h.assertTrue(!claude.khazuk.ShrineBlock.mayRoot(false, Waking.God.NONE), "the Shrine takes root for a survival player who never woke the Dawi");
+        h.assertTrue(claude.khazuk.ShrineBlock.mayRoot(false, new Waking.God(true, "Karak Kadrin", 0)), "the Shrine won't take root for the Dawi's god");
+        h.assertTrue(claude.khazuk.ShrineBlock.mayRoot(true, Waking.God.NONE), "the Shrine won't take root for a creative player");
+        var stranger = h.makeMockServerPlayerInLevel();
+        ItemStack shrine = new ItemStack(KRegistry.SHRINE_ITEM.get());
+        BlockPos floor = h.absolutePos(ROCK.below());
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(floor), Direction.UP, floor, false);
+        Waking.setGod(stranger, new Waking.God(true, "Karak Kadrin", 0));
+        h.assertTrue(KRegistry.SHRINE.get().getStateForPlacement(new BlockPlaceContext(stranger, InteractionHand.MAIN_HAND, shrine, hit)) != null,
+                "the Shrine didn't take root for the Dawi's god");
+        // set down, the first hold takes the hold's name and the first Dawi
+        h.setBlock(ROCK, KRegistry.SHRINE.get().defaultBlockState());
+        KRegistry.SHRINE.get().setPlacedBy(h.getLevel(), h.absolutePos(ROCK), KRegistry.SHRINE.get().defaultBlockState(), stranger, shrine);
+        ShrineBlockEntity hold = (ShrineBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(ROCK));
+        h.assertTrue(hold.settlementName().equals("Karak Kadrin") && hold.reserveWorkers() == Waking.FIRST_MINERS
+                && hold.reserveSoldiers() == Waking.FIRST_WARRIORS, "the first hold is " + hold.settlementName() + " with " + hold.reserveWorkers()
+                + " Miners and " + hold.reserveSoldiers() + " Warriors in its deeps");
+        h.assertTrue(Waking.god(stranger).holds() == 1, "the god's holds weren't counted");
+        h.succeed();
+    }
+}

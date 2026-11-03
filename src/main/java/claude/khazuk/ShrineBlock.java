@@ -54,12 +54,44 @@ public class ShrineBlock extends BaseEntityBlock {
                 (l, p, s, be) -> SettlementBlockEntity.serverTick(l, p, s, be));
     }
 
+    /** The Shrine takes root only for a god who has woken the Dawi (god/Waking); a creative god may set one anywhere. */
+    @Override
+    public @Nullable BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
+        Player p = ctx.getPlayer();
+        if (p != null && !mayRoot(p.isCreative(), claude.khazuk.god.Waking.god(p))) {
+            if (!ctx.getLevel().isClientSide()) {
+                p.sendSystemMessage(Component.literal("The Shrine takes root only for the Dawi's god. Wake them first: strike a gold ingot on the deep rock "
+                        + "(deepslate, below y " + claude.khazuk.god.Waking.DEEP_Y + ").").withStyle(ChatFormatting.RED));
+            }
+            return null;
+        }
+        return super.getStateForPlacement(ctx);
+    }
+
+    /** Whether a Shrine takes root for a player: a creative one always, else only the god who woke the Dawi. */
+    public static boolean mayRoot(boolean creative, claude.khazuk.god.Waking.God god) {
+        return creative || god.woke();
+    }
+
+    /**
+     * Set down, the Shrine is its god's hold, under the hold's name (god/Waking#nameFor). The first one set down after the waking brings up
+     * the Dawi who woke: {@value claude.khazuk.god.Waking#FIRST_MINERS} Miners and {@value claude.khazuk.god.Waking#FIRST_WARRIORS} Warrior
+     * in its deeps from the start.
+     */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity by, ItemStack stack) {
         super.setPlacedBy(level, pos, state, by, stack);
         if (by instanceof ServerPlayer p && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart) {
-            heart.claim(p, p.getGameProfile().name() + "'s Hold");
-            heart.tellOwner(heart.settlementName() + ": the Ancestors are watching. Feed the hold, and the Dawi come up from the deeps.", ChatFormatting.GOLD);
+            var god = claude.khazuk.god.Waking.god(p);
+            heart.claim(p, claude.khazuk.god.Waking.nameFor(p));
+            claude.khazuk.god.Waking.setGod(p, new claude.khazuk.god.Waking.God(god.woke(), god.holdName(), god.holds() + 1));
+            if (god.woke() && god.holds() == 0) {
+                heart.addToReserve(claude.khazuk.god.Waking.FIRST_MINERS, claude.khazuk.god.Waking.FIRST_WARRIORS);
+                heart.tellOwner(heart.settlementName() + ": the first Dawi come up out of the stone to their Shrine. Feed the hold, and more follow.",
+                        ChatFormatting.GOLD);
+            } else {
+                heart.tellOwner(heart.settlementName() + ": the Ancestors are watching. Feed the hold, and the Dawi come up from the deeps.", ChatFormatting.GOLD);
+            }
         }
     }
 
