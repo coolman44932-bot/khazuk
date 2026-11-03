@@ -130,7 +130,7 @@ public final class Waking {
         }
         begin(level, p, at);                                     // the gold is spent when the Dawi wake: a waking cut short costs nothing
         e.setCanceled(true);
-        e.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+        e.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS_SERVER);   // the server swings the hand: the client's handler passes
     }
 
     /** Begins the waking at {@code at}, struck by {@code p}: the rock cracks for {@value #WAKE_TICKS} ticks. */
@@ -185,6 +185,7 @@ public final class Waking {
 
     /** The rock opens and the first Dawi step out: they hand their god the Shrine and the kit, and ask for their hold's name. */
     public static void woken(ServerLevel level, ServerPlayer p, BlockPos at) {
+        RENAMING.remove(p.getUUID());                            // the name asked next is the hold's own, not an old Shrine's
         if (!p.isCreative()) {
             spendGold(p);
         }
@@ -303,9 +304,9 @@ public final class Waking {
      * asked to rename, or after the waking the hold's own name.
      */
     public static void named(ServerPlayer p, String raw) {
-        String name = raw == null ? "" : raw.replaceAll("[\\p{Cntrl}\u00a7]", "").strip();
-        if (name.length() > NAME_MAX) {
-            name = name.substring(0, NAME_MAX);
+        String name = raw == null ? "" : raw.replaceAll("[\\p{Cntrl}\\p{Cf}\u0080-\u009f\u00a7]", "").strip();   // no codes, controls or invisible marks
+        if (name.codePointCount(0, name.length()) > NAME_MAX) {
+            name = name.substring(0, name.offsetByCodePoints(0, NAME_MAX)).strip();   // whole letters only, never half of one
         }
         God g = god(p);
         BlockPos renaming = RENAMING.remove(p.getUUID());
