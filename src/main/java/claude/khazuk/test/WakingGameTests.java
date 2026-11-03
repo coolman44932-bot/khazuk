@@ -34,9 +34,13 @@ public class WakingGameTests {
         BlockPos at = h.absolutePos(ROCK);
         h.assertTrue(at.getY() < Waking.DEEP_Y && Waking.deepRock(h.getLevel().getBlockState(at), at), "the test's rock isn't deep rock at y " + at.getY());
         var god = h.makeMockServerPlayerInLevel();
+        god.snapTo(at.getX() + 2.5, at.getY(), at.getZ() + 0.5);   // beside the rock (the mock comes in at 0 0 0)
         h.assertTrue(!Waking.god(god).woke(), "a new player has woken the Dawi already");
         Waking.begin(h.getLevel(), god, at);
+        var far = h.makeMockServerPlayerInLevel();                // one who strikes and walks off: the stone falls quiet
+        Waking.begin(h.getLevel(), far, at.east(6));
         h.startSequence()
+                .thenExecuteAfter(2, () -> h.assertTrue(!Waking.waking(far.getUUID()), "a waking went on with its god far off"))
                 .thenExecuteAfter(Waking.WAKE_TICKS / 2, () -> h.assertTrue(!Waking.god(god).woke(), "the Dawi woke before the rock had cracked"))
                 .thenWaitUntil(() -> h.assertTrue(Waking.god(god).woke(), "the Dawi never woke"))
                 .thenExecute(() -> {
