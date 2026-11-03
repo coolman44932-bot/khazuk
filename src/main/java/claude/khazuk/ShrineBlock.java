@@ -66,8 +66,9 @@ public class ShrineBlock extends BaseEntityBlock {
         }
         if (p != null && !p.isCreative() && ctx.getLevel() instanceof net.minecraft.server.level.ServerLevel sl
                 && !claude.settlementcore.settlement.Founding.of(sl).spot(ctx.getClickedPos(), p.getUUID())) {
-            p.sendSystemMessage(Component.literal("A Shrine stands only on the dais of its Keep. Found the hold first: set the Keep's plan down, "
-                    + "and when it stands, set the Shrine on the dais inside.").withStyle(ChatFormatting.RED));
+            p.sendSystemMessage(Component.literal("A Shrine stands only on the dais of its Keep. Found the hold first: set the Ancestors' Plan of the "
+                    + "Keep down (stone bricks, an iron and a gold ingot, paper), or use it beside an old Shrine, and when the Keep stands, set the "
+                    + "Shrine on the dais inside.").withStyle(ChatFormatting.RED));
             return null;
         }
         return super.getStateForPlacement(ctx);

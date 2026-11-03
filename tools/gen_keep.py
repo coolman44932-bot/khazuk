@@ -80,13 +80,13 @@ def keep():
         for z in range(KZ0, KZ1 + 1):
             wall = x in (KX0, KX1) or z in (KZ0, KZ1)
             h.put(x, 0, z, "minecraft:polished_deepslate" if (x + z) % 2 else "minecraft:deepslate_tiles")
-            for y in range(1, 9):
+            for y in range(1, 12):
                 h.put(x, y, z, stone(x, y, z, h) if wall else AIR)
-            h.put(x, 9, z, TILE)                                    # the roof
+            h.put(x, 12, z, TILE)                                   # the roof, high enough for the ancestor's face under it
             if wall and (x + z) % 2 == 0:
-                h.put(x, 10, z, CARVE)                              # its parapet
+                h.put(x, 13, z, CARVE)                              # its parapet
     for x, z in ((KX0, KZ0), (KX0, KZ1), (KX1, KZ0), (KX1, KZ1)):
-        for y in range(1, 10):
+        for y in range(1, 13):
             h.put(x, y, z, POL)                                     # the keep's corners
     # its door toward the gate, 3 wide and 4 high, a carved lintel
     for z in range(GATE_Z - 1, GATE_Z + 2):
@@ -95,7 +95,7 @@ def keep():
         h.put(KX0, 5, z, CARVE)
     h.put(KX0, 6, GATE_Z, GOLD)
     # arrow slits on every side
-    for y in (3, 6):
+    for y in (3, 6, 9):
         for z in (KZ0 + 2, KZ1 - 2):
             h.put(KX0, y, z, "minecraft:iron_bars")
             h.put(KX1, y, z, "minecraft:iron_bars")
@@ -116,8 +116,9 @@ def keep():
     h.face(KX1 - 1, GATE_Z, 2)
     for x in (KX0 + 2, KX1 - 2):                                    # lanterns on chains from the roof
         for z in (KZ0 + 2, KZ1 - 2):
-            h.put(x, 8, z, CHAIN)
-            h.put(x, 7, z, LANTERN)
+            h.put(x, 11, z, CHAIN)
+            h.put(x, 10, z, CHAIN)
+            h.put(x, 9, z, LANTERN)
     return h
 
 

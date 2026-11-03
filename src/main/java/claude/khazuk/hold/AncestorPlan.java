@@ -67,7 +67,8 @@ public class AncestorPlan extends Item {
         }
         ShrineBlockEntity hold = ShrineBlockEntity.ownedAt(p, ctx.getClickedPos());
         if (room == null || hold == null) {
-            p.sendSystemMessage(Component.literal("No hold of yours is here: set down an Ancestor Shrine first.").withStyle(ChatFormatting.RED));
+            p.sendSystemMessage(Component.literal("No hold of yours is here. Found one first: the Ancestors' Plan of the Keep (stone bricks, an iron "
+                    + "and a gold ingot, paper), then the Shrine on its dais.").withStyle(ChatFormatting.RED));
             return InteractionResult.FAIL;
         }
         if (!Rooms.isRaised(room.id())) {
