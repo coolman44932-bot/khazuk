@@ -63,13 +63,21 @@ public final class Waking {
     public static final int FIRST_MINERS = 3, FIRST_WARRIORS = 1;
     public static final int KIT_GOLD = 40, KIT_BREAD = 16;
 
-    /** What a player is to the Dawi: whether they have woken them, the first hold's name, and how many holds they have founded. */
-    public record God(boolean woke, String holdName, int holds) {
-        public static final God NONE = new God(false, "", 0);
+    /**
+     * What a player is to the Dawi: whether they have woken them, the first hold's name, how many Shrines they have set down, and whether
+     * the first Dawi have come up to one yet (once only, whichever Shrine they set down first after waking them, however often it's moved).
+     */
+    public record God(boolean woke, String holdName, int holds, boolean firstUp) {
+        public static final God NONE = new God(false, "", 0, false);
         public static final MapCodec<God> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                 Codec.BOOL.fieldOf("woke").forGetter(God::woke),
                 Codec.STRING.fieldOf("hold_name").forGetter(God::holdName),
-                Codec.INT.fieldOf("holds").forGetter(God::holds)).apply(i, God::new));
+                Codec.INT.fieldOf("holds").forGetter(God::holds),
+                Codec.BOOL.optionalFieldOf("first_up", false).forGetter(God::firstUp)).apply(i, God::new));
+
+        public God(boolean woke, String holdName, int holds) {
+            this(woke, holdName, holds, false);
+        }
     }
 
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, Khazuk.MODID);
@@ -81,6 +89,10 @@ public final class Waking {
     }
 
     private static final Map<UUID, Under> WAKING = new HashMap<>();
+    /** The Shrine each god is renaming (sneak-used with an empty hand), until the name comes back. */
+    private static final Map<UUID, BlockPos> RENAMING = new HashMap<>();
+    /** How far a god may wander from the cracking rock before it falls quiet. */
+    static final double WAKE_REACH = 24;
 
     private Waking() {
     }
@@ -116,11 +128,9 @@ public final class Waking {
         if (!deepRock(level.getBlockState(at), at)) {
             return;
         }
-        begin(level, p, at);
-        if (!p.isCreative()) {
-            held.shrink(1);
-        }
+        begin(level, p, at);                                     // the gold is spent when the Dawi wake: a waking cut short costs nothing
         e.setCanceled(true);
+        e.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
     }
 
     /** Begins the waking at {@code at}, struck by {@code p}: the rock cracks for {@value #WAKE_TICKS} ticks. */
@@ -128,6 +138,17 @@ public final class Waking {
         WAKING.put(p.getUUID(), new Under(level, at, WAKE_TICKS));
         p.sendSystemMessage(Component.literal("The deep rock answers your gold. Something stirs in the stone.").withStyle(ChatFormatting.GOLD));
         level.playSound(null, at, SoundEvents.DEEPSLATE_BREAK, SoundSource.BLOCKS, 1.5f, 0.6f);
+    }
+
+    /** Whether {@code id} has a waking under way (the tests). */
+    public static boolean waking(UUID id) {
+        return WAKING.containsKey(id);
+    }
+
+    @SubscribeEvent
+    static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent e) {
+        WAKING.clear();
+        RENAMING.clear();
     }
 
     @SubscribeEvent
@@ -139,8 +160,12 @@ public final class Waking {
             var en = it.next();
             Under u = en.getValue();
             ServerPlayer p = e.getServer().getPlayerList().getPlayer(en.getKey());
-            if (p == null) {
-                it.remove();                                     // gone: the stone sleeps on, and the gold is theirs to strike again
+            if (p == null || !p.isAlive() || p.level() != u.level()
+                    || p.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(u.at())) > WAKE_REACH * WAKE_REACH) {
+                it.remove();                                     // gone, dead, or wandered off: the stone sleeps on, the gold still theirs
+                if (p != null && p.isAlive()) {
+                    p.sendSystemMessage(Component.literal("The stone falls quiet. Strike it again, and stay by it.").withStyle(ChatFormatting.GRAY));
+                }
                 continue;
             }
             if (u.left() % 10 == 0) {
@@ -160,15 +185,26 @@ public final class Waking {
 
     /** The rock opens and the first Dawi step out: they hand their god the Shrine and the kit, and ask for their hold's name. */
     public static void woken(ServerLevel level, ServerPlayer p, BlockPos at) {
+        if (!p.isCreative()) {
+            spendGold(p);
+        }
+        boolean wet = false;
+        for (BlockPos c : new BlockPos[]{at, at.above()}) {
+            for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
+                wet |= !level.getFluidState(c.relative(d)).isEmpty();
+            }
+        }
         for (BlockPos c : new BlockPos[]{at, at.above()}) {
             BlockState was = level.getBlockState(c);
             if (deepRock(was, c)) {
                 level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, c, Block.getId(was));
-                level.setBlockAndUpdate(c, Blocks.AIR.defaultBlockState());   // the doorway in the rock they came out of
+                if (!wet) {
+                    level.setBlockAndUpdate(c, Blocks.AIR.defaultBlockState());   // the doorway in the rock they came out of (never into water or lava)
+                }
             }
         }
         String name = "Karak " + p.getGameProfile().name();
-        setGod(p, new God(true, name, god(p).holds()));
+        setGod(p, new God(true, name, god(p).holds(), god(p).firstUp()));
         give(p, new ItemStack(KRegistry.SHRINE_ITEM.get()));
         give(p, new ItemStack(KRegistry.PLAN_HOLD_GATE.get()));
         give(p, new ItemStack(KRegistry.PLAN_GREAT_HALL.get()));
@@ -185,17 +221,45 @@ public final class Waking {
         }
     }
 
+    /** The ingot the god struck the rock with, spent now the Dawi have woken. */
+    private static void spendGold(ServerPlayer p) {
+        var inv = p.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (inv.getItem(i).is(Items.GOLD_INGOT)) {
+                inv.getItem(i).shrink(1);
+                return;
+            }
+        }
+    }
+
     private static void give(ServerPlayer p, ItemStack s) {
         if (!p.getInventory().add(s)) {
             p.drop(s, false);
         }
     }
 
-    /** The name a Shrine set down by {@code p} takes: the first hold's own, then "the hold's name, hold N". */
-    public static String nameFor(ServerPlayer p) {
+    /**
+     * The name a Shrine set down by {@code p} at {@code at} takes: the hold's own name while it is their only Shrine (a first Shrine picked
+     * up and set down elsewhere keeps it), else "the hold's name, hold N", N one more than the other Shrines of theirs that stand.
+     */
+    public static String nameFor(ServerPlayer p, BlockPos at) {
         God g = god(p);
         String base = g.holdName().isEmpty() ? p.getGameProfile().name() + "'s Hold" : g.holdName();
-        return g.holds() == 0 ? base : base + ", hold " + (g.holds() + 1);
+        int others = 0;
+        for (var s : claude.settlementcore.settlement.SettlementSpawns.loaded(p.level())) {
+            if (s instanceof claude.khazuk.ShrineBlockEntity h && p.getUUID().equals(h.owner()) && !h.getBlockPos().equals(at)) {
+                others++;
+            }
+        }
+        return others == 0 ? base : base + ", hold " + (others + 1);
+    }
+
+    /** {@code p} sneak-used their Shrine with an empty hand: ask them its new name. */
+    public static void askRename(ServerPlayer p, claude.khazuk.ShrineBlockEntity hold) {
+        RENAMING.put(p.getUUID(), hold.getBlockPos());
+        if (p.connection != null && p.connection.hasChannel(AskName.TYPE)) {
+            PacketDistributor.sendToPlayer(p, new AskName(hold.settlementName()));
+        }
     }
 
     // ------------------------------------------------------------------ the hold's name: asked of the client, sent back
@@ -234,22 +298,32 @@ public final class Waking {
         }));
     }
 
-    /** The god names the hold (a name of up to {@value #NAME_MAX} letters; blank keeps the Dawi's): kept, and the first Shrine renamed if it stands. */
+    /**
+     * The god names a hold (up to {@value #NAME_MAX} letters, no formatting or control characters; blank keeps the old name): the Shrine they
+     * asked to rename, or after the waking the hold's own name.
+     */
     public static void named(ServerPlayer p, String raw) {
-        String name = raw == null ? "" : raw.strip();
+        String name = raw == null ? "" : raw.replaceAll("[\\p{Cntrl}\u00a7]", "").strip();
         if (name.length() > NAME_MAX) {
             name = name.substring(0, NAME_MAX);
         }
         God g = god(p);
-        if (!g.woke() || name.isEmpty()) {
+        BlockPos renaming = RENAMING.remove(p.getUUID());
+        if (!g.woke() && renaming == null || name.isEmpty()) {
             return;
         }
-        String was = g.holdName();
-        setGod(p, new God(true, name, g.holds()));
-        claude.khazuk.ShrineBlockEntity first = claude.khazuk.ShrineBlockEntity.ownedAt(p, p.blockPosition());
-        if (first != null && first.settlementName().equals(was)) {
-            first.claim(p, name);                                // named after the Shrine was set down: the first hold takes the name
+        if (renaming != null) {
+            if (p.level().getBlockEntity(renaming) instanceof claude.khazuk.ShrineBlockEntity h && p.getUUID().equals(h.owner())) {
+                String was = h.settlementName();
+                h.claim(p, name);
+                if (was.equals(g.holdName())) {
+                    setGod(p, new God(g.woke(), name, g.holds(), g.firstUp()));   // the first hold renamed: its name is the hold's
+                }
+                p.sendSystemMessage(Component.literal("The Dawi carve the new name over the door: " + name + ".").withStyle(ChatFormatting.GOLD));
+            }
+            return;
         }
+        setGod(p, new God(true, name, g.holds(), g.firstUp()));
         p.sendSystemMessage(Component.literal("The Dawi carve the name over their door: " + name + ".").withStyle(ChatFormatting.GOLD));
     }
 

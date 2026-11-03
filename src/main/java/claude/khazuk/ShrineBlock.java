@@ -58,11 +58,10 @@ public class ShrineBlock extends BaseEntityBlock {
     @Override
     public @Nullable BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
         Player p = ctx.getPlayer();
-        if (p != null && !mayRoot(p.isCreative(), claude.khazuk.god.Waking.god(p))) {
-            if (!ctx.getLevel().isClientSide()) {
-                p.sendSystemMessage(Component.literal("The Shrine takes root only for the Dawi's god. Wake them first: strike a gold ingot on the deep rock "
-                        + "(deepslate, below y " + claude.khazuk.god.Waking.DEEP_Y + ").").withStyle(ChatFormatting.RED));
-            }
+        // the server's word only: the client hasn't the god's state (the attachment isn't synced), so it doesn't guess a refusal
+        if (p != null && !ctx.getLevel().isClientSide() && !mayRoot(p.isCreative(), claude.khazuk.god.Waking.god(p))) {
+            p.sendSystemMessage(Component.literal("The Shrine takes root only for the Dawi's god. Wake them first: strike a gold ingot on the deep rock "
+                    + "(deepslate, below y " + claude.khazuk.god.Waking.DEEP_Y + ").").withStyle(ChatFormatting.RED));
             return null;
         }
         return super.getStateForPlacement(ctx);
@@ -75,17 +74,18 @@ public class ShrineBlock extends BaseEntityBlock {
 
     /**
      * Set down, the Shrine is its god's hold, under the hold's name (god/Waking#nameFor). The first one set down after the waking brings up
-     * the Dawi who woke: {@value claude.khazuk.god.Waking#FIRST_MINERS} Miners and {@value claude.khazuk.god.Waking#FIRST_WARRIORS} Warrior
-     * in its deeps from the start.
+     * the Dawi who woke, once: {@value claude.khazuk.god.Waking#FIRST_MINERS} Miners and {@value claude.khazuk.god.Waking#FIRST_WARRIORS}
+     * Warrior in its deeps from the start.
      */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity by, ItemStack stack) {
         super.setPlacedBy(level, pos, state, by, stack);
         if (by instanceof ServerPlayer p && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart) {
             var god = claude.khazuk.god.Waking.god(p);
-            heart.claim(p, claude.khazuk.god.Waking.nameFor(p));
-            claude.khazuk.god.Waking.setGod(p, new claude.khazuk.god.Waking.God(god.woke(), god.holdName(), god.holds() + 1));
-            if (god.woke() && god.holds() == 0) {
+            heart.claim(p, claude.khazuk.god.Waking.nameFor(p, pos));
+            boolean first = god.woke() && !god.firstUp();
+            claude.khazuk.god.Waking.setGod(p, new claude.khazuk.god.Waking.God(god.woke(), god.holdName(), god.holds() + 1, god.firstUp() || first));
+            if (first) {
                 heart.addToReserve(claude.khazuk.god.Waking.FIRST_MINERS, claude.khazuk.god.Waking.FIRST_WARRIORS);
                 heart.tellOwner(heart.settlementName() + ": the first Dawi come up out of the stone to their Shrine. Feed the hold, and more follow.",
                         ChatFormatting.GOLD);
@@ -120,6 +120,11 @@ public class ShrineBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isSecondaryUseActive() && player instanceof ServerPlayer sp
+                && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart && sp.getUUID().equals(heart.owner())) {
+            claude.khazuk.god.Waking.askRename(sp, heart);      // sneak-used by its god: name the hold anew
+            return InteractionResult.SUCCESS;
+        }
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart) {
             player.sendSystemMessage(Component.literal(heart.settlementName() + ": " + heart.peopleCount() + " up, " + heart.reserveWorkers()
                     + " Miners and " + heart.reserveSoldiers() + " Warriors in the deeps, food " + heart.food() + ", gold " + heart.currency())
