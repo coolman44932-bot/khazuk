@@ -62,6 +62,9 @@ public class AncestorPlan extends Item {
             return InteractionResult.PASS;
         }
         Rooms.Room room = room();
+        if (claude.settlementcore.settlement.Founding.isFoundingHall(room)) {
+            return found(level, p, room, ctx.getClickedPos(), p.getDirection(), p::sendSystemMessage) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+        }
         ShrineBlockEntity hold = ShrineBlockEntity.ownedAt(p, ctx.getClickedPos());
         if (room == null || hold == null) {
             p.sendSystemMessage(Component.literal("No hold of yours is here: set down an Ancestor Shrine first.").withStyle(ChatFormatting.RED));
@@ -73,6 +76,42 @@ public class AncestorPlan extends Item {
         }
         return setOut(hold, level, room, ctx.getClickedPos(), p.getDirection(), p.isCreative(), p::sendSystemMessage)
                 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+    }
+
+    /** How near a Shrine of yours the Keep's plan must be used to raise the Keep round it (a hold founded before keeps). */
+    public static final int ROUND_REACH = 12;
+
+    /**
+     * The Keep's plan used on {@code ground} by its god {@code p}, facing {@code facing}: round a Shrine of theirs within
+     * {@value #ROUND_REACH} that has no keep yet (the Keep raised round it, its gate toward them), else a new hold's founding there. The god
+     * raises it (the engine's Founding); its Shrine goes on the dais. Only for the Dawi's god (or a creative one). True if begun.
+     */
+    public static boolean found(net.minecraft.server.level.ServerLevel level, net.minecraft.server.level.ServerPlayer p, Rooms.Room room, BlockPos ground,
+                                Direction facing, java.util.function.Consumer<Component> tell) {
+        if (!p.isCreative() && !claude.khazuk.god.Waking.god(p).woke()) {
+            tell.accept(Component.literal("Only the Dawi's god founds a hold. Wake them first: strike a gold ingot on the deep rock.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+        var founding = claude.settlementcore.settlement.Founding.of(level);
+        ShrineBlockEntity near = ShrineBlockEntity.ownedAt(p, ground);
+        String no;
+        if (near != null && near.getBlockPos().distSqr(ground) <= ROUND_REACH * ROUND_REACH && !near.has(HoldRooms.KEEP)) {
+            no = founding.beginRound(level, room, near.getBlockPos(), facing, p.getUUID());
+            if (no == null) {
+                tell.accept(Component.literal("The Ancestors raise the " + room.displayName() + " round " + near.settlementName() + "'s Shrine.")
+                        .withStyle(ChatFormatting.GOLD));
+                return true;
+            }
+        } else {
+            no = founding.begin(level, placement(room, ground, facing), p.getUUID());
+            if (no == null) {
+                tell.accept(Component.literal("The Ancestors raise the " + room.displayName() + ". When it stands, set the Shrine on the dais inside.")
+                        .withStyle(ChatFormatting.GOLD));
+                return true;
+            }
+        }
+        tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
+        return false;
     }
 
     /** Begins digging the hall at {@code pl} for {@code hold}: refused (and told why) where the engine won't dig it; else begun, paid. True if begun. */

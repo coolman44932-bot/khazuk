@@ -12,6 +12,8 @@ import java.util.Set;
  * The hold's buildings and what each is for, registered with the engine (their templates in data/khazuk/structure/room/, door on the
  * x = 0 face at y 1, facing west; y 0 the floor):
  * <ul>
+ * <li>{@link #KEEP}: the Keep (tools/gen_keep.py), the hold's founding hall (the engine's Founding): raised by the god before the hold
+ * exists, a stone keep in a walled yard; the Shrine is set on its dais, and the hold is born owning it.</li>
  * <li>{@link #GATE}: the Hold Gate (tools/gen_hold_gate.py --template; the user's picture of a karak's gate), raised: the Miners raise its
  * gatehouse from the Ancestors' Plan, then the god raises the mountain it is cut into ({@link HoldCrag}).</li>
  * <li>Dug (tools/gen_halls.py; the engine's dig side, Works#dig): the {@link #GREAT_HALL}, the {@link #BARRACKS} and the mine (the
@@ -24,11 +26,16 @@ public final class HoldRooms {
     public static final Rooms.Function GATE = Rooms.Function.of("DAWI_HOLD_GATE");
     public static final Rooms.Function GREAT_HALL = Rooms.Function.of("DAWI_GREAT_HALL");
     public static final Rooms.Function BARRACKS = Rooms.Function.of("DAWI_BARRACKS");
+    public static final Rooms.Function KEEP = Rooms.Function.of("DAWI_KEEP");
 
     public static final List<Rooms.Room> RAISED = List.of(
             new Rooms.Room("dawi_hold_gate", "Hold Gate", 40, GATE,
                     "A karak's gate cut into the mountain: ancestors carved on its towers, bronze guardians at its door, a road up to it.",
-                    32, 43, 31, 0, 1, 15, List.of(), List.of(), List.of()));
+                    32, 43, 31, 0, 1, 15, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_keep", "Keep", 0, KEEP,
+                    "The hold's founding: a stone keep in a walled yard, its gate shut against foes, the Shrine on the dais inside.",
+                    25, 14, 25, 0, 1, 12, List.of(), List.of(), List.of(
+                            new Rooms.Station(claude.settlementcore.settlement.Founding.HEART, 14, 1, 12, Direction.WEST))));
 
     public static final List<Rooms.Room> DUG = List.of(
             new Rooms.Room("dawi_great_hall", "Great Hall", 30, GREAT_HALL,

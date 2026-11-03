@@ -64,6 +64,12 @@ public class ShrineBlock extends BaseEntityBlock {
                     + "(deepslate, below y " + claude.khazuk.god.Waking.DEEP_Y + ").").withStyle(ChatFormatting.RED));
             return null;
         }
+        if (p != null && !p.isCreative() && ctx.getLevel() instanceof net.minecraft.server.level.ServerLevel sl
+                && !claude.settlementcore.settlement.Founding.of(sl).spot(ctx.getClickedPos(), p.getUUID())) {
+            p.sendSystemMessage(Component.literal("A Shrine stands only on the dais of its Keep. Found the hold first: set the Keep's plan down, "
+                    + "and when it stands, set the Shrine on the dais inside.").withStyle(ChatFormatting.RED));
+            return null;
+        }
         return super.getStateForPlacement(ctx);
     }
 
@@ -83,6 +89,12 @@ public class ShrineBlock extends BaseEntityBlock {
         if (by instanceof ServerPlayer p && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart) {
             var god = claude.khazuk.god.Waking.god(p);
             heart.claim(p, claude.khazuk.god.Waking.nameFor(p, pos));
+            if (level instanceof net.minecraft.server.level.ServerLevel sl) {
+                var keep = claude.settlementcore.settlement.Founding.of(sl).claim(pos, p.getUUID());
+                if (keep != null) {
+                    heart.addBuilding(keep, true);              // set on its Keep's dais: the hold is born owning the Keep
+                }
+            }
             boolean first = god.woke() && !god.firstUp();
             claude.khazuk.god.Waking.setGod(p, new claude.khazuk.god.Waking.God(god.woke(), god.holdName(), god.holds() + 1, god.firstUp() || first));
             if (first) {

@@ -44,6 +44,10 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Warrior::new, MobCategory.CREATURE).sized(0.7f, 1.8f).eyeHeight(1.6f).clientTrackingRange(10)
                     .build(key("dwarf_warrior")));
 
+    /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_KEEP = ITEMS.registerItem("plan_keep",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_keep"));
+
     /** The Ancestors' Plans of the dug halls: used on a wall of the hold's open space, the Miners dig the hall out behind it. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_GREAT_HALL = ITEMS.registerItem("plan_great_hall",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_great_hall"));
@@ -75,6 +79,7 @@ public final class KRegistry {
             .icon(() -> SHRINE_ITEM.get().getDefaultInstance())
             .displayItems((params, out) -> {
                 out.accept(SHRINE_ITEM.get());
+                out.accept(PLAN_KEEP.get());
                 out.accept(PLAN_HOLD_GATE.get());
                 out.accept(PLAN_GREAT_HALL.get());
                 out.accept(PLAN_BARRACKS.get());
