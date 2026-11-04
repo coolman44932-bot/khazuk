@@ -310,6 +310,9 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         super.aiStep();
         if (!level().isClientSide()) {
             mend();
+            if (furyUp && !claude.khazuk.god.AncestorPowers.furious(this)) {
+                feelFury();                                      // the Fury spent on the tick it ends (the review of dd26ec4: not up to 10 ticks late)
+            }
             if (tickCount % 40 == 13) {
                 drink();
                 wearRunes();

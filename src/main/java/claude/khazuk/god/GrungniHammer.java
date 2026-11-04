@@ -39,11 +39,15 @@ import java.util.UUID;
  * gathers where it'll land; on tick {@value #IMPACT_TICK} it strikes (its clip's head meets the ground at 1.00 s), and everything within
  * {@value #RADIUS} blocks that isn't the god's (AncestorPowers#godsOwn) takes {@value #DAMAGE} at the middle, down to {@value #EDGE_DAMAGE}
  * at the edge, is set alight for {@value #BURN_SECONDS} s (forge-hot) and flung away and up. A rune-priest's blessing ({@link #blessing})
- * multiplies the blow and widens the reach. No block is broken. It lifts away and is gone at tick {@value #LIFE}. Never saved.
+ * multiplies the blow and widens the reach. On tick {@value #TAP_TICK} the smith's second tap (the detail session's clip, 1.42 s) lands
+ * lighter: {@value #TAP_SHARE} of the blow over {@value #TAP_REACH} of the reach, a lighter fling, and the anvil rings again. No block is
+ * broken. It lifts away and is gone at tick {@value #LIFE}. Never saved.
  */
 public class GrungniHammer extends Entity implements GeoEntity {
 
-    public static final int IMPACT_TICK = 20, LIFE = 50, BURN_SECONDS = 4;
+    public static final int IMPACT_TICK = 20, TAP_TICK = 28, LIFE = 50, BURN_SECONDS = 4;
+    public static final float TAP_SHARE = 0.5f;
+    public static final double TAP_REACH = 0.6;
     public static final double RADIUS = 5.0;
     public static final float DAMAGE = 40f, EDGE_DAMAGE = 20f;
     public static final double FLING = 1.0, FLING_UP = 0.8;
@@ -55,8 +59,8 @@ public class GrungniHammer extends Entity implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable private UUID caster;
     private float blessing = 1f;
-    /** What it hit when it struck, for the tests. */
-    public int hitForTests = -1;
+    /** What it hit when it struck, and with its second tap, for the tests. */
+    public int hitForTests = -1, tapHitForTests = -1;
 
     public GrungniHammer(EntityType<? extends GrungniHammer> type, Level level) {
         super(type, level);
@@ -99,15 +103,17 @@ public class GrungniHammer extends Entity implements GeoEntity {
             return;
         }
         if (tickCount < IMPACT_TICK && (tickCount & 1) == 0) {
-            double r = radius() * (1.0 - tickCount / (double) IMPACT_TICK) + 1.0;    // the gold ring closing in on where it falls
-            for (int i = 0; i < 16; i++) {
+            double r = radius() * (1.0 - tickCount / (double) IMPACT_TICK) + 1.0;    // the ring of light closing in on where it falls
+            for (int i = 0; i < 16; i++) {                       // full-bright, so it reads at dusk and at night (the detail session's note)
                 double a = i * Math.PI / 8 - tickCount * 0.2;
-                sl.sendParticles(new DustParticleOptions(0xF2C744, 1.8f), getX() + Math.cos(a) * r, getY() + 0.15, getZ() + Math.sin(a) * r,
-                        1, 0, 0, 0, 0);
+                sl.sendParticles(ParticleTypes.END_ROD, getX() + Math.cos(a) * r, getY() + 0.15, getZ() + Math.sin(a) * r, 1, 0, 0, 0, 0);
             }
         }
         if (tickCount == IMPACT_TICK) {
             strike(sl);
+        }
+        if (tickCount == TAP_TICK) {
+            tap(sl);
         }
         if (tickCount >= LIFE) {
             discard();
@@ -116,9 +122,21 @@ public class GrungniHammer extends Entity implements GeoEntity {
 
     /** It strikes: everything not the god's in reach hurt, set alight and flung; sparks and a great ring of the anvil. Returns how many it hit. */
     public int strike(ServerLevel sl) {
+        int hit = blow(sl, radius(), 1f, true);
+        hitForTests = hit;
+        return hit;
+    }
+
+    /** The smith's second tap: lighter and closer in, the anvil ringing again. Returns how many it hit. */
+    public int tap(ServerLevel sl) {
+        int hit = blow(sl, radius() * TAP_REACH, TAP_SHARE, false);
+        tapHitForTests = hit;
+        return hit;
+    }
+
+    private int blow(ServerLevel sl, double reach, float share, boolean first) {
         ServerPlayer god = caster == null ? null : sl.getServer().getPlayerList().getPlayer(caster);
         DamageSource src = sl.damageSources().source(KRegistry.HAMMER_DAMAGE, this, god);
-        double reach = radius();
         int hit = 0;
         for (LivingEntity e : sl.getEntitiesOfClass(LivingEntity.class, new AABB(position(), position()).inflate(reach, 4, reach), LivingEntity::isAlive)) {
             if (caster != null && AncestorPowers.godsOwn(e, caster, god)) {
@@ -128,7 +146,8 @@ public class GrungniHammer extends Entity implements GeoEntity {
             if (d > reach + e.getBbWidth() / 2) {
                 continue;
             }
-            float dmg = (float) (DAMAGE - (DAMAGE - EDGE_DAMAGE) * Math.min(1.0, d / reach)) * blessing;
+            float dmg = (float) (DAMAGE - (DAMAGE - EDGE_DAMAGE) * Math.min(1.0, d / reach)) * blessing * share;
+            e.invulnerableTime = 0;                              // the second tap comes 8 ticks after the first: past its blow's i-frames
             if (!e.hurtServer(sl, src, dmg)) {
                 continue;
             }
@@ -136,13 +155,21 @@ public class GrungniHammer extends Entity implements GeoEntity {
             e.igniteForSeconds(BURN_SECONDS);
             double k = Math.max(0, 1 - e.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
             Vec3 out = d < 0.1 ? Vec3.ZERO : new Vec3(dx / d, 0, dz / d);
-            e.setDeltaMovement(e.getDeltaMovement().add(out.scale(FLING * k)).add(0, FLING_UP * k, 0));
+            e.setDeltaMovement(e.getDeltaMovement().add(out.scale(FLING * k * share)).add(0, FLING_UP * k * share, 0));
             e.hurtMarked = true;
         }
         BlockPos ground = BlockPos.containing(getX(), getY() - 0.5, getZ());
         BlockState under = sl.getBlockState(ground);
         if (!under.isAir()) {
-            sl.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, under), getX(), getY() + 0.3, getZ(), 180, reach * 0.5, 0.3, reach * 0.5, 0.4);
+            sl.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, under), getX(), getY() + 0.3, getZ(), first ? 180 : 60, reach * 0.5, 0.3, reach * 0.5, 0.4);
+        }
+        if (!first) {                                            // the tap: sparks and the anvil's ring, no blast
+            for (int i = 0; i < 12; i++) {
+                double a = i * Math.PI / 6;
+                sl.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 0.4, getZ(), 0, Math.cos(a), 0.2, Math.sin(a), 0.4);
+            }
+            sl.playSound(null, getX(), getY(), getZ(), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 2.5f, 0.75f);
+            return hit;
         }
         for (int i = 0; i < 32; i++) {                           // the forge's sparks thrown out in a ring
             double a = i * Math.PI / 16;
@@ -153,7 +180,6 @@ public class GrungniHammer extends Entity implements GeoEntity {
         sl.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 0.5, getZ(), 5, reach * 0.3, 0.2, reach * 0.3, 0);
         sl.playSound(null, getX(), getY(), getZ(), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 4f, 0.5f);
         sl.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 3f, 0.7f);
-        hitForTests = hit;
         return hit;
     }
 

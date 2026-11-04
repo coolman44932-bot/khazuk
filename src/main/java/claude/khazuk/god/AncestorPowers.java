@@ -120,6 +120,21 @@ public final class AncestorPowers {
         return until != null && e.level().getGameTime() < until;
     }
 
+    /** {@code e} rages until game tick {@code until} (the Fury, and the tests). */
+    public static void rage(LivingEntity e, long until) {
+        FURIOUS.put(e, until);
+        if (e instanceof Dawi d) {
+            d.feelFury();
+        }
+    }
+
+    /** The world closed: nobody is warded or raging any more (the review of dd26ec4: the old world's entities otherwise linger till collected). */
+    @SubscribeEvent
+    public static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent e) {
+        WARDED.clear();
+        FURIOUS.clear();
+    }
+
     /** The Ward and the Fury lifted from {@code e} at once (the tests; a power's own end comes on the tick). */
     public static void lift(LivingEntity e) {
         WARDED.remove(e);
@@ -227,8 +242,7 @@ public final class AncestorPowers {
         int n = 0;
         for (Dawi d : level.getEntitiesOfClass(Dawi.class, god.getBoundingBox().inflate(r, 6, r),
                 d -> d.isAlive() && godsOwn(d, god.getUUID(), god) && d.distanceToSqr(god) <= r * r)) {
-            FURIOUS.put(d, until);
-            d.feelFury();
+            rage(d, until);
             n++;
         }
         FURIOUS.put(god, until);
@@ -293,7 +307,7 @@ public final class AncestorPowers {
         if (e.getServer().getTickCount() % 10 != 0) {
             return;
         }
-        glow(WARDED, new DustParticleOptions(0xF2C744, 1.2f));
+        glow(WARDED, new DustParticleOptions(0xF2C744, 1.2f));   // gold; an END_ROD glint among it reads at night
         glow(FURIOUS, null);
     }
 
@@ -312,6 +326,7 @@ public final class AncestorPowers {
                 double y = le.getY() + le.getBbHeight() * 0.6;
                 if (dust != null) {
                     sl.sendParticles(dust, le.getX(), y, le.getZ(), 3, le.getBbWidth() * 0.6, le.getBbHeight() * 0.4, le.getBbWidth() * 0.6, 0);
+                    sl.sendParticles(ParticleTypes.END_ROD, le.getX(), y, le.getZ(), 1, le.getBbWidth() * 0.6, le.getBbHeight() * 0.4, le.getBbWidth() * 0.6, 0);
                 } else {
                     sl.sendParticles(ParticleTypes.SMALL_FLAME, le.getX(), y, le.getZ(), 2, le.getBbWidth() * 0.4, le.getBbHeight() * 0.3, le.getBbWidth() * 0.4, 0.01);
                 }

@@ -271,4 +271,55 @@ public class PowersGameTests {
                 "the Fury lifted, the Warrior still hits for " + mine.getAttributeValue(Attributes.ATTACK_DAMAGE) + " (was " + blow + ")");
         h.succeed();
     }
+
+    /**
+     * The smith's double strike (0.10.1, the detail session's clip): an iron golem at the Hammer's heart takes the full blow on tick 20 and
+     * the lighter tap on tick 28, and isn't flung (it stands its ground). Normal: the batch sets it.
+     */
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazukhostile")
+    public static void grungnisHammerTapsASecondTimeLighter(GameTestHelper h) {
+        ServerPlayer god = god(h, new BlockPos(2, 1, 2));
+        ShrineBlockEntity heart = hold(h, god);
+        BlockPos at = new BlockPos(12, 1, 12);
+        var golem = h.spawn(EntityType.IRON_GOLEM, at);
+        golem.setNoAi(true);
+        golem.setPersistenceRequired();
+        Vec3 where = h.absoluteVec(Vec3.atBottomCenterOf(at));
+        heart.devotion().add(AncestorPowers.HAMMER_COST);
+        h.assertTrue(AncestorPowers.hammer(heart, god, h.getLevel(), where) == null, "the Hammer was refused");
+        GrungniHammer hammer = h.getLevel().getEntitiesOfClass(GrungniHammer.class, new AABB(where, where).inflate(1)).get(0);
+        float full = golem.getMaxHealth();
+        float[] afterBlow = new float[1];
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(hammer.hitForTests >= 0, "the Hammer hasn't struck"))
+                .thenExecute(() -> {
+                    afterBlow[0] = golem.getHealth();
+                    h.assertTrue(full - afterBlow[0] > GrungniHammer.DAMAGE * 0.5f, "the blow took " + (full - afterBlow[0]) + " off the golem");
+                })
+                .thenWaitUntil(() -> h.assertTrue(hammer.tapHitForTests >= 0, "the Hammer hasn't tapped"))
+                .thenExecute(() -> {
+                    float tap = afterBlow[0] - golem.getHealth(), blow = full - afterBlow[0];
+                    h.assertTrue(hammer.tapHitForTests == 1 && tap > 0 && tap < blow, "the tap took " + tap + " (the blow " + blow + "), hit "
+                            + hammer.tapHitForTests);
+                })
+                .thenSucceed();
+    }
+
+    /** Grimnir's Fury runs out on its own, on the tick it ends: the Warrior's rage comes off (the review of dd26ec4). */
+    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
+    public static void grimnirsFuryRunsOutOnItsOwn(GameTestHelper h) {
+        ServerPlayer god = god(h, new BlockPos(10, 1, 10));
+        ShrineBlockEntity heart = hold(h, god);
+        Warrior mine = h.spawn(KRegistry.WARRIOR.get(), new BlockPos(12, 1, 10));
+        mine.bindTo(heart);
+        double blow = mine.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        long end = h.getLevel().getGameTime() + 5;
+        AncestorPowers.rage(mine, end);
+        h.assertTrue(mine.furyUp(), "the rage didn't come on");
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(h.getLevel().getGameTime() >= end + 1, "waiting for the Fury's end"))
+                .thenExecute(() -> h.assertTrue(!mine.furyUp() && Math.abs(mine.getAttributeValue(Attributes.ATTACK_DAMAGE) - blow) < 1e-3,
+                        "the Fury ran out but the Warrior still rages (" + mine.furyUp() + ", blow " + mine.getAttributeValue(Attributes.ATTACK_DAMAGE) + ")"))
+                .thenSucceed();
+    }
 }
