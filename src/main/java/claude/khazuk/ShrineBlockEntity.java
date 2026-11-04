@@ -46,6 +46,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     private final HoldCrag crags = new HoldCrag();
     /** D3: the hold's malt, ale and hoard. */
     private final claude.khazuk.hold.Brewhouse brew = new claude.khazuk.hold.Brewhouse();
+    /** D4: the Dammaz Kron, the hold's Book of Grudges. */
+    private final claude.khazuk.hold.Grudges grudges = new claude.khazuk.hold.Grudges();
 
     public ShrineBlockEntity(BlockPos pos, BlockState state) {
         super(KRegistry.SHRINE_ENTITY.get(), pos, state, KEYS);
@@ -86,13 +88,17 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return brew;
     }
 
+    public claude.khazuk.hold.Grudges grudges() {
+        return grudges;
+    }
+
     /** The engine's second, then a second's rise of a gate's mountain. */
     @Override
     public void second(ServerLevel level) {
         super.second(level);
         crags.second(level, this, HoldCrag.PER_SECOND);
         brew.second(level, this);
-        if (crags.takeDirty() | brew.takeDirty()) {
+        if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
     }
@@ -103,6 +109,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         CompoundTag tag = new CompoundTag();
         crags.save(tag);
         brew.save(tag);
+        grudges.save(tag);
         out.store("khazuk", CompoundTag.CODEC, tag);
     }
 
@@ -112,6 +119,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         CompoundTag tag = in.read("khazuk", CompoundTag.CODEC).orElseGet(CompoundTag::new);
         crags.load(tag);
         brew.load(tag);
+        grudges.load(tag);
     }
 
     @Override

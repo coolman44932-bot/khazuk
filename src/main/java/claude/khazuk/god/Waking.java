@@ -211,6 +211,7 @@ public final class Waking {
         give(p, new ItemStack(KRegistry.PLAN_HOLD_GATE.get()));
         give(p, new ItemStack(KRegistry.PLAN_GREAT_HALL.get()));
         give(p, new ItemStack(KRegistry.PLAN_MINE.get()));
+        give(p, new ItemStack(KRegistry.DAMMAZ_KRON.get()));          // D4: the hold's Book of Grudges
         give(p, new ItemStack(Items.GOLD_INGOT, KIT_GOLD));
         give(p, new ItemStack(Items.BREAD, KIT_BREAD));
         p.sendSystemMessage(Component.literal("The rock splits, and the first Dawi step out of the mountain, beards white with stone dust. They kneel: "

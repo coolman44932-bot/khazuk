@@ -55,6 +55,9 @@ public final class KRegistry {
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_barracks"));
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_MINE = ITEMS.registerItem("plan_mine",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_mine"));
+    /** D4: the Dammaz Kron, the hold's Book of Grudges as its god carries it. */
+    public static final DeferredItem<claude.khazuk.hold.BookOfGrudges> DAMMAZ_KRON = ITEMS.registerItem("dammaz_kron",
+            p -> new claude.khazuk.hold.BookOfGrudges(p.stacksTo(1)));
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_BREWERY = ITEMS.registerItem("plan_brewery",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_brewery"));
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_TREASURY = ITEMS.registerItem("plan_treasury",
@@ -87,6 +90,7 @@ public final class KRegistry {
                 out.accept(PLAN_HOLD_GATE.get());
                 out.accept(PLAN_GREAT_HALL.get());
                 out.accept(PLAN_BARRACKS.get());
+                out.accept(DAMMAZ_KRON.get());
                 out.accept(PLAN_BREWERY.get());
                 out.accept(PLAN_TREASURY.get());
                 out.accept(PLAN_MINE.get());

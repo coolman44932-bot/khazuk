@@ -35,6 +35,7 @@ def main():
     im.save(TEX)
     plan_item()
     throne_item()
+    book_item()
     print("ok")
 
 
@@ -98,6 +99,43 @@ def plan_item():
                                               "ingredients": needs + ["minecraft:paper"],
                                               "result": {"id": f"khazuk:{pid}", "count": 1}})
         d[f"item.khazuk.{pid}"] = "Ancestors' Plan: " + name
+    out("assets/khazuk/lang/en_us.json", d)
+
+
+def book_item():
+    """The Dammaz Kron: a thick book bound in red leather, gold corners and a gold clasp, an ancestor rune on its cover. Its item files,
+    recipe (a book, a gold ingot, an iron ingot) and name."""
+    import json
+    r = random.Random(23)
+    im = Image.new("RGBA", (16, 16))
+    RED, RED_D, PAGE = (138, 28, 26), (92, 16, 16), (232, 220, 190)
+    def px(x, y, c):
+        f = 0.92 + 0.16 * r.random()
+        im.putpixel((x, y), tuple(min(255, int(v * f)) for v in c) + (255,))
+    for y in range(2, 14):
+        for x in range(3, 13):
+            px(x, y, RED_D if x in (3, 12) or y in (2, 13) else RED)
+    for y in range(3, 13):                                      # the pages' edge on the right
+        px(13, y, PAGE)
+    px(14, 4, PAGE)
+    px(14, 11, PAGE)
+    for x, y in ((3, 2), (4, 2), (3, 3), (11, 2), (12, 2), (12, 3), (3, 12), (3, 13), (4, 13), (12, 12), (11, 13), (12, 13)):
+        px(x, y, GOLD)                                           # gold corners
+    for y in range(6, 10):                                      # the clasp
+        px(13, y, GOLD_D)
+        px(14, y, GOLD)
+    for x, y in ((7, 5), (8, 5), (6, 6), (9, 6), (7, 7), (8, 7), (7, 8), (8, 8), (6, 9), (9, 9), (7, 10), (8, 10)):
+        px(x, y, GOLD_L)                                         # an ancestor rune
+    im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "dammaz_kron.png"))
+    out("assets/khazuk/items/dammaz_kron.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/dammaz_kron"}})
+    out("assets/khazuk/models/item/dammaz_kron.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/dammaz_kron"}})
+    out("data/khazuk/recipe/dammaz_kron.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+                                               "ingredients": ["minecraft:book", "minecraft:gold_ingot", "minecraft:iron_ingot"],
+                                               "result": {"id": "khazuk:dammaz_kron", "count": 1}})
+    lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
+    with open(lang, encoding="utf-8") as f:
+        d = json.load(f)
+    d["item.khazuk.dammaz_kron"] = "Dammaz Kron, the Book of Grudges"
     out("assets/khazuk/lang/en_us.json", d)
 
 

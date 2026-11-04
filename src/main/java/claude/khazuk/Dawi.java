@@ -396,6 +396,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     public static final double ALE_DAMAGE = 2, ALE_SPEED = 0.1;
     public static final float ALE_TEMPO = 1.25f;
     static final net.minecraft.resources.Identifier ALE = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "ale");
+    static final net.minecraft.resources.Identifier GRUDGE = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "grudgebearer");
     private boolean aleUp;
 
     /** Whether he has ale in him now (refreshed every 2 s from his Shrine's barrels). */
@@ -438,7 +439,21 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     /** A blow that lands plays the attack clip on every client, whole: a swing's 6 ticks would cut it short (the review of 737e467). */
     @Override
     public boolean doHurtTarget(ServerLevel level, net.minecraft.world.entity.Entity target) {
-        boolean hit = super.doHurtTarget(level, target);
+        ShrineBlockEntity h = settlement();
+        var dmg = getAttribute(Attributes.ATTACK_DAMAGE);
+        boolean bears = h != null && dmg != null && h.grudges().bears(target);
+        if (bears) {                                             // D4: a grudgebearer strikes a foe of a settled grudge's kind harder
+            dmg.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(GRUDGE, claude.khazuk.hold.Grudges.BEARER_PERCENT / 100.0,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+        boolean hit;
+        try {
+            hit = super.doHurtTarget(level, target);
+        } finally {
+            if (bears) {
+                dmg.removeModifier(GRUDGE);
+            }
+        }
         if (hit) {
             triggerAnim("attack", "attack");
             attacksForTests++;
@@ -452,6 +467,11 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         if (h != null) {
             h.removePerson(getUUID());
             h.works().forget(getUUID());
+            net.minecraft.world.entity.Entity killer = source.getEntity();
+            if (killer != null && killer != this && !(killer instanceof Dawi d && d.settlement() == h) && !killer.getUUID().equals(h.owner())
+                    && level() instanceof ServerLevel sl) {
+                h.grudges().wronged(sl, h, killer, "slew " + getName().getString());   // D4: written in the Dammaz Kron
+            }
         }
         super.die(source);
     }
