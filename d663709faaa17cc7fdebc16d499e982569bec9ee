@@ -1,0 +1,1 @@
+REVIEW PASS d663709faaa17cc7fdebc16d499e982569bec9ee: no cap overshoot and the existing round-count tests still hold; notes: food drain triples at full cap, and the rises can drain the reserve room crews draw on (the survival run showed it: answered in a63aa52). (fix-reviewer, 2026-11-04)
