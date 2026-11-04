@@ -1,0 +1,2 @@
+fix-reviewer (Sonnet 5.5 agent), 2026-11-02: the 99fe744 findings fixed; notes: SUCCESS swings nothing, RENAMING not cleared on Escape, ASCII-only filter (fixed next).
+REVIEW PASS WITH NOTES f8102ff
