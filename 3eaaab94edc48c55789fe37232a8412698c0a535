@@ -1,0 +1,3 @@
+REVIEW FAIL 3eaaab9: Rune of Stone ids not slot-specific (two runed pieces replace each other, unequipping strips the other); negative addCurrency for the price; the kit lost if the Shrine is broken mid-job; the sneak double-fire; lore overwritten; fixed in the next commit
+
+REVIEW PASS 3eaaab9: covered by the re-review of fac144c
