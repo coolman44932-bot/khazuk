@@ -48,6 +48,18 @@ public final class Brewhouse {
         return took;
     }
 
+    /**
+     * Sheaves or bales brought to the Shrine, {@code each} malt apiece: as many as the store has room for, the last one whole even if it
+     * runs past the cap (a bale is never charged for malt the store didn't take: the review of 3060f8c). How many it took.
+     */
+    public int takeMalt(int each, int count) {
+        int room = MALT_CAP - malt;
+        int units = room <= 0 ? 0 : Math.min(count, (room + each - 1) / each);
+        malt += units * each;
+        dirty |= units > 0;
+        return units;
+    }
+
     /** Tests and a settled grudge (D4): ale straight into the barrels. */
     public void addAle(int amount) {
         ale = Math.max(0, Math.min(ALE_CAP, ale + amount));
@@ -63,6 +75,7 @@ public final class Brewhouse {
     /** The Shrine's second: brew, drink, and the hoard's interest. */
     public void second(ServerLevel level, ShrineBlockEntity hold) {
         clock++;
+        dirty |= clock % 60 == 0;                                // the clock saved now and then, so a restart keeps the hoard's interest due
         boolean brewery = hold.has(HoldRooms.BREWERY);
         if (brewery && clock % BREW_SECONDS == 0 && malt > 0 && ale < ALE_CAP) {
             boolean wasDry = ale == 0;
@@ -107,7 +120,7 @@ public final class Brewhouse {
     }
 
     public void load(CompoundTag tag) {
-        malt = Math.max(0, Math.min(MALT_CAP, tag.getIntOr("malt", 0)));
+        malt = Math.max(0, Math.min(MALT_CAP + MALT_PER_HAY, tag.getIntOr("malt", 0)));
         ale = Math.max(0, Math.min(ALE_CAP, tag.getIntOr("ale", 0)));
         clock = tag.getIntOr("brew_clock", 0);
     }

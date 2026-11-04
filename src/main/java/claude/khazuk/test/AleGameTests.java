@@ -73,6 +73,10 @@ public class AleGameTests {
         b.secondsForTests(h.getLevel(), heart, Brewhouse.BREW_SECONDS * 4);
         h.assertTrue(b.malt() == 8 && b.ale() == 4 * Brewhouse.ALE_PER_MALT, "after four brews: malt " + b.malt() + ", ale " + b.ale());
         h.assertTrue(b.addMalt(Brewhouse.MALT_CAP) == Brewhouse.MALT_CAP - 8 && b.malt() == Brewhouse.MALT_CAP, "the malt store isn't capped: " + b.malt());
+        Brewhouse near = new Brewhouse();
+        near.addMalt(Brewhouse.MALT_CAP - 4);
+        h.assertTrue(near.takeMalt(Brewhouse.MALT_PER_HAY, 3) == 1 && near.malt() == Brewhouse.MALT_CAP - 4 + Brewhouse.MALT_PER_HAY
+                && near.takeMalt(Brewhouse.MALT_PER_HAY, 3) == 0, "near the cap a bale took " + near.malt() + ": a bale is whole or not taken");
         h.succeed();
     }
 
