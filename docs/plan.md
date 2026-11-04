@@ -133,7 +133,9 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   200); Grungni's Hammer (30), Valaya's Ward (40), Grimnir's Fury (40) as tokens handed over at the first devotion enough; rune-priests
   bless them (x1.25, Runelord x1.5), the Throne takes a quarter off. The Hammer's detailed model is commissioned
   (handoffs/grungnis_hammer_2026-11-03.md); it ships on a stand-in.
-- **Then** the roster in TWW1's order, a step at a time, as the Waaagh!'s branches go.
+- **0.11.0, the Longbeards: DONE** (jar 439463f1). Shield or great axe; Old Grumblers steady the hold's Dawi within 8; they bear every
+  grudge written; a Great Hall raises two of each, and a Warrior with 8 kills grows into one (handed back through Shrine#absorb).
+- **Then** the roster in TWW1's order, a step at a time: Ironbreakers and Hammerers next.
 
 ## 10. For the user to change (each is my pick until then)
 
