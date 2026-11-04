@@ -132,9 +132,10 @@ public class DawiFightGameTests {
     }
 
     /**
-     * A still Warrior facing his own way, and a still zombie {@code ahead} (or behind) him to strike from. The blows are indirect magic: a
-     * blow from a place that armour doesn't touch (armour's cut isn't linear in the blow: the review of 08527b2), so what he takes is
-     * exactly what the shield and his grit let through.
+     * A still Warrior facing his own way, his armour off, and a still zombie {@code ahead} (or behind) him to strike from. Armour's cut isn't
+     * linear in the blow (the review of 08527b2), so with none what he takes is exactly what the shield and his grit let through. (Not a
+     * blow that bypasses armour: vanilla's bypasses_shield holds all of bypasses_armor, so such a blow skips the shield too; the laptop's
+     * run of 2927f7a.)
      */
     private static Warrior standing(GameTestHelper h, BlockPos at) {
         Warrior w = h.spawn(KRegistry.WARRIOR.get(), at);
@@ -142,6 +143,8 @@ public class DawiFightGameTests {
         w.setYRot(0);
         w.yBodyRot = 0;
         w.setYHeadRot(0);
+        w.getAttribute(Attributes.ARMOR).setBaseValue(0);
+        w.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(0);
         return w;
     }
 
@@ -159,8 +162,8 @@ public class DawiFightGameTests {
         Zombie a = striker(h, front, true), b = striker(h, back, false);
         h.assertTrue(front.shieldFaces(a.position()) && !back.shieldFaces(b.position()), "the strikers aren't where the test put them");
         float fullFront = front.getHealth(), fullBack = back.getHealth();
-        front.hurtServer(h.getLevel(), h.getLevel().damageSources().indirectMagic(a, a), 10);
-        back.hurtServer(h.getLevel(), h.getLevel().damageSources().indirectMagic(b, b), 10);
+        front.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(a), 10);
+        back.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(b), 10);
         float tookFront = fullFront - front.getHealth(), tookBack = fullBack - back.getHealth();
         h.assertTrue(tookBack > 0 && Math.abs(tookFront - tookBack * Warrior.SHIELD_MELEE) < 0.05,
                 "from the front he took " + tookFront + ", from behind " + tookBack + ": not " + Warrior.SHIELD_MELEE + " of it");
@@ -176,8 +179,8 @@ public class DawiFightGameTests {
         low.setHealth((float) Warrior.MAX_HEALTH * 0.25f);
         h.assertTrue(low.isStubborn() && !whole.isStubborn(), "stubborn: " + low.isStubborn() + ", " + whole.isStubborn());
         float w0 = whole.getHealth(), l0 = low.getHealth();
-        whole.hurtServer(h.getLevel(), h.getLevel().damageSources().indirectMagic(a, a), 6);
-        low.hurtServer(h.getLevel(), h.getLevel().damageSources().indirectMagic(b, b), 6);
+        whole.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(a), 6);
+        low.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(b), 6);
         float tookWhole = w0 - whole.getHealth(), tookLow = l0 - low.getHealth();
         h.assertTrue(tookWhole > 0 && Math.abs(tookLow - tookWhole * Dawi.STUBBORN_TAKEN) < 0.05,
                 "whole he took " + tookWhole + ", low " + tookLow + ": not " + Dawi.STUBBORN_TAKEN + " of it");

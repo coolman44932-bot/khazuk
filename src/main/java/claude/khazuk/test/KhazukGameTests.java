@@ -96,6 +96,7 @@ public class KhazukGameTests {
                 .thenWaitUntil(() -> h.assertTrue(near(h, Warrior.class).size() == 1, "the round's guard is not up"))
                 .thenExecute(() -> {
                     guard[0] = near(h, Warrior.class).get(0);
+                    near(h, Miner.class).forEach(m -> m.discard());   // D2's Miners fight well enough to take the husk first
                     foe[0] = h.spawn(EntityType.HUSK, HEART.offset(5, 0, 0));
                     foe[0].setPersistenceRequired();
                 })
