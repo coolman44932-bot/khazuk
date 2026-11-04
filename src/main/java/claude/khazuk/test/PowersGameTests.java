@@ -316,10 +316,19 @@ public class PowersGameTests {
         long end = h.getLevel().getGameTime() + 5;
         AncestorPowers.rage(mine, end);
         h.assertTrue(mine.furyUp(), "the rage didn't come on");
-        h.startSequence()
-                .thenWaitUntil(() -> h.assertTrue(h.getLevel().getGameTime() >= end + 1, "waiting for the Fury's end"))
-                .thenExecute(() -> h.assertTrue(!mine.furyUp() && Math.abs(mine.getAttributeValue(Attributes.ATTACK_DAMAGE) - blow) < 1e-3,
-                        "the Fury ran out but the Warrior still rages (" + mine.furyUp() + ", blow " + mine.getAttributeValue(Attributes.ATTACK_DAMAGE) + ")"))
-                .thenSucceed();
+        // checked every tick (the review of 421b9ee): still raging before the end, and off by the tick after it, never waiting on the
+        // ten-tick sweep (which alone would leave him raging up to half a second on)
+        boolean[] sawEnd = new boolean[1];
+        h.onEachTick(() -> {
+            long now = h.getLevel().getGameTime();
+            if (now < end - 1) {
+                h.assertTrue(mine.furyUp(), "the Fury came off early, " + (end - now) + " ticks before its end");
+            } else if (now >= end + 1 && !sawEnd[0]) {
+                sawEnd[0] = true;
+                h.assertTrue(!mine.furyUp() && Math.abs(mine.getAttributeValue(Attributes.ATTACK_DAMAGE) - blow) < 1e-3,
+                        "a tick after the Fury's end the Warrior still rages (" + mine.furyUp() + ", blow " + mine.getAttributeValue(Attributes.ATTACK_DAMAGE) + ")");
+                h.succeed();
+            }
+        });
     }
 }

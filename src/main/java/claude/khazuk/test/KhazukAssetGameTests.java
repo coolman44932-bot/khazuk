@@ -112,7 +112,7 @@ public class KhazukAssetGameTests {
         h.succeed();
     }
 
-    /** Grungni's Hammer (D7; the fast stand-in until the detail session's showpiece): its geo bakes, its strike bakes, its glowmask is in the jar. */
+    /** Grungni's Hammer (D7, the detail session's showpiece since 0.10.1): its geo bakes, its strike bakes, its glowmask is in the jar. */
     @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
     public static void grungnisHammersModelAndStrikeBake(GameTestHelper h) throws Exception {
         Identifier id = unit("grungnis_hammer");
