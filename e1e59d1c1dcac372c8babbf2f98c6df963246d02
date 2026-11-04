@@ -1,0 +1,1 @@
+REVIEW PASS e1e59d1c1dcac372c8babbf2f98c6df963246d02: the kit buff is clean and the sprinted survival run is sound; add an @AfterBatch(khazuklong) stopSprinting so a failed run can't keep the server sprinting, and tighten ore_gold to vein gold only. (fix-reviewer, 2026-11-04)
