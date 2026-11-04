@@ -36,7 +36,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     /**
      * 0.12.2 (the user, 2026-11-04: "raise the cap"): the hold's halls make room for more Dawi up at once: the Keep {@value #KEEP_ROOM}, the
      * Great Hall {@value #GREAT_HALL_ROOM}, the Barracks {@value #BARRACKS_ROOM}, the Mine and the Brewery {@value #SMALL_ROOM} each; and a
-     * round of spawning brings up to {@value #RISE_PER_ROUND} more out of the deeps while there's room (two Miners to a Warrior).
+     * round of spawning brings up to {@value #RISE_PER_ROUND} more out of the deeps while there's room (two Miners to a Warrior) and no hall is
+     * being dug or raised (those crews come up out of the deeps at their work).
      */
     public static final int KEEP_ROOM = 2, GREAT_HALL_ROOM = 6, BARRACKS_ROOM = 4, SMALL_ROOM = 2, RISE_PER_ROUND = 3;
     public static final int RESERVE_CAP = 24;
@@ -178,7 +179,11 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
             for (int i = 0; i < workers + guards; i++) {
                 brood.bringUp(i >= workers, getBlockPos().above());
             }
-            for (int i = 0; i < RISE_PER_ROUND && peopleCount() < peopleCap(); i++) {   // the deeps' waiting Dawi, while the halls have room
+            // the deeps' waiting Dawi, while the halls have room and nothing is being dug or raised: a dig's or a site's crew comes up out of
+            // the deeps right at its work, and Dawi brought up first would walk there instead (the laptop's run of 4120042: the Great Hall
+            // 95 s slower)
+            boolean building = !works().digs().isEmpty() || !works().sites().isEmpty();
+            for (int i = 0; !building && i < RISE_PER_ROUND && peopleCount() < peopleCap(); i++) {
                 boolean soldier = i % 3 == 2;
                 if (brood.bringUp(soldier, getBlockPos().above()) == null && brood.bringUp(!soldier, getBlockPos().above()) == null) {
                     break;
