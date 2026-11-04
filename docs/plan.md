@@ -115,8 +115,11 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   - **The god's plans for the first halls** (the Great Hall, the mine, the barracks), dug by the Miners on the engine's dig side behind
     the gate's stair.
 - **The Throne of Power** goes in as soon as the detail session's model and contract are ready, whichever D step that falls in.
-- **D2, Miners and Dwarf Warriors modelled** (fast models from Blockbench scripts), their stats, the floor tests. **Ship 1** (D0-D2).
-- **D3, gold and ale:** the mine and the treasury, the brewery, ale as morale.
+- **D2, Miners and Dwarf Warriors modelled** (fast models from Blockbench scripts), their stats, the floor tests. **DONE in 0.5.0** (2026-11-03,
+  bbsrc/khazuk_build.js; the Warrior's shield, the Miner's pick, stubborn and mending; one Warrior beats three zombies and an axe vindicator,
+  one Miner three zombies).
+- **D3, gold and ale:** the mine and the treasury, the brewery, ale as morale. **DONE in 0.5.0** (hold/Brewhouse: wheat is malt, the
+  Brewery brews ale, ale makes the hold hit harder and walk and work faster; the Treasury pays 3 an ore and its hoard grows).
 - **D4, the Book of Grudges.**
 - **D5, runes:** the Runesmith (a showpiece) and the runic forge.
 - **D6, the gate:** a gatehouse and walls raised on the surface; Quarrellers and Thunderers to man them.
