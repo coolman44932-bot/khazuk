@@ -1,0 +1,2 @@
+fix-reviewer (Sonnet 5.5 agent), 2026-11-02: first REVIEW FAIL 745c3f5 (die() returned early on every real death; the kick took 8 off the rider's next blow; takeDirty untested). Re-reviewed as fixed by 19f681b, at HEAD c44e654: all three causes fixed and proven by tests; every other change checks out. Notes: friend guards untested; the crag's retry list not saved; occupied foot cells not retried; a throne lost in the void with its god offline.
+REVIEW PASS WITH NOTES 745c3f5
