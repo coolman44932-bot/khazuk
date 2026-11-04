@@ -1,0 +1,2 @@
+fix-reviewer (Sonnet 5.5 agent), 2026-11-02: D1 Hold Gate wiring + Throne of Power. Findings fixed in the next commit (kick i-frames, crag keep-out and Shrine refusal, safe lift, dirty save, walk/run threshold, dismount, never lost, grudge scan). Open: crag outline not shown in the plan's preview; gate rebuilt at the same door counts as risen.
+REVIEW PASS WITH NOTES 4239f71
