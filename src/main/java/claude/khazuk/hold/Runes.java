@@ -302,19 +302,41 @@ public final class Runes {
     /** The forge's local cell the Runesmith works from: a slab a step before the anvil (gen_halls.py), his blow square on its face. */
     static final BlockPos WORK_SPOT = new BlockPos(8, 1, 6);
 
-    /** Where he stands to work: on the slab's top, in the middle of its cell; null without a forge whose placement is known. */
-    public static @Nullable Vec3 workSpot(ShrineBlockEntity hold) {
+    /** The work spot's cell in the world, or null without a forge whose placement is known. */
+    public static @Nullable BlockPos workCell(ShrineBlockEntity hold) {
         for (Building b : hold.buildings()) {
             if (!"dawi_runic_forge".equals(b.room())) {
                 continue;
             }
             PlanPlacement pl = BuildingBook.placementOf(b);
             if (pl != null) {
-                BlockPos c = pl.world(WORK_SPOT);
-                return new Vec3(c.getX() + 0.5, c.getY() + 0.5, c.getZ() + 0.5);
+                return pl.world(WORK_SPOT);
             }
         }
         return null;
+    }
+
+    /**
+     * Where he stands to work: on the slab's top, in the middle of its cell; null without a forge whose placement is known. A forge dug
+     * before the slab was in its template (0.8.2) has air there: he lays the slab himself, so he never stands half a block over the
+     * floor (the review of 0638f33: he bobbed there every second).
+     */
+    public static @Nullable Vec3 workSpot(ServerLevel level, ShrineBlockEntity hold) {
+        BlockPos c = workCell(hold);
+        if (c == null) {
+            return null;
+        }
+        if (level.isLoaded(c) && level.getBlockState(c).isAir()) {
+            level.setBlockAndUpdate(c, net.minecraft.world.level.block.Blocks.POLISHED_DEEPSLATE_SLAB.defaultBlockState());
+        }
+        boolean slab = level.getBlockState(c).getBlock() instanceof net.minecraft.world.level.block.SlabBlock;
+        return new Vec3(c.getX() + 0.5, c.getY() + (slab ? 0.5 : 0), c.getZ() + 0.5);
+    }
+
+    /** A foe on him, now or a moment ago: he fights, and the hammering waits. */
+    static boolean fighting(Runesmith smith) {
+        return smith.getTarget() != null && smith.getTarget().isAlive()
+                || smith.getLastHurtByMob() != null && smith.tickCount - smith.getLastHurtByMobTimestamp() < 100;
     }
 
     /** The hold's Runesmith near its anvil, if he's up. */
@@ -353,7 +375,7 @@ public final class Runes {
                 Runesmith r = (lord ? KRegistry.RUNELORD : KRegistry.RUNESMITH).get().create(level, EntitySpawnReason.MOB_SUMMONED);
                 if (r != null) {
                     r.bindTo(hold);
-                    Vec3 at = workSpot(hold);
+                    Vec3 at = workSpot(level, hold);
                     r.emergeAt(at != null ? at.x : anvil.getX() + 0.5, at != null ? at.y : anvil.getY(), at != null ? at.z : anvil.getZ() - 1.5);
                     r.standAt(anvil);
                     level.addFreshEntity(r);
@@ -370,7 +392,11 @@ public final class Runes {
             smith.setDigging(false);
             return;
         }
-        Vec3 spot = workSpot(hold);
+        if (fighting(smith)) {                                     // a foe first: the rune waits, he isn't pinned to the anvil (the review of 0638f33)
+            smith.setDigging(false);
+            return;
+        }
+        Vec3 spot = workSpot(level, hold);
         if (spot == null) {
             spot = new Vec3(anvil.getX() + 0.5, anvil.getY(), anvil.getZ() - 1.5);
         }
@@ -387,6 +413,10 @@ public final class Runes {
         smith.setYRot(yaw);
         smith.setYBodyRot(yaw);
         smith.setYHeadRot(yaw);
+        BlockPos cell = BlockPos.containing(spot.x, spot.y, spot.z);
+        if (!cell.equals(smith.guardPos())) {
+            smith.standAt(anvil);                                // his post is the slab, wherever he stood before
+        }
         smith.setDigging(true);
         smith.getLookControl().setLookAt(Vec3.atCenterOf(anvil));
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, 6, 0.2, 0.1, 0.2, 0.05);

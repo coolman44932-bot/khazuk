@@ -237,4 +237,39 @@ public class RuneGameTests {
                 })
                 .thenSucceed();
     }
+
+    /**
+     * The Runesmith at work, at a forge facing another way and dug without the slab (as before 0.8.2): the slab is laid, he stands on its
+     * middle facing the anvil, hammering; a foe on him stops the hammering (the review of 0638f33).
+     */
+    @GameTest(template = "arena", timeoutTicks = 80, batch = "khazuk")
+    public static void theRunesmithWorksSquarelyFromHisSlabAndFightsFirst(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        Rooms.Room r = HoldRooms.room("dawi_runic_forge");
+        BlockPos door = h.absolutePos(new BlockPos(12, 1, 22));
+        PlanPlacement pl = PlanPlacement.compute(r, door, Direction.NORTH);
+        heart.addBuilding(new Building(r.id(), pl.box(), door, Direction.NORTH), false);
+        BlockPos anvil = Runes.anvil(heart), cell = pl.world(new BlockPos(8, 1, 6));
+        h.assertTrue(h.getLevel().getBlockState(cell).isAir(), "the test's forge isn't dug: its work cell is " + h.getLevel().getBlockState(cell));
+        heart.runes().second(h.getLevel(), heart);
+        Runesmith smith = Runes.runesmith(h.getLevel(), heart, anvil);
+        h.assertTrue(smith != null, "no Runesmith came up");
+        h.assertTrue(h.getLevel().getBlockState(cell).getBlock() instanceof net.minecraft.world.level.block.SlabBlock, "the slab wasn't laid at his work spot");
+        heart.addCurrency(100, "the test");
+        heart.runes().begin(heart, ItemStack.EMPTY);
+        h.runAfterDelay(20, () -> {                               // risen (16 ticks), then a second of work
+            heart.runes().second(h.getLevel(), heart);
+            double dx = smith.getX() - (cell.getX() + 0.5), dz = smith.getZ() - (cell.getZ() + 0.5), dy = smith.getY() - (cell.getY() + 0.5);
+            h.assertTrue(Math.abs(dx) < 0.1 && Math.abs(dz) < 0.1 && Math.abs(dy) < 0.1, "he isn't on his slab: off by " + dx + ", " + dy + ", " + dz);
+            net.minecraft.world.phys.Vec3 to = new net.minecraft.world.phys.Vec3(anvil.getX() + 0.5 - smith.getX(), 0, anvil.getZ() + 0.5 - smith.getZ()).normalize();
+            h.assertTrue(net.minecraft.world.phys.Vec3.directionFromRotation(0, smith.yBodyRot).dot(to) > 0.95, "his body doesn't face the anvil: " + smith.yBodyRot);
+            h.assertTrue(smith.isDigging(), "he isn't hammering");
+            Zombie foe = h.spawn(EntityType.ZOMBIE, new BlockPos(20, 1, 4));
+            foe.setNoAi(true);
+            smith.setTarget(foe);
+            heart.runes().second(h.getLevel(), heart);
+            h.assertTrue(!smith.isDigging(), "he kept hammering with a foe on him");
+            h.succeed();
+        });
+    }
 }
