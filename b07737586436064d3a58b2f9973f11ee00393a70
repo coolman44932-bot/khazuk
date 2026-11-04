@@ -1,0 +1,1 @@
+REVIEW PASS b07737586436064d3a58b2f9973f11ee00393a70: only the pin's commit field changed; checkCorePin reads only sha256, and libs/settlementcore-0.5.5.jar still matches it. (fix-reviewer, 2026-11-04)
