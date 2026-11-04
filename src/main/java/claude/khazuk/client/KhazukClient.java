@@ -67,6 +67,9 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.WARRIOR.get(), GuardRenderer::new);
         e.registerEntityRenderer(KRegistry.THRONE.get(), ThroneRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNESMITH.get(), RunesmithRenderer::new);
+        e.registerEntityRenderer(KRegistry.RUNELORD.get(), RunelordRenderer::new);
+        e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), ctx -> new com.geckolib.renderer.GeoEntityRenderer<claude.khazuk.hold.AnvilOfDoom,
+                LivingEntityRenderState>(ctx, KRegistry.ANVIL_OF_DOOM.get()));
     }
 
     @SubscribeEvent
@@ -96,6 +99,19 @@ public final class KhazukClient {
         RunesmithRenderer(EntityRendererProvider.Context ctx) {
             super(ctx, new RunesmithModel());
             this.shadowRadius = 0.45f;
+        }
+    }
+
+    static final class RunelordModel extends HordeGeoModel<claude.khazuk.Runelord> {
+        RunelordModel() {
+            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "runelord"), true);
+        }
+    }
+
+    static final class RunelordRenderer extends HordeRenderer<claude.khazuk.Runelord, LivingEntityRenderState> {
+        RunelordRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, new RunelordModel());
+            this.shadowRadius = 0.5f;
         }
     }
 

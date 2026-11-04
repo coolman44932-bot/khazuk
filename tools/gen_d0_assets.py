@@ -37,6 +37,7 @@ def main():
     throne_item()
     book_item()
     runesmith_egg()
+    anvil_items()
     print("ok")
 
 
@@ -163,6 +164,55 @@ def runesmith_egg():
         d = json.load(f)
     d["entity.khazuk.runesmith"] = "Runesmith"
     d["item.khazuk.runesmith_spawn_egg"] = "Runesmith Spawn Egg"
+    out("assets/khazuk/lang/en_us.json", d)
+
+
+def anvil_items():
+    """D5b: the Runelord's spawn egg (the Miner's, recoloured gold and white) and the Anvil of Doom's item (a dark anvil on a gold-edged
+    step, runes glowing blue on its face). Their item files and names, and the Runelord's and the Anvil's entities'."""
+    import json
+    src = Image.open(os.path.join(RES, "assets", "khazuk", "textures", "item", "miner_spawn_egg.png")).convert("RGBA")
+    im = Image.new("RGBA", src.size)
+    for y in range(src.size[1]):
+        for x in range(src.size[0]):
+            r, g, b, a = src.getpixel((x, y))
+            lum = (r + g + b) / 3
+            im.putpixel((x, y), (0, 0, 0, 0) if a == 0 else (min(255, int(lum * 1.3 + 20)), min(255, int(lum * 1.05 + 10)), int(lum * 0.5), a))
+    im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "runelord_spawn_egg.png"))
+    out("assets/khazuk/items/runelord_spawn_egg.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/runelord_spawn_egg"}})
+    out("assets/khazuk/models/item/runelord_spawn_egg.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/runelord_spawn_egg"}})
+    r = random.Random(29)
+    im = Image.new("RGBA", (16, 16))
+    IRON, IRON_D, RUNE = (70, 76, 82), (44, 48, 52), (98, 230, 255)
+    def px(x, y, c):
+        f = 0.92 + 0.16 * r.random()
+        im.putpixel((x, y), tuple(min(255, int(v * f)) for v in c) + (255,))
+    for x in range(1, 15):                                       # the stone step, gold-edged
+        for y in (13, 14):
+            px(x, y, STONE if y == 14 else STONE_L)
+        px(x, 12, GOLD)
+    for y in range(9, 12):                                      # the anvil's foot and waist
+        for x in range(5, 11):
+            px(x, y, IRON_D)
+    for y in range(5, 9):                                       # its top, the horn out to the left
+        for x in range(3, 14):
+            px(x, y, IRON)
+    for x in range(0, 3):
+        px(x, 6, IRON)
+        px(x, 7, IRON_D)
+    for x in (5, 7, 9, 11):                                     # runes on its face
+        px(x, 6, RUNE)
+    px(8, 5, RUNE)
+    im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "anvil_of_doom.png"))
+    out("assets/khazuk/items/anvil_of_doom.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/anvil_of_doom"}})
+    out("assets/khazuk/models/item/anvil_of_doom.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/anvil_of_doom"}})
+    lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
+    with open(lang, encoding="utf-8") as f:
+        d = json.load(f)
+    d["entity.khazuk.runelord"] = "Runelord"
+    d["item.khazuk.runelord_spawn_egg"] = "Runelord Spawn Egg"
+    d["entity.khazuk.anvil_of_doom"] = "Anvil of Doom"
+    d["item.khazuk.anvil_of_doom"] = "Anvil of Doom"
     out("assets/khazuk/lang/en_us.json", d)
 
 

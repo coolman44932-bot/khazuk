@@ -75,6 +75,8 @@ public final class Runes {
     public static final int MAX = 3;
     public static final double IRON_ARMOR = 2, CLEAVE_DAMAGE = 1.5, WARD_CUT = 0.2, MIGHT_DAMAGE = 2, STONE_ARMOR = 1;
     public static final int HOLD_COST = 40, KIT_COST = 30, STRIKE_SECONDS = 10, RESPAWN_SECONDS = 120;
+    /** D5b: runes struck before the Runesmith is raised to Runelord, and the Anvil of Doom comes up with him. */
+    public static final int TO_RUNELORD = 5;
     /** How near the anvil the Runesmith has to be to work at it. */
     public static final double AT_ANVIL = 3.5;
 
@@ -85,6 +87,9 @@ public final class Runes {
     private ItemStack kit = ItemStack.EMPTY;
     private int left;
     private int respawnIn;
+    /** Runes struck in all; whether the hold's smith is a Runelord now, and whether its Anvil of Doom has come up. */
+    private int struck;
+    private boolean lord, anvilGiven;
     private boolean dirty;
 
     public int level(Kind k) {
@@ -98,6 +103,15 @@ public final class Runes {
 
     public Kind chosen() {
         return chosen;
+    }
+
+    public int struck() {
+        return struck;
+    }
+
+    /** Whether the hold's Runesmith has been raised to Runelord. */
+    public boolean lord() {
+        return lord;
     }
 
     public @Nullable Kind job() {
@@ -311,17 +325,21 @@ public final class Runes {
             return;
         }
         Runesmith smith = runesmith(level, hold, anvil);
+        if (smith != null && lord && !(smith instanceof claude.khazuk.Runelord)) {
+            smith = raise(level, hold, smith, anvil);                // raised to Runelord (D5b)
+        }
         if (smith == null) {
             if (respawnIn > 0) {
                 respawnIn--;
             } else {
-                Runesmith r = KRegistry.RUNESMITH.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+                Runesmith r = (lord ? KRegistry.RUNELORD : KRegistry.RUNESMITH).get().create(level, EntitySpawnReason.MOB_SUMMONED);
                 if (r != null) {
                     r.bindTo(hold);
                     r.emergeAt(anvil.getX() + 0.5, anvil.getY(), anvil.getZ() - 1.5);
                     r.standAt(anvil);
                     level.addFreshEntity(r);
-                    hold.tellOwner(hold.settlementName() + ": the Runesmith comes up out of the stone to the rune anvil.", ChatFormatting.AQUA);
+                    hold.tellOwner(hold.settlementName() + ": the " + (lord ? "Runelord" : "Runesmith") + " comes up out of the stone to the rune anvil.",
+                            ChatFormatting.AQUA);
                     respawnIn = RESPAWN_SECONDS;
                     dirty = true;
                 }
@@ -350,6 +368,36 @@ public final class Runes {
         smith.setDigging(false);
     }
 
+    /**
+     * The Runesmith raised to Runelord where he stands (D5b): a Runelord in his place, whole, and the hold's Anvil of Doom laid beside the
+     * rune anvil, once.
+     */
+    private Runesmith raise(ServerLevel level, ShrineBlockEntity hold, Runesmith smith, BlockPos anvil) {
+        claude.khazuk.Runelord r = KRegistry.RUNELORD.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        if (r == null) {
+            return smith;
+        }
+        r.bindTo(hold);
+        r.snapTo(smith.getX(), smith.getY(), smith.getZ(), smith.getYRot(), 0f);
+        if (smith.hasCustomName()) {
+            r.setCustomName(smith.getCustomName());
+        }
+        r.standAt(anvil);
+        smith.discard();
+        level.addFreshEntity(r);
+        level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, r.getX(), r.getY() + 1, r.getZ(), 40, 0.4, 0.6, 0.4, 0.05);
+        level.playSound(null, anvil, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.5f, 0.5f);
+        String gift = "";
+        if (!anvilGiven) {
+            anvilGiven = true;
+            Containers.dropItemStack(level, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, new ItemStack(KRegistry.ANVIL_OF_DOOM_ITEM.get()));
+            gift = " He brings up the hold's oldest relic with him: the Anvil of Doom lies by the rune anvil. Set it down, stand on it, and strike it.";
+        }
+        hold.tellOwner(hold.settlementName() + ": " + struck + " runes struck, and the Runesmith is a Runelord now." + gift, ChatFormatting.GOLD);
+        dirty = true;
+        return r;
+    }
+
     private void finish(ServerLevel level, ShrineBlockEntity hold, BlockPos anvil) {
         Kind k = job;
         job = null;
@@ -367,9 +415,11 @@ public final class Runes {
             String name = kit.getHoverName().getString();
             Containers.dropItemStack(level, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, kit);
             kit = ItemStack.EMPTY;
+            countStruck();
             hold.tellOwner(hold.settlementName() + ": the " + k.title + " is struck into your " + name + ". It lies on the anvil.", ChatFormatting.GOLD);
         } else {
             strike(k);
+            countStruck();
             hold.tellOwner(hold.settlementName() + ": the " + k.title + " " + "I".repeat(level(k)) + " is struck: " + k.what + ".", ChatFormatting.GOLD);
         }
     }
@@ -381,6 +431,14 @@ public final class Runes {
             kit = ItemStack.EMPTY;
             job = null;
             dirty = true;
+        }
+    }
+
+    /** One more rune struck; at {@value #TO_RUNELORD} the Runesmith is to be raised (the next second, where he stands). */
+    private void countStruck() {
+        struck++;
+        if (struck >= TO_RUNELORD) {
+            lord = true;
         }
     }
 
@@ -399,6 +457,9 @@ public final class Runes {
         tag.putString("rune_job", job == null ? "" : job.name());
         tag.putInt("rune_left", left);
         tag.putInt("rune_respawn", respawnIn);
+        tag.putInt("rune_struck", struck);
+        tag.putBoolean("rune_lord", lord);
+        tag.putBoolean("rune_anvil_given", anvilGiven);
     }
 
     public void load(CompoundTag tag) {
@@ -410,6 +471,9 @@ public final class Runes {
         job = j.isEmpty() ? null : kind(j, null);
         left = Math.max(0, tag.getIntOr("rune_left", 0));
         respawnIn = Math.max(0, tag.getIntOr("rune_respawn", 0));
+        struck = Math.max(0, tag.getIntOr("rune_struck", 0));
+        lord = tag.getBooleanOr("rune_lord", false);
+        anvilGiven = tag.getBooleanOr("rune_anvil_given", false);
     }
 
     /** The kit at the anvil, saved by the Shrine itself (an item needs the level's registries: ShrineBlockEntity#saveAdditional). */

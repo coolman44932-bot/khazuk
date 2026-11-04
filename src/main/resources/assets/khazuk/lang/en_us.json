@@ -17,5 +17,9 @@
   "item.khazuk.dammaz_kron": "Dammaz Kron, the Book of Grudges",
   "item.khazuk.plan_runic_forge": "Ancestors' Plan: Runic Forge",
   "entity.khazuk.runesmith": "Runesmith",
-  "item.khazuk.runesmith_spawn_egg": "Runesmith Spawn Egg"
+  "item.khazuk.runesmith_spawn_egg": "Runesmith Spawn Egg",
+  "entity.khazuk.runelord": "Runelord",
+  "item.khazuk.runelord_spawn_egg": "Runelord Spawn Egg",
+  "entity.khazuk.anvil_of_doom": "Anvil of Doom",
+  "item.khazuk.anvil_of_doom": "Anvil of Doom"
 }

@@ -49,6 +49,15 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Runesmith::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("runesmith")));
 
+    /** D5b: the Runelord, the Runesmith raised to a lord. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Runelord>> RUNELORD = ENTITIES.register("runelord",
+            () -> EntityType.Builder.of(Runelord::new, MobCategory.CREATURE).sized(0.8f, 1.55f).eyeHeight(1.25f).clientTrackingRange(10)
+                    .build(key("runelord")));
+    /** D5b: the Anvil of Doom, the god's to stand on and strike: a platform 2 blocks across, the anvil and its two Guard on it. */
+    public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.hold.AnvilOfDoom>> ANVIL_OF_DOOM = ENTITIES.register("anvil_of_doom",
+            () -> EntityType.Builder.of(claude.khazuk.hold.AnvilOfDoom::new, MobCategory.MISC).sized(2.0f, 1.3f).eyeHeight(1.0f).fireImmune()
+                    .clientTrackingRange(10).build(key("anvil_of_doom")));
+
     /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_KEEP = ITEMS.registerItem("plan_keep",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_keep"));
@@ -71,6 +80,11 @@ public final class KRegistry {
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_runic_forge"));
     public static final DeferredItem<SpawnEggItem> RUNESMITH_EGG = ITEMS.registerItem("runesmith_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(RUNESMITH.get())));
+    public static final DeferredItem<SpawnEggItem> RUNELORD_EGG = ITEMS.registerItem("runelord_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(RUNELORD.get())));
+    /** D5b: the Anvil of Doom, carried: set it down on the ground, facing the way you face. */
+    public static final DeferredItem<claude.khazuk.hold.AnvilOfDoomItem> ANVIL_OF_DOOM_ITEM = ITEMS.registerItem("anvil_of_doom",
+            p -> new claude.khazuk.hold.AnvilOfDoomItem(p.stacksTo(1).fireResistant()));
 
     /** Thorgrim's Throne of Power, the god's mount: 2.4 across the bearers' shields, the seat 2 up (a rider sits above its box). */
     public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.throne.ThroneOfPower>> THRONE = ENTITIES.register("throne_of_power",
@@ -104,6 +118,8 @@ public final class KRegistry {
                 out.accept(PLAN_TREASURY.get());
                 out.accept(PLAN_RUNIC_FORGE.get());
                 out.accept(RUNESMITH_EGG.get());
+                out.accept(RUNELORD_EGG.get());
+                out.accept(ANVIL_OF_DOOM_ITEM.get());
                 out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
                 out.accept(MINER_EGG.get());
@@ -131,6 +147,8 @@ public final class KRegistry {
         e.put(MINER.get(), Miner.createAttributes().build());
         e.put(WARRIOR.get(), Warrior.createAttributes().build());
         e.put(RUNESMITH.get(), Runesmith.createAttributes().build());
+        e.put(RUNELORD.get(), Runelord.createAttributes().build());
+        e.put(ANVIL_OF_DOOM.get(), claude.khazuk.hold.AnvilOfDoom.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }
 }
