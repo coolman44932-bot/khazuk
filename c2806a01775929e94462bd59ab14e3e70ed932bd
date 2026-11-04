@@ -1,0 +1,1 @@
+REVIEW PASS c2806a01775929e94462bd59ab14e3e70ed932bd: the test checks expiry every tick and ordering can't make it flaky; without the fix it fails on about 80% of runs (the 10-tick sweep can land in the window). (fix-reviewer, 2026-11-04)
