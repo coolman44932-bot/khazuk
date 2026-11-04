@@ -1,0 +1,1 @@
+REVIEW PASS e3f787f: ale, Treasury and templates trace correctly; minor notes (interest clock not marked dirty, a bale charged for a partial intake at the cap) fixed in the next commit
