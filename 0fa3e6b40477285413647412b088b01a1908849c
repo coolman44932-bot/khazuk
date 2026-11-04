@@ -1,0 +1,1 @@
+REVIEW PASS 0fa3e6b: slab laid only in the forge's own air cell, fighting() frees him, guard post tracks the slab, the new test fails without the fix (covers ccd0b0d)
