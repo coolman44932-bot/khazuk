@@ -1,0 +1,2 @@
+fix-reviewer (Sonnet 5.5 agent), 2026-11-02: the Shrine recipe and the data test. Notes: recipes checked for existence only, drops without a tool.
+REVIEW PASS WITH NOTES c44e654
