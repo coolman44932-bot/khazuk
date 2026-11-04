@@ -40,6 +40,8 @@ public final class Grudges {
 
     public static final int PER_WRONG = 5, GOLD_BASE = 10, GOLD_PER = 2, ALE_REWARD = 16, KEPT = 64;
     public static final int BEARER_PERCENT = 25;
+    /** A wrong by one foe again within this many ticks (a stranger's every pick-stroke) is written quietly: the god is told once. */
+    public static final int QUIET_TICKS = 200;
 
     /** One grudge: whom it names (a kind of foe, one foe by name, a player), why, and how many of them have fallen to the hold. */
     public static final class Grudge {
@@ -50,6 +52,7 @@ public final class Grudges {
         int need, have;
         final long written;
         boolean settled;
+        long told = Long.MIN_VALUE / 2;                          // when its god was last told of it (not saved: after a restart he is told again)
 
         Grudge(String key, String type, String name, String why, int need, long written) {
             this.key = key;
@@ -121,8 +124,22 @@ public final class Grudges {
         if (one) {
             return foe.getName().getString();
         }
-        String kind = foe.getType().getDescription().getString();
-        return kind.endsWith("s") ? kind : kind + "s";
+        return plural(foe.getType().getDescription().getString());
+    }
+
+    /** "Zombies", "Witches", "Wolves", "Silverfish". */
+    public static String plural(String kind) {
+        String k = kind.toLowerCase(java.util.Locale.ROOT);
+        if (k.endsWith("s") || k.endsWith("fish") || k.endsWith("sheep")) {
+            return kind;
+        }
+        if (k.endsWith("ch") || k.endsWith("sh") || k.endsWith("x")) {
+            return kind + "es";
+        }
+        if (k.endsWith("lf")) {
+            return kind.substring(0, kind.length() - 1) + "ves";
+        }
+        return kind + "s";
     }
 
     /** The key a grudge against {@code foe} has: a player and a named mob are one foe, the rest a kind. */
@@ -143,20 +160,27 @@ public final class Grudges {
     public Grudge wronged(ServerLevel level, ShrineBlockEntity hold, Entity foe, String why) {
         String key = keyOf(foe);
         boolean one = !key.startsWith("kind:");
+        long now = level.getGameTime();
         for (Grudge g : book) {
             if (!g.settled && g.key.equals(key)) {
                 if (!one) {
                     g.need += PER_WRONG;
                 }
+                boolean quiet = one && now - g.told < QUIET_TICKS;
                 g.why = why;
                 dirty = true;
+                if (quiet) {
+                    return g;                                    // the same foe at it again: written, its god already told
+                }
+                g.told = now;
                 hold.tellOwner(hold.settlementName() + ": the grudge against " + g.name + " grows: " + why + ". "
                         + (one ? "Their death settles it." : (g.need - g.have) + " more of them must fall."), ChatFormatting.DARK_RED);
                 book(level, hold, "grudge_written");
                 return g;
             }
         }
-        Grudge g = new Grudge(key, typeId(foe), nameOf(foe, one), why, one ? 1 : PER_WRONG, level.getGameTime());
+        Grudge g = new Grudge(key, typeId(foe), nameOf(foe, one), why, one ? 1 : PER_WRONG, now);
+        g.told = now;
         book.add(g);
         trim();
         dirty = true;
@@ -198,8 +222,7 @@ public final class Grudges {
 
     private static String nameOf(Grudge g) {
         EntityType<?> t = BuiltInRegistries.ENTITY_TYPE.getValue(net.minecraft.resources.Identifier.parse(g.type));
-        String kind = t == null ? g.name : t.getDescription().getString();
-        return kind.endsWith("s") ? kind : kind + "s";
+        return t == null ? g.name : plural(t.getDescription().getString());
     }
 
     /** The Book on the Throne of Power opens for its god, if he rides it. */

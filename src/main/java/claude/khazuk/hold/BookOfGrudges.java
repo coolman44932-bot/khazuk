@@ -37,6 +37,7 @@ public class BookOfGrudges extends Item {
             return InteractionResult.SUCCESS;
         }
         write(stack, hold);
+        sp.containerMenu.broadcastChanges();                     // the pages to the client's own stack first: it opens the book from that
         sp.openItemGui(stack, hand);
         return InteractionResult.SUCCESS;
     }

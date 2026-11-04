@@ -137,12 +137,34 @@ public class GrudgeGameTests {
         }
         BlockPos a = h.absolutePos(lo), b = h.absolutePos(hi);
         heart.addBuilding(new Building("dawi_barracks", BoundingBox.fromCorners(a, b)), false);
-        Creeper c = h.spawn(EntityType.CREEPER, new BlockPos(5, 4, 5));
-        c.setNoAi(true);
-        h.getLevel().explode(c, c.getX(), c.getY(), c.getZ(), 3f, Level.ExplosionInteraction.MOB);
-        Grudges.Grudge g = heart.grudges().named("Creepers");
-        h.assertTrue(g != null && g.need() == Grudges.PER_WRONG && g.why().contains("Barracks"), "the blast's grudge: "
-                + (g == null ? "not written (mob griefing off?)" : g.need() + ", " + g.why()));
+        // a Shrine set down this tick is in the level's list of holds from its first load (the laptop's run of 6e74d54: a blast on the same
+        // tick found no hold)
+        h.runAfterDelay(2, () -> {
+            Creeper c = h.spawn(EntityType.CREEPER, new BlockPos(5, 4, 5));
+            c.setNoAi(true);
+            h.getLevel().explode(c, c.getX(), c.getY(), c.getZ(), 3f, Level.ExplosionInteraction.MOB);
+            Grudges.Grudge g = heart.grudges().named("Creepers");
+            h.assertTrue(g != null && g.need() == Grudges.PER_WRONG && g.why().contains("Barracks"), "the blast's grudge: "
+                    + (g == null ? "not written" : g.need() + ", " + g.why()));
+            h.succeed();
+        });
+    }
+
+    /** One foe at the hold again and again (a stranger's every pick-stroke) is one grudge, owing one death; kinds are named in English plurals. */
+    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazuk")
+    public static void oneFoeAgainIsOneGrudgeAndKindsArePlural(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        Zombie boss = still(h, new BlockPos(4, 1, 4));
+        boss.setCustomName(Component.literal("Gutrot"));
+        for (int i = 0; i < 5; i++) {
+            heart.grudges().wronged(h.getLevel(), heart, boss, "broke the stone of the Barracks");
+        }
+        Grudges.Grudge g = heart.grudges().named("Gutrot");
+        h.assertTrue(g != null && g.need() == 1 && heart.grudges().grudges().size() == 1, "five wrongs by Gutrot: " + heart.grudges().grudges().size()
+                + " grudges, the first owing " + (g == null ? "?" : g.need()));
+        h.assertTrue(Grudges.plural("Witch").equals("Witches") && Grudges.plural("Wolf").equals("Wolves") && Grudges.plural("Silverfish").equals("Silverfish")
+                && Grudges.plural("Zombie").equals("Zombies") && Grudges.plural("Breeze").equals("Breezes"), "plurals: " + Grudges.plural("Witch")
+                + ", " + Grudges.plural("Wolf") + ", " + Grudges.plural("Silverfish"));
         h.succeed();
     }
 

@@ -71,14 +71,34 @@ public final class GrudgeEvents {
             return;
         }
         List<BlockPos> hit = e.getAffectedBlocks();
-        java.util.Set<ShrineBlockEntity> told = new java.util.HashSet<>();
-        for (BlockPos p : hit) {
-            if (level.getBlockState(p).isAir()) {
+        if (hit.isEmpty()) {
+            return;
+        }
+        // the blast's box once, then only the holds with a building in it, and each hold's buildings only until one is hit
+        net.minecraft.world.level.levelgen.structure.BoundingBox blast = net.minecraft.world.level.levelgen.structure.BoundingBox
+                .encapsulatingPositions(hit).orElse(null);
+        if (blast == null) {
+            return;
+        }
+        for (Settlement s : SettlementSpawns.loaded(level)) {
+            if (!(s instanceof ShrineBlockEntity hold) || by.getUUID().equals(hold.owner())) {
                 continue;
             }
-            Hit h = buildingAt(level, p);
-            if (h != null && !by.getUUID().equals(h.hold().owner()) && told.add(h.hold())) {
-                h.hold().grudges().wronged(level, h.hold(), by, "blew a hole in " + roomName(h.building()));
+            for (Building b : hold.buildings()) {
+                if (!b.box().intersects(blast)) {
+                    continue;
+                }
+                BlockPos struck = null;
+                for (BlockPos p : hit) {
+                    if (b.box().isInside(p) && !level.getBlockState(p).isAir()) {
+                        struck = p;
+                        break;
+                    }
+                }
+                if (struck != null) {
+                    hold.grudges().wronged(level, hold, by, "blew a hole in " + roomName(b));
+                    break;                                       // one grudge a blast for a hold
+                }
             }
         }
     }
