@@ -151,7 +151,11 @@ public class SurvivalRunGameTests {
                     "the first Longbeard up");
             step(h, hd, at, "two_each_ranks", Ranks.count(h.getLevel(), hd, Quarreller.class) >= 2 && Ranks.count(h.getLevel(), hd, Thunderer.class) >= 2,
                     "two Quarrellers and two Thunderers up");
-            step(h, hd, at, "ore_gold", hd.currency() > goldBefore[0] - 65, "the first gold dug out of the veins");
+            boolean struck = false;                                  // a vein dug out (its block gone), not just any gold coming in (the review of aa98ebb)
+            for (BlockPos v : VEINS) {
+                struck |= !h.getLevel().getBlockState(h.absolutePos(v)).is(Blocks.DEEPSLATE_GOLD_ORE);
+            }
+            step(h, hd, at, "ore_gold", struck && hd.currency() > goldBefore[0] - 65, "the first gold dug out of the veins");
             if (now % 1200 == 0) {
                 line(h, hd, "a minute's look: digs " + hd.works().digs().stream().map(d -> d.room().id() + " " + Math.round(d.job().progress() * 100) + "%").toList());
             }
@@ -185,5 +189,11 @@ public class SurvivalRunGameTests {
             at.put(key, h.getTick());
             line(h, hold, what);
         }
+    }
+
+    /** The sprint ends with the batch, whether the run passed, failed or timed out (the review of aa98ebb). */
+    @claude.settlementcore.test.AfterBatch(batch = "khazuklong")
+    public static void runEnds(net.minecraft.server.level.ServerLevel level) {
+        level.getServer().tickRateManager().stopSprinting();
     }
 }
