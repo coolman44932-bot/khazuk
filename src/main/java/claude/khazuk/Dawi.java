@@ -473,6 +473,19 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         }
     }
 
+    /**
+     * A Dwarf never turns on his own god, whatever the god does to him (the review of 88e429a: a Marksman's sure shot made a god's stray blow
+     * deadly); anyone else he may.
+     */
+    @Override
+    public void setTarget(@org.jspecify.annotations.Nullable LivingEntity target) {
+        ShrineBlockEntity h = target instanceof Player ? settlement() : null;
+        if (h != null && target.getUUID().equals(h.owner())) {
+            return;
+        }
+        super.setTarget(target);
+    }
+
     /** Blows that landed and played the attack clip, for the tests. */
     public int attacksForTests;
 

@@ -53,6 +53,10 @@ public abstract class Marksman extends Dawi {
     protected void registerGoals() {
         super.registerGoals();
         goalSelector.addGoal(2, new Shoot(this));
+        // marks found as he shoots them: unseen ones too, when his walled hold's walls stand between (the review of 88e429a: Dawi's own target
+        // goal must see its mark, so a foe behind the wall was never his)
+        targetSelector.addGoal(2, new net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class,
+                10, false, false, (m, level) -> m instanceof net.minecraft.world.entity.Mob mob && claude.settlementcore.defence.Muster.foe(mob) && canShoot(mob)));
     }
 
     /** Whether he can put a shot on {@code mark}: in range, and seen, or outside his walled hold's walls (over the battlements). */
@@ -79,6 +83,7 @@ public abstract class Marksman extends Dawi {
         }
         level.playSound(null, getX(), getY(), getZ(), report(), getSoundSource(), 1.0f, 0.9f + getRandom().nextFloat() * 0.2f);
         triggerAnim("attack", "attack");
+        foeShotAt();                                             // the engine's word for a ranged blow: he is getting at his foe
         if (mark.hurtServer(level, level.damageSources().mobProjectile(this, this), shotDamageOn(mark))) {
             shotsForTests++;
             setLastHurtMob(mark);

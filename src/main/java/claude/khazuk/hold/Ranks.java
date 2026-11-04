@@ -14,9 +14,9 @@ import net.minecraft.world.phys.AABB;
 
 /**
  * D6: the hold's missile troops, raised by its Barracks. With a Barracks dug, every {@value #RAISE_SECONDS} s the Shrine brings up one more
- * Quarreller or Thunderer (whichever the hold has fewer of) out of {@value #COST} food, until it keeps {@value #EACH} of each. They stand
- * their posts like the hold's guards (the engine's muster brings them to the walls when foes come), and shoot (Marksman). Counted among the
- * loaded ones round the Shrine; not on the engine's roll, as the Runesmith isn't.
+ * Quarreller or Thunderer (whichever the hold has fewer of) out of {@value #COST} food, until it keeps {@value #EACH} of each. They keep near
+ * the Shrine as the hold's people do and shoot what comes within their range (Marksman), over the hold's walls when it's walled. Counted
+ * among the loaded ones round the Shrine; not on the engine's roll (nor its muster), as the Runesmith isn't.
  */
 public final class Ranks {
 

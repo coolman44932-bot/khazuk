@@ -60,7 +60,8 @@ public class RanksGameTests {
         h.succeed();
     }
 
-    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazuk")
+    /** Hostile (Normal) batch: the zombies have to live past this tick for the chestplate's armour to count. */
+    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazukhostile")
     public static void aMarksmanShootsOnlyInRangeAndAThunderersShotBitesArmour(GameTestHelper h) {
         Quarreller q = h.spawn(KRegistry.QUARRELLER.get(), new BlockPos(2, 1, 12));
         q.setNoAi(true);
@@ -74,12 +75,16 @@ public class RanksGameTests {
         Zombie plated = h.spawn(EntityType.ZOMBIE, new BlockPos(14, 1, 4));
         plated.setNoAi(true);
         plated.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
-        h.assertTrue(t.shotOn(plated) > Thunderer.SHOT && t.shotOn(mid) == Thunderer.SHOT, "the ball bites: " + t.shotOn(plated) + " on plate, "
-                + t.shotOn(mid) + " on a bare zombie");
         float hp = mid.getHealth();
         q.shoot(h.getLevel(), mid);
         h.assertTrue(q.shotsForTests == 1 && mid.getHealth() < hp, "the bolt didn't land: zombie at " + mid.getHealth());
-        h.succeed();
+        // a worn piece's armour counts from the wearer's next tick (the laptop's run of 88e429a); a zombie wears 2 of its own
+        h.runAfterDelay(2, () -> {
+            h.assertTrue(Math.abs(t.shotOn(plated) - t.shotOn(mid) - Thunderer.PIERCE * (plated.getArmorValue() - mid.getArmorValue())) < 1e-4
+                    && t.shotOn(plated) > t.shotOn(mid), "the ball bites: " + t.shotOn(plated) + " on plate (armour " + plated.getArmorValue()
+                    + "), " + t.shotOn(mid) + " on a bare zombie (armour " + mid.getArmorValue() + ")");
+            h.succeed();
+        });
     }
 
     private static void beats(GameTestHelper h, Marksman m) {
@@ -117,5 +122,19 @@ public class RanksGameTests {
         Thunderer t = h.spawn(KRegistry.THUNDERER.get(), new BlockPos(4, 1, 12));
         t.bindTo(heart);
         beats(h, t);
+    }
+
+    /** A Dwarf never turns on his own god: a god's stray blow makes no target of him (the review of 88e429a). */
+    @SuppressWarnings("removal")
+    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
+    public static void aDwarfNeverTargetsHisGod(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        var god = h.makeMockServerPlayerInLevel();
+        heart.claim(god, "Karak Test");
+        Thunderer t = h.spawn(KRegistry.THUNDERER.get(), new BlockPos(4, 1, 4));
+        t.bindTo(heart);
+        t.setTarget(god);
+        h.assertTrue(t.getTarget() == null, "the Thunderer took his own god for his mark");
+        h.succeed();
     }
 }
