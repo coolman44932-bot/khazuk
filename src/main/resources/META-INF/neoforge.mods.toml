@@ -1,6 +1,6 @@
 modLoader = "javafml"
 loaderVersion = "[1,)"
-license = "All rights reserved"
+license = "MIT"
 
 [[mods]]
     modId = "khazuk"
