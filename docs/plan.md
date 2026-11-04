@@ -126,7 +126,9 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   model: the hold's Iron, Cleaving and Warding runes and the god's Might and Stone, struck at the forge's anvil).
 - **D5b, the Runelord and the Anvil of Doom.** **DONE in 0.8.0** (2026-11-03; five runes raise the Runesmith to Runelord, who brings the
   Anvil of Doom: Wrath and Ruin, Hearth and Home, Oath and Steel, struck by the god standing on it).
-- **D6, the gate:** a gatehouse and walls raised on the surface; Quarrellers and Thunderers to man them.
+- **D6, the gate:** a gatehouse and walls raised on the surface; Quarrellers and Thunderers to man them. **DONE in 0.9.0** (2026-11-03;
+  Marksman, Quarreller, Thunderer, hold/Ranks: the Barracks raises four of each; they shoot over a walled hold's walls. The Hold Gate and
+  the Keep are the gatehouse and walls).
 - **D7, the Ancestor Gods' powers.**
 - **Then** the roster in TWW1's order, a step at a time, as the Waaagh!'s branches go.
 
