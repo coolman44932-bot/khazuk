@@ -63,15 +63,15 @@ public final class KhazukClient {
 
     @SubscribeEvent
     static void renderers(EntityRenderersEvent.RegisterRenderers e) {
-        e.registerEntityRenderer(KRegistry.MINER.get(), WorkerRenderer::new);
-        e.registerEntityRenderer(KRegistry.WARRIOR.get(), GuardRenderer::new);
+        e.registerEntityRenderer(KRegistry.MINER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.MINER, 0.35f));
+        e.registerEntityRenderer(KRegistry.WARRIOR.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.WARRIOR, 0.45f));
         e.registerEntityRenderer(KRegistry.THRONE.get(), ThroneRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNESMITH.get(), RunesmithRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNELORD.get(), RunelordRenderer::new);
-        e.registerEntityRenderer(KRegistry.QUARRELLER.get(), ctx -> new UnitRenderer<>(ctx, "quarreller"));
-        e.registerEntityRenderer(KRegistry.THUNDERER.get(), ctx -> new UnitRenderer<>(ctx, "thunderer"));
-        e.registerEntityRenderer(KRegistry.LONGBEARD.get(), ctx -> new UnitRenderer<>(ctx, "longbeard"));
-        e.registerEntityRenderer(KRegistry.LONGBEARD_GREAT.get(), ctx -> new UnitRenderer<>(ctx, "longbeard_great"));
+        e.registerEntityRenderer(KRegistry.QUARRELLER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.QUARRELLER));
+        e.registerEntityRenderer(KRegistry.THUNDERER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.THUNDERER));
+        e.registerEntityRenderer(KRegistry.LONGBEARD.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.LONGBEARD));
+        e.registerEntityRenderer(KRegistry.LONGBEARD_GREAT.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.LONGBEARD_GREAT));
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
         e.registerEntityRenderer(KRegistry.GRUNGNIS_HAMMER_STRIKE.get(), HammerRenderer::new);
     }
@@ -79,18 +79,6 @@ public final class KhazukClient {
     @SubscribeEvent
     static void reload(AddClientReloadListenersEvent e) {
         e.addListener(Identifier.fromNamespaceAndPath(Khazuk.MODID, "horde_caches"), (ResourceManagerReloadListener) rm -> HordeLod.clearCaches());
-    }
-
-    static final class WorkerModel extends HordeGeoModel<Miner> {
-        WorkerModel() {
-            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "miner"), true);
-        }
-    }
-
-    static final class GuardModel extends HordeGeoModel<Warrior> {
-        GuardModel() {
-            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "dwarf_warrior"), true);
-        }
     }
 
     static final class RunesmithModel extends HordeGeoModel<claude.khazuk.Runesmith> {
@@ -121,31 +109,59 @@ public final class KhazukClient {
         }
     }
 
-    /** D6's rank-and-file on their fast models: any Dawi drawn by the crowd renderer from its own model. */
+    /** A Dwarf's rolled look (claude.khazuk.Looks), packed, in his render state. */
+    static final com.geckolib.constant.dataticket.DataTicket<Integer> LOOK = com.geckolib.constant.dataticket.DataTicket.create("khazuk_look", Integer.class);
+
+    /**
+     * The rank-and-file on their fast models, each Dwarf in his own look (0.12, TWW3's unit variants): his palette's texture, and of each
+     * group of parts only the one he rolled shown (the Warboss's way: the others' bones skipped every frame). The look comes from his UUID
+     * (Looks#roll), so nothing is synced; a far Dwarf's kept model is his own, so it keeps his look.
+     */
     static final class UnitModel<T extends claude.khazuk.Dawi> extends HordeGeoModel<T> {
-        UnitModel(String kind) {
-            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, kind), true);
+        final claude.khazuk.Looks.Kind kind;
+        private final Identifier[] textures = new Identifier[claude.khazuk.Looks.PALETTES];
+        /** The bones each packed look hides, worked out once (the render thread only; a few dozen looks a kind). */
+        private final java.util.Map<Integer, java.util.List<String>> hidden = new java.util.HashMap<>();
+
+        UnitModel(claude.khazuk.Looks.Kind kind) {
+            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, kind.id()), true);
+            this.kind = kind;
+            for (int p = 0; p < textures.length; p++) {
+                textures[p] = claude.khazuk.Looks.texture(kind, p);
+            }
+        }
+
+        @Override
+        public void addAdditionalStateData(T d, @org.jspecify.annotations.Nullable Object related, com.geckolib.renderer.base.GeoRenderState state) {
+            super.addAdditionalStateData(d, related, state);
+            state.addGeckolibData(LOOK, claude.khazuk.Looks.pack(claude.khazuk.Looks.roll(kind, d.getUUID())));
+        }
+
+        @Override
+        public Identifier getTextureResource(com.geckolib.renderer.base.GeoRenderState state) {
+            return textures[claude.khazuk.Looks.palette(state.getOrDefaultGeckolibData(LOOK, 0))];
+        }
+
+        @Override
+        public <R extends LivingEntityRenderState & com.geckolib.renderer.base.GeoRenderState> void customAnimations(
+                com.geckolib.renderer.base.RenderPassInfo<R> info, com.geckolib.renderer.base.BoneSnapshots snapshots) {
+            super.customAnimations(info, snapshots);
+            for (String bone : hidden.computeIfAbsent(info.getOrDefaultGeckolibData(LOOK, 0), packed -> claude.khazuk.Looks.hidden(kind, packed))) {
+                snapshots.ifPresent(bone, b -> b.skipRender(true).skipChildrenRender(true));
+            }
         }
     }
 
     static final class UnitRenderer<T extends claude.khazuk.Dawi> extends HordeRenderer<T, LivingEntityRenderState> {
-        UnitRenderer(EntityRendererProvider.Context ctx, String kind) {
+        UnitRenderer(EntityRendererProvider.Context ctx, claude.khazuk.Looks.Kind kind) {
+            this(ctx, kind, 0.4f);
+        }
+
+        UnitRenderer(EntityRendererProvider.Context ctx, claude.khazuk.Looks.Kind kind, float shadow) {
             super(ctx, new UnitModel<>(kind));
-            this.shadowRadius = 0.4f;
+            this.shadowRadius = shadow;
         }
     }
 
-    static final class WorkerRenderer extends HordeRenderer<Miner, LivingEntityRenderState> {
-        WorkerRenderer(EntityRendererProvider.Context ctx) {
-            super(ctx, new WorkerModel());
-            this.shadowRadius = 0.35f;
-        }
-    }
 
-    static final class GuardRenderer extends HordeRenderer<Warrior, LivingEntityRenderState> {
-        GuardRenderer(EntityRendererProvider.Context ctx) {
-            super(ctx, new GuardModel());
-            this.shadowRadius = 0.45f;
-        }
-    }
 }

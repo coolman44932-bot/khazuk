@@ -134,4 +134,70 @@ public class KhazukAssetGameTests {
         }
         h.succeed();
     }
+
+    /**
+     * Unit variants (0.12): every rank-and-file kind's swappable parts are bones of its baked model, and every palette's texture is in the
+     * jar, so no look a Dwarf rolls (claude.khazuk.Looks) names a bone or a texture that isn't there.
+     */
+    @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
+    public static void everyVariantsPartsAndPalettesAreThere(GameTestHelper h) throws Exception {
+        for (claude.khazuk.Looks.Kind kind : claude.khazuk.Looks.ALL) {
+            Geometry geo;
+            try (InputStreamReader r = open(h, path(h, GeckoLibResources.MODELS_PATH, unit(kind.id()), ".geo.json"))) {
+                geo = Geometry.GSON.fromJson(r, Geometry.class);
+            }
+            BakedGeoModel baked = geo.bake(unit(kind.id()));
+            for (List<String> group : kind.groups()) {
+                for (String bone : group) {
+                    h.assertTrue(bone.isEmpty() || baked.getBone(bone).isPresent(), kind.id() + "'s model has no variant bone " + bone);
+                }
+            }
+            for (int p = 0; p < claude.khazuk.Looks.PALETTES; p++) {
+                Identifier tex = claude.khazuk.Looks.texture(kind, p);
+                open(h, "assets/" + tex.getNamespace() + "/" + tex.getPath()).close();
+            }
+        }
+        h.succeed();
+    }
+
+    /**
+     * A Dwarf's look is his own and always the same: rolled twice from one UUID it matches; over 600 UUIDs every palette and every part
+     * of every group turns up; and the bones a look hides are every part of each group but the one it shows.
+     */
+    @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
+    public static void aDwarfsLookIsHisOwnAndTheyVary(GameTestHelper h) {
+        java.util.Random r = new java.util.Random(12);
+        for (claude.khazuk.Looks.Kind kind : claude.khazuk.Looks.ALL) {
+            boolean[] palettes = new boolean[claude.khazuk.Looks.PALETTES];
+            boolean[][] parts = new boolean[kind.groups().size()][];
+            for (int g = 0; g < parts.length; g++) {
+                parts[g] = new boolean[kind.groups().get(g).size()];
+            }
+            for (int i = 0; i < 600; i++) {
+                java.util.UUID id = new java.util.UUID(r.nextLong(), r.nextLong());
+                claude.khazuk.Looks.Look a = claude.khazuk.Looks.roll(kind, id), b = claude.khazuk.Looks.roll(kind, id);
+                h.assertTrue(a.palette() == b.palette() && java.util.Arrays.equals(a.picks(), b.picks()), kind.id() + ": one UUID rolled two looks");
+                palettes[a.palette()] = true;
+                int packed = claude.khazuk.Looks.pack(a);
+                List<String> hidden = claude.khazuk.Looks.hidden(kind, packed);
+                for (int g = 0; g < parts.length; g++) {
+                    parts[g][a.picks()[g]] = true;
+                    List<String> group = kind.groups().get(g);
+                    for (int k = 0; k < group.size(); k++) {
+                        boolean hides = hidden.contains(group.get(k));
+                        h.assertTrue(group.get(k).isEmpty() || hides == (k != a.picks()[g]), kind.id() + ": the look " + packed + " hides " + hidden);
+                    }
+                }
+            }
+            for (int p = 0; p < palettes.length; p++) {
+                h.assertTrue(palettes[p], kind.id() + ": palette " + p + " never came up in 600 Dwarfs");
+            }
+            for (int g = 0; g < parts.length; g++) {
+                for (int k = 0; k < parts[g].length; k++) {
+                    h.assertTrue(parts[g][k], kind.id() + ": part " + k + " of group " + g + " never came up in 600 Dwarfs");
+                }
+            }
+        }
+        h.succeed();
+    }
 }
