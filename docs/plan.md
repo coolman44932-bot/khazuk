@@ -129,7 +129,10 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
 - **D6, the gate:** a gatehouse and walls raised on the surface; Quarrellers and Thunderers to man them. **DONE in 0.9.0** (2026-11-03;
   Marksman, Quarreller, Thunderer, hold/Ranks: the Barracks raises four of each; they shoot over a walled hold's walls. The Hold Gate and
   the Keep are the gatehouse and walls).
-- **D7, the Ancestor Gods' powers.**
+- **D7, the Ancestor Gods' powers: DONE in 0.10.0** (jar 2cfad8cb). The hold's devotion (prayers, ale, Runesmiths, settled grudges, cap
+  200); Grungni's Hammer (30), Valaya's Ward (40), Grimnir's Fury (40) as tokens handed over at the first devotion enough; rune-priests
+  bless them (x1.25, Runelord x1.5), the Throne takes a quarter off. The Hammer's detailed model is commissioned
+  (handoffs/grungnis_hammer_2026-11-03.md); it ships on a stand-in.
 - **Then** the roster in TWW1's order, a step at a time, as the Waaagh!'s branches go.
 
 ## 10. For the user to change (each is my pick until then)
