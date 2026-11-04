@@ -140,8 +140,19 @@ public final class Runes {
 
     // ------------------------------------------------------------------ the god's kit
 
-    static Identifier runeId(Kind k, int n) {
-        return Identifier.fromNamespaceAndPath(Khazuk.MODID, "rune_" + k.name().toLowerCase(java.util.Locale.ROOT) + "_" + n);
+    /**
+     * A kit rune's modifier id: its kind, the slot its piece is worn in, and its number. The slot is in it so two runed pieces never share
+     * an id: an equipped item's modifiers are added and taken off the wearer by id (the review of a3aecff: two Stone-runed pieces replaced
+     * each other, and taking one off stripped the other).
+     */
+    static Identifier runeId(Kind k, String slot, int n) {
+        return Identifier.fromNamespaceAndPath(Khazuk.MODID, "rune_" + k.name().toLowerCase(java.util.Locale.ROOT) + "_" + slot + "_" + n);
+    }
+
+    /** The slot a piece of kit is worn in, by name: its armour slot, else the main hand. */
+    static String slotOf(ItemStack stack) {
+        var eq = stack.get(DataComponents.EQUIPPABLE);
+        return eq != null && eq.slot().isArmor() ? eq.slot().getSerializedName() : "mainhand";
     }
 
     /** The rune a piece of kit takes: Might for a weapon, Stone for armour, or none. */
@@ -166,8 +177,9 @@ public final class Runes {
     public static int kitRunes(ItemStack stack, Kind k) {
         ItemAttributeModifiers mods = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
         int n = 0;
+        String slot = slotOf(stack);
         for (int i = 1; i <= MAX; i++) {
-            Identifier id = runeId(k, i);
+            Identifier id = runeId(k, slot, i);
             if (mods.modifiers().stream().anyMatch(e -> e.modifier().id().equals(id))) {
                 n = i;
             }
@@ -182,18 +194,28 @@ public final class Runes {
             return;
         }
         ItemAttributeModifiers mods = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        String where = slotOf(stack);
         if (k == Kind.MIGHT) {
-            mods = mods.withModifierAdded(Attributes.ATTACK_DAMAGE, new AttributeModifier(runeId(k, n), MIGHT_DAMAGE, AttributeModifier.Operation.ADD_VALUE),
+            mods = mods.withModifierAdded(Attributes.ATTACK_DAMAGE, new AttributeModifier(runeId(k, where, n), MIGHT_DAMAGE, AttributeModifier.Operation.ADD_VALUE),
                     EquipmentSlotGroup.MAINHAND);
         } else {
             var eq = stack.get(DataComponents.EQUIPPABLE);
             EquipmentSlotGroup slot = eq == null ? EquipmentSlotGroup.ARMOR : EquipmentSlotGroup.bySlot(eq.slot());
-            mods = mods.withModifierAdded(Attributes.ARMOR, new AttributeModifier(runeId(k, n), STONE_ARMOR, AttributeModifier.Operation.ADD_VALUE), slot);
-            mods = mods.withModifierAdded(Attributes.ARMOR_TOUGHNESS, new AttributeModifier(runeId(k, n).withSuffix("_tough"), STONE_ARMOR,
+            mods = mods.withModifierAdded(Attributes.ARMOR, new AttributeModifier(runeId(k, where, n), STONE_ARMOR, AttributeModifier.Operation.ADD_VALUE), slot);
+            mods = mods.withModifierAdded(Attributes.ARMOR_TOUGHNESS, new AttributeModifier(runeId(k, where, n).withSuffix("_tough"), STONE_ARMOR,
                     AttributeModifier.Operation.ADD_VALUE), slot);
         }
         stack.set(DataComponents.ATTRIBUTE_MODIFIERS, mods);
         List<Component> lore = new ArrayList<>();
+        ItemLore had = stack.get(DataComponents.LORE);
+        if (had != null) {                                       // the item's own lore kept (the review of a3aecff), its old rune lines dropped
+            for (Component line : had.lines()) {
+                String s = line.getString();
+                if (!s.startsWith(Kind.MIGHT.title) && !s.startsWith(Kind.STONE.title)) {
+                    lore.add(line);
+                }
+            }
+        }
         for (Kind each : List.of(Kind.MIGHT, Kind.STONE)) {
             int has = each == k ? n : kitRunes(stack, each);
             if (has > 0) {
@@ -232,7 +254,9 @@ public final class Runes {
             return Component.literal("A " + k.title + " " + "I".repeat(has + 1) + " costs " + price + " gold; the hold has " + hold.currency() + ".")
                     .withStyle(ChatFormatting.YELLOW);
         }
-        hold.addCurrency(-price, "A rune struck");
+        if (!hold.spendCurrency(price, "A rune struck")) {
+            return Component.literal("The hold's gold fell short of " + price + ".").withStyle(ChatFormatting.YELLOW);
+        }
         job = k;
         left = STRIKE_SECONDS;
         if (k.onKit()) {
@@ -336,6 +360,9 @@ public final class Runes {
             return;
         }
         if (k.onKit()) {
+            if (kit.isEmpty()) {
+                return;
+            }
             runeKit(kit, k);
             String name = kit.getHoverName().getString();
             Containers.dropItemStack(level, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, kit);
@@ -344,6 +371,16 @@ public final class Runes {
         } else {
             strike(k);
             hold.tellOwner(hold.settlementName() + ": the " + k.title + " " + "I".repeat(level(k)) + " is struck: " + k.what + ".", ChatFormatting.GOLD);
+        }
+    }
+
+    /** The Shrine is gone: the kit at the anvil is dropped where it stood, never lost (the review of a3aecff). */
+    public void dropKit(ServerLevel level, BlockPos at) {
+        if (!kit.isEmpty()) {
+            Containers.dropItemStack(level, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, kit);
+            kit = ItemStack.EMPTY;
+            job = null;
+            dirty = true;
         }
     }
 

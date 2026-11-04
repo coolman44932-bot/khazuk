@@ -38,6 +38,9 @@ public final class RuneEvents {
         }
         e.setCanceled(true);
         e.setCancellationResult(InteractionResult.SUCCESS);
+        if (e.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) {
+            return;                                              // one use a click: the offhand's event only keeps the anvil's own screen shut
+        }
         Runes runes = hold.runes();
         if (p.isSecondaryUseActive()) {
             Runes.Kind k = runes.cycle();

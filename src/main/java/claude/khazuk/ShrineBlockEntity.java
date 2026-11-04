@@ -98,6 +98,15 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return runes;
     }
 
+    /** Broken: the kit at the Runesmith's anvil drops where the Shrine stood, never lost (the review of a3aecff). */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        if (level instanceof ServerLevel sl) {
+            runes.dropKit(sl, pos);
+        }
+        super.preRemoveSideEffects(pos, state);
+    }
+
     /** The engine's second, then a second's rise of a gate's mountain. */
     @Override
     public void second(ServerLevel level) {

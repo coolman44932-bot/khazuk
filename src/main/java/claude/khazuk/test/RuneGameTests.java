@@ -132,6 +132,42 @@ public class RuneGameTests {
             Runes.runeKit(plate, Runes.Kind.STONE);
         }
         h.assertTrue(Runes.kitRunes(plate, Runes.Kind.STONE) == Runes.MAX, "the plate carries " + Runes.kitRunes(plate, Runes.Kind.STONE) + " runes of stone, past three");
+        // two runed pieces worn together both count: their runes' ids differ by slot (the review of a3aecff)
+        ItemStack legs = new ItemStack(Items.IRON_LEGGINGS);
+        legs.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(List.of(net.minecraft.network.chat.Component.literal("Thorin's"))));
+        Runes.runeKit(legs, Runes.Kind.STONE);
+        Zombie wearer = h.spawn(EntityType.ZOMBIE, new BlockPos(14, 1, 14));
+        wearer.setNoAi(true);
+        double bare = wearer.getAttributeValue(Attributes.ARMOR);
+        ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE);
+        Runes.runeKit(chest, Runes.Kind.STONE);
+        wearer.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, chest);
+        wearer.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, legs);
+        double plainArmour = new ItemStack(Items.IRON_CHESTPLATE).get(DataComponents.ATTRIBUTE_MODIFIERS).modifiers().stream()
+                .filter(e -> e.attribute().is(Attributes.ARMOR)).mapToDouble(e -> e.modifier().amount()).sum()
+                + new ItemStack(Items.IRON_LEGGINGS).get(DataComponents.ATTRIBUTE_MODIFIERS).modifiers().stream()
+                .filter(e -> e.attribute().is(Attributes.ARMOR)).mapToDouble(e -> e.modifier().amount()).sum();
+        h.runAfterDelay(2, () -> {
+            double worn = wearer.getAttributeValue(Attributes.ARMOR) - bare;
+            h.assertTrue(Math.abs(worn - plainArmour - 2 * Runes.STONE_ARMOR) < 1e-6, "a runed chestplate and leggings give " + worn
+                    + " armour, the plain pair " + plainArmour + ": both runes must count");
+            h.assertTrue(legs.get(DataComponents.LORE).lines().get(0).getString().equals("Thorin's"), "the leggings' own lore was lost: " + legs.get(DataComponents.LORE));
+            h.succeed();
+        });
+    }
+
+    /** The god's kit at the anvil when the Shrine is broken: dropped where the Shrine stood, never lost. */
+    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazuk")
+    public static void theKitAtTheAnvilIsNeverLost(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        forge(h, heart);
+        heart.addCurrency(100, "the test");
+        int gold = heart.currency();
+        heart.runes().begin(heart, new ItemStack(Items.DIAMOND_SWORD));
+        h.assertTrue(heart.runes().job() == Runes.Kind.MIGHT && heart.currency() == gold - Runes.cost(Runes.Kind.MIGHT, 0), "the sword's rune wasn't paid for");
+        h.setBlock(HEART, Blocks.AIR);
+        List<ItemEntity> dropped = h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(h.absolutePos(HEART)).inflate(2));
+        h.assertTrue(dropped.size() == 1 && dropped.get(0).getItem().is(Items.DIAMOND_SWORD), "the sword wasn't dropped where the Shrine stood: " + dropped);
         h.succeed();
     }
 
