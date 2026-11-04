@@ -122,7 +122,8 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   Brewery brews ale, ale makes the hold hit harder and walk and work faster; the Treasury pays 3 an ore and its hoard grows).
 - **D4, the Book of Grudges.** **DONE in 0.6.0** (2026-11-03; hold/Grudges, GrudgeEvents, the Dammaz Kron item; settled grudges make the
   Dawi grudgebearers: +25% against that kind).
-- **D5, runes:** the Runesmith (a showpiece) and the runic forge.
+- **D5, runes:** the Runesmith (a showpiece) and the runic forge. **DONE in 0.7.0** (2026-11-03; hold/Runes, RuneEvents, Runesmith on a fast
+  model: the hold's Iron, Cleaving and Warding runes and the god's Might and Stone, struck at the forge's anvil).
 - **D6, the gate:** a gatehouse and walls raised on the surface; Quarrellers and Thunderers to man them.
 - **D7, the Ancestor Gods' powers.**
 - **Then** the roster in TWW1's order, a step at a time, as the Waaagh!'s branches go.
