@@ -61,7 +61,7 @@ public final class Waking {
     public static final int DEEP_Y = 0;
     public static final int WAKE_TICKS = 60;
     public static final int FIRST_MINERS = 3, FIRST_WARRIORS = 1;
-    public static final int KIT_GOLD = 40, KIT_BREAD = 16;
+    public static final int KIT_GOLD = 90, KIT_BREAD = 16;   // 90: the Hold Gate, the Great Hall and the Mine at once (the user, 2026-11-04: "sure")
 
     /**
      * What a player is to the Dawi: whether they have woken them, the first hold's name, how many Shrines they have set down, and whether
