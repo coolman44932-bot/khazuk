@@ -33,6 +33,12 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     static final Keys KEYS = new Keys("hold_name", "gold", "people", "reserve_miners", "reserve_warriors");
     public static final int ROUND_SECONDS = 30;
     public static final int UP_AT_ONCE = 8;
+    /**
+     * 0.12.2 (the user, 2026-11-04: "raise the cap"): the hold's halls make room for more Dawi up at once: the Keep {@value #KEEP_ROOM}, the
+     * Great Hall {@value #GREAT_HALL_ROOM}, the Barracks {@value #BARRACKS_ROOM}, the Mine and the Brewery {@value #SMALL_ROOM} each; and a
+     * round of spawning brings up to {@value #RISE_PER_ROUND} more out of the deeps while there's room (two Miners to a Warrior).
+     */
+    public static final int KEEP_ROOM = 2, GREAT_HALL_ROOM = 6, BARRACKS_ROOM = 4, SMALL_ROOM = 2, RISE_PER_ROUND = 3;
     public static final int RESERVE_CAP = 24;
     /** A hold's land reaches 40 blocks round its Shrine: room for its gate (53 across) and its halls. */
     public static final int RADIUS = 40;
@@ -172,6 +178,12 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
             for (int i = 0; i < workers + guards; i++) {
                 brood.bringUp(i >= workers, getBlockPos().above());
             }
+            for (int i = 0; i < RISE_PER_ROUND && peopleCount() < peopleCap(); i++) {   // the deeps' waiting Dawi, while the halls have room
+                boolean soldier = i % 3 == 2;
+                if (brood.bringUp(soldier, getBlockPos().above()) == null && brood.bringUp(!soldier, getBlockPos().above()) == null) {
+                    break;
+                }
+            }
         };
     }
 
@@ -187,7 +199,9 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
 
     @Override
     public int peopleCap() {
-        return UP_AT_ONCE;
+        return UP_AT_ONCE + (has(claude.khazuk.hold.HoldRooms.KEEP) ? KEEP_ROOM : 0) + (has(claude.khazuk.hold.HoldRooms.GREAT_HALL) ? GREAT_HALL_ROOM : 0)
+                + (has(claude.khazuk.hold.HoldRooms.BARRACKS) ? BARRACKS_ROOM : 0) + (has(claude.settlementcore.room.Rooms.Function.OREMINE) ? SMALL_ROOM : 0)
+                + (has(claude.khazuk.hold.HoldRooms.BREWERY) ? SMALL_ROOM : 0);
     }
 
     @Override

@@ -148,7 +148,7 @@ public class ShrineBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart) {
-            player.sendSystemMessage(Component.literal(heart.settlementName() + ": " + heart.peopleCount() + " up, " + heart.reserveWorkers()
+            player.sendSystemMessage(Component.literal(heart.settlementName() + ": " + heart.peopleCount() + " up (room for " + heart.peopleCap() + "), " + heart.reserveWorkers()
                     + " Miners and " + heart.reserveSoldiers() + " Warriors in the deeps, food " + heart.food() + ", gold " + heart.currency()
                     + ", ale " + heart.brew().ale() + " (malt " + heart.brew().malt() + "), devotion " + heart.devotion().devotion()
                     + "/" + claude.khazuk.god.Devotion.MAX)

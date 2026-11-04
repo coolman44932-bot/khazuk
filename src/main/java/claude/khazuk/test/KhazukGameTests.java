@@ -64,6 +64,34 @@ public class KhazukGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * The halls make room (0.12.2, the user's "raise the cap"): with none, a hold keeps 8 up and the rest wait in the deeps; with a Great
+     * Hall and a Barracks, the rounds bring the waiting Dawi up until 18 are up.
+     */
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
+    public static void theHallsMakeRoomAndTheDeepsComeUp(GameTestHelper h) {
+        ShrineBlockEntity heart = heart(h);
+        heart.addFood(500, claude.settlementcore.food.Fare.COOKED, "the test");
+        heart.addToReserve(16, 6);
+        for (int i = 0; i < 6; i++) {
+            heart.roundForTests(h.getLevel());
+        }
+        h.assertTrue(heart.peopleCap() == ShrineBlockEntity.UP_AT_ONCE && heart.peopleCount() == ShrineBlockEntity.UP_AT_ONCE,
+                "with no halls: " + heart.peopleCount() + " up of room for " + heart.peopleCap() + ", not 8");
+        BlockPos a = h.absolutePos(new BlockPos(1, 1, 1)), b = h.absolutePos(new BlockPos(1, 1, 18));
+        heart.addBuilding(new claude.settlementcore.settlement.Building("dawi_great_hall",
+                new net.minecraft.world.level.levelgen.structure.BoundingBox(a.getX(), a.getY(), a.getZ(), a.getX() + 3, a.getY() + 3, a.getZ() + 3)), false);
+        heart.addBuilding(new claude.settlementcore.settlement.Building("dawi_barracks",
+                new net.minecraft.world.level.levelgen.structure.BoundingBox(b.getX(), b.getY(), b.getZ(), b.getX() + 3, b.getY() + 3, b.getZ() + 3)), false);
+        int room = ShrineBlockEntity.UP_AT_ONCE + ShrineBlockEntity.GREAT_HALL_ROOM + ShrineBlockEntity.BARRACKS_ROOM;
+        for (int i = 0; i < 6; i++) {
+            heart.roundForTests(h.getLevel());
+        }
+        h.assertTrue(heart.peopleCap() == room && heart.peopleCount() == room, "with a Great Hall and a Barracks: " + heart.peopleCount()
+                + " up of room for " + heart.peopleCap() + ", not " + room);
+        h.succeed();
+    }
+
     /** Sent home, a worker walks to the Shrine and sinks into the ground: off the roll and into the reserve, and gone from the world. */
     @GameTest(template = "arena", timeoutTicks = 400, batch = "khazuk")
     public static void aWorkerSentHomeSinksBackIntoTheReserve(GameTestHelper h) {
