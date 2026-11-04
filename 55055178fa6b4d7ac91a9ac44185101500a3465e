@@ -1,0 +1,1 @@
+REVIEW PASS 5505517: the four fixes are correct, covering ad8de1d (book synced before it opens, quiet repeats, blast by box, plurals); note: the quiet-window test passes without the fix (weak proof)
