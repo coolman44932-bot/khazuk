@@ -120,7 +120,8 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   one Miner three zombies).
 - **D3, gold and ale:** the mine and the treasury, the brewery, ale as morale. **DONE in 0.5.0** (hold/Brewhouse: wheat is malt, the
   Brewery brews ale, ale makes the hold hit harder and walk and work faster; the Treasury pays 3 an ore and its hoard grows).
-- **D4, the Book of Grudges.**
+- **D4, the Book of Grudges.** **DONE in 0.6.0** (2026-11-03; hold/Grudges, GrudgeEvents, the Dammaz Kron item; settled grudges make the
+  Dawi grudgebearers: +25% against that kind).
 - **D5, runes:** the Runesmith (a showpiece) and the runic forge.
 - **D6, the gate:** a gatehouse and walls raised on the surface; Quarrellers and Thunderers to man them.
 - **D7, the Ancestor Gods' powers.**
