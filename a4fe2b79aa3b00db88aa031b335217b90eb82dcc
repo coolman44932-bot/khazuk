@@ -1,0 +1,1 @@
+REVIEW PASS a4fe2b79aa3b00db88aa031b335217b90eb82dcc: promote now hands the Warrior back through absorb for all three cases (crew, roll, muster defender), the Longbeard keeps his mode and guard post, veterans are excluded from the Great Hall's cap, and the bite is tested through a real blow. Covers 688429d's FAIL. (fix-reviewer re-review, 2026-11-04)
