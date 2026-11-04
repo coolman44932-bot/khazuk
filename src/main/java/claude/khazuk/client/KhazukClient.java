@@ -66,6 +66,7 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.MINER.get(), WorkerRenderer::new);
         e.registerEntityRenderer(KRegistry.WARRIOR.get(), GuardRenderer::new);
         e.registerEntityRenderer(KRegistry.THRONE.get(), ThroneRenderer::new);
+        e.registerEntityRenderer(KRegistry.RUNESMITH.get(), RunesmithRenderer::new);
     }
 
     @SubscribeEvent
@@ -82,6 +83,19 @@ public final class KhazukClient {
     static final class GuardModel extends HordeGeoModel<Warrior> {
         GuardModel() {
             super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "dwarf_warrior"), true);
+        }
+    }
+
+    static final class RunesmithModel extends HordeGeoModel<claude.khazuk.Runesmith> {
+        RunesmithModel() {
+            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "runesmith"), true);
+        }
+    }
+
+    static final class RunesmithRenderer extends HordeRenderer<claude.khazuk.Runesmith, LivingEntityRenderState> {
+        RunesmithRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, new RunesmithModel());
+            this.shadowRadius = 0.45f;
         }
     }
 

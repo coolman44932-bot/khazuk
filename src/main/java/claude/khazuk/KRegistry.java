@@ -44,6 +44,11 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Warrior::new, MobCategory.CREATURE).sized(0.8f, 1.45f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("dwarf_warrior")));
 
+    /** D5: the Runesmith, the hold's hero at its Runic Forge. A Dwarf, a little taller in his crested helm. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Runesmith>> RUNESMITH = ENTITIES.register("runesmith",
+            () -> EntityType.Builder.of(Runesmith::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("runesmith")));
+
     /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_KEEP = ITEMS.registerItem("plan_keep",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_keep"));
@@ -62,6 +67,10 @@ public final class KRegistry {
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_brewery"));
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_TREASURY = ITEMS.registerItem("plan_treasury",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_treasury"));
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_RUNIC_FORGE = ITEMS.registerItem("plan_runic_forge",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_runic_forge"));
+    public static final DeferredItem<SpawnEggItem> RUNESMITH_EGG = ITEMS.registerItem("runesmith_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(RUNESMITH.get())));
 
     /** Thorgrim's Throne of Power, the god's mount: 2.4 across the bearers' shields, the seat 2 up (a rider sits above its box). */
     public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.throne.ThroneOfPower>> THRONE = ENTITIES.register("throne_of_power",
@@ -93,6 +102,8 @@ public final class KRegistry {
                 out.accept(DAMMAZ_KRON.get());
                 out.accept(PLAN_BREWERY.get());
                 out.accept(PLAN_TREASURY.get());
+                out.accept(PLAN_RUNIC_FORGE.get());
+                out.accept(RUNESMITH_EGG.get());
                 out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
                 out.accept(MINER_EGG.get());
@@ -119,6 +130,7 @@ public final class KRegistry {
     private static void attributes(EntityAttributeCreationEvent e) {
         e.put(MINER.get(), Miner.createAttributes().build());
         e.put(WARRIOR.get(), Warrior.createAttributes().build());
+        e.put(RUNESMITH.get(), Runesmith.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }
 }

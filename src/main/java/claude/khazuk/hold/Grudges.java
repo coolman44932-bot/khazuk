@@ -89,6 +89,8 @@ public final class Grudges {
     }
 
     private final List<Grudge> book = new ArrayList<>();
+    /** How many times its god has been told of a grudge written or grown, for the tests. */
+    public int toldForTests;
     private final Set<String> bears = new LinkedHashSet<>();
     private boolean dirty;
 
@@ -173,6 +175,7 @@ public final class Grudges {
                     return g;                                    // the same foe at it again: written, its god already told
                 }
                 g.told = now;
+                toldForTests++;
                 hold.tellOwner(hold.settlementName() + ": the grudge against " + g.name + " grows: " + why + ". "
                         + (one ? "Their death settles it." : (g.need - g.have) + " more of them must fall."), ChatFormatting.DARK_RED);
                 book(level, hold, "grudge_written");
@@ -181,6 +184,7 @@ public final class Grudges {
         }
         Grudge g = new Grudge(key, typeId(foe), nameOf(foe, one), why, one ? 1 : PER_WRONG, now);
         g.told = now;
+        toldForTests++;
         book.add(g);
         trim();
         dirty = true;

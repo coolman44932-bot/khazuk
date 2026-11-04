@@ -312,6 +312,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
             mend();
             if (tickCount % 40 == 13) {
                 drink();
+                wearRunes();
             }
         }
     }
@@ -369,6 +370,10 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
 
     /** What he takes of a blow of {@code amount}: all of it, or less when he's stubborn. A Warrior's shield comes before this. */
     protected float taken(DamageSource source, float amount) {
+        if (wardRunes > 0 && (source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION) || source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)
+                || source.is(net.minecraft.tags.DamageTypeTags.WITCH_RESISTANT_TO))) {
+            amount *= (float) (1 - claude.khazuk.hold.Runes.WARD_CUT * wardRunes);   // D5: the hold's Rune of Warding
+        }
         return isStubborn() && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY) ? amount * STUBBORN_TAKEN : amount;
     }
 
@@ -402,6 +407,41 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     /** Whether he has ale in him now (refreshed every 2 s from his Shrine's barrels). */
     public boolean aleUp() {
         return aleUp;
+    }
+
+    // ------------------------------------------------------------------ the hold's runes (D5)
+
+    static final net.minecraft.resources.Identifier RUNE_IRON = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "hold_rune_iron");
+    static final net.minecraft.resources.Identifier RUNE_CLEAVING = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "hold_rune_cleaving");
+    private int ironRunes, cleaveRunes, wardRunes;
+
+    /** The hold's runes on him: its Runes of Iron and Cleaving as armour and blows, its Rune of Warding kept for {@link #taken}. */
+    void wearRunes() {
+        ShrineBlockEntity h = settlement();
+        var r = h == null ? null : h.runes();
+        int iron = r == null ? 0 : r.level(claude.khazuk.hold.Runes.Kind.IRON), cleave = r == null ? 0 : r.level(claude.khazuk.hold.Runes.Kind.CLEAVING);
+        wardRunes = r == null ? 0 : r.level(claude.khazuk.hold.Runes.Kind.WARDING);
+        if (iron != ironRunes) {
+            ironRunes = iron;
+            rune(Attributes.ARMOR, RUNE_IRON, iron * claude.khazuk.hold.Runes.IRON_ARMOR);
+        }
+        if (cleave != cleaveRunes) {
+            cleaveRunes = cleave;
+            rune(Attributes.ATTACK_DAMAGE, RUNE_CLEAVING, cleave * claude.khazuk.hold.Runes.CLEAVE_DAMAGE);
+        }
+    }
+
+    private void rune(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attr, net.minecraft.resources.Identifier id, double amount) {
+        var a = getAttribute(attr);
+        if (a == null) {
+            return;
+        }
+        if (amount <= 0) {
+            a.removeModifier(id);
+        } else {
+            a.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(id, amount,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+        }
     }
 
     /** His Shrine's barrels: ale in him while they hold any, the bonuses on and off with it. */

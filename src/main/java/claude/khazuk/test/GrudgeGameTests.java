@@ -162,6 +162,13 @@ public class GrudgeGameTests {
         Grudges.Grudge g = heart.grudges().named("Gutrot");
         h.assertTrue(g != null && g.need() == 1 && heart.grudges().grudges().size() == 1, "five wrongs by Gutrot: " + heart.grudges().grudges().size()
                 + " grudges, the first owing " + (g == null ? "?" : g.need()));
+        h.assertTrue(heart.grudges().toldForTests == 1, "five wrongs by Gutrot in one tick told its god " + heart.grudges().toldForTests
+                + " times, not once (the review of 8decc4d: the quiet window had no proof)");
+        Zombie grunt = still(h, new BlockPos(6, 1, 4));
+        heart.grudges().wronged(h.getLevel(), heart, grunt, "slew a Miner");
+        heart.grudges().wronged(h.getLevel(), heart, grunt, "slew a Warrior");
+        h.assertTrue(heart.grudges().toldForTests == 3, "two wrongs by the Zombies told its god " + (heart.grudges().toldForTests - 1)
+                + " times: a kind's grudge is told every time");
         h.assertTrue(Grudges.plural("Witch").equals("Witches") && Grudges.plural("Wolf").equals("Wolves") && Grudges.plural("Silverfish").equals("Silverfish")
                 && Grudges.plural("Zombie").equals("Zombies") && Grudges.plural("Breeze").equals("Breezes"), "plurals: " + Grudges.plural("Witch")
                 + ", " + Grudges.plural("Wolf") + ", " + Grudges.plural("Silverfish"));

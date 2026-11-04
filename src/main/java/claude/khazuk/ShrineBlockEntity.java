@@ -48,6 +48,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     private final claude.khazuk.hold.Brewhouse brew = new claude.khazuk.hold.Brewhouse();
     /** D4: the Dammaz Kron, the hold's Book of Grudges. */
     private final claude.khazuk.hold.Grudges grudges = new claude.khazuk.hold.Grudges();
+    /** D5: the hold's runes, and the Runesmith's work at its anvil. */
+    private final claude.khazuk.hold.Runes runes = new claude.khazuk.hold.Runes();
 
     public ShrineBlockEntity(BlockPos pos, BlockState state) {
         super(KRegistry.SHRINE_ENTITY.get(), pos, state, KEYS);
@@ -92,13 +94,18 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return grudges;
     }
 
+    public claude.khazuk.hold.Runes runes() {
+        return runes;
+    }
+
     /** The engine's second, then a second's rise of a gate's mountain. */
     @Override
     public void second(ServerLevel level) {
         super.second(level);
         crags.second(level, this, HoldCrag.PER_SECOND);
         brew.second(level, this);
-        if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty()) {
+        runes.second(level, this);
+        if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
     }
@@ -110,7 +117,9 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         crags.save(tag);
         brew.save(tag);
         grudges.save(tag);
+        runes.save(tag);
         out.store("khazuk", CompoundTag.CODEC, tag);
+        out.storeNullable("rune_kit", net.minecraft.world.item.ItemStack.CODEC, runes.kit().isEmpty() ? null : runes.kit());
     }
 
     @Override
@@ -120,6 +129,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         crags.load(tag);
         brew.load(tag);
         grudges.load(tag);
+        runes.load(tag);
+        runes.kit(in.read("rune_kit", net.minecraft.world.item.ItemStack.CODEC).orElse(net.minecraft.world.item.ItemStack.EMPTY));
     }
 
     @Override

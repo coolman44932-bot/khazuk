@@ -319,7 +319,51 @@ def treasury():
     return h
 
 
-HALLS = {"dawi_great_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury}
+def runic_forge():
+    """The Runic Forge (D5), 15 long, 9 high, 13 wide: the Runesmith's hall. The rune anvil (its "anvil" station, where runes are struck)
+    on a polished dais in the middle, a ring of soul fire round it; the forge at the far end, lava behind iron bars under a copper hood,
+    blast furnaces either side; a quench trough of water; runes cut into the walls, lit blue (soul lanterns in chiselled stone); racks of
+    hammers and ingots. Its station: the anvil at (9, 1, 6), struck from the door's side."""
+    h = Hall(15, 9, 13, 6, 3, 4, 23)
+    h.shell()
+    for z in range(3, 10):                                               # the forge at the far end: lava in a stone hearth behind bars
+        h.put(13, 1, z, "minecraft:blast_furnace[facing=west,lit=true]" if z in (3, 9) else "minecraft:lava_cauldron")
+        h.put(13, 2, z, "minecraft:iron_bars" if 4 <= z <= 8 else CHIS)
+        h.put(13, 3, z, "minecraft:waxed_cut_copper")
+        h.put(12, 4, z, "minecraft:waxed_cut_copper_slab[type=top]")
+    for y in range(4, 8):                                                # its chimney up the vault
+        h.put(13, y, 6, "minecraft:waxed_copper_block" if y < 7 else "minecraft:waxed_exposed_copper")
+    for x in range(8, 11):                                               # the anvil's dais, polished, gold at its corners
+        for z in range(5, 8):
+            h.put(x, 0, z, POL)
+    for (x, z) in ((8, 5), (8, 7), (10, 5), (10, 7)):
+        h.put(x, 0, z, GOLD)
+    h.put(9, 1, 6, "minecraft:anvil[facing=north]")                     # the rune anvil: its station
+    h.stations.append(("anvil", 9, 1, 6, "west"))
+    for (x, z) in ((7, 4), (7, 8), (11, 4), (11, 8)):                    # soul fire round it, blue: the runes' own light
+        h.put(x, 0, z, "minecraft:soul_campfire[lit=true]")
+        h.put(x, 1, z, "minecraft:iron_bars")
+    for x in range(3, 7):                                                # the quench trough along one wall, racks of ingots along the other
+        h.put(x, 1, 1, "minecraft:water_cauldron[level=3]")
+        h.put(x, 1, 11, "minecraft:iron_block" if x % 2 else "minecraft:gold_block")
+        h.put(x, 2, 11, "minecraft:iron_bars")
+    for x in range(3, 12, 2):                                            # runes cut into both long walls, lit blue
+        for z in (0, 12):
+            h.put(x, 3, z, "minecraft:chiseled_deepslate")
+            h.put(x, 4, z, "minecraft:chiseled_deepslate")
+    for x in range(3, 12, 4):                                            # soul lanterns hung from the vault along both walls
+        for z in (2, 10):
+            h.put(x, 7, z, CHAIN)
+            h.put(x, 6, z, CHAIN)
+            h.put(x, 5, z, "minecraft:soul_lantern[hanging=true]")
+    h.put(2, 1, 3, "minecraft:smithing_table")
+    h.put(2, 1, 9, "minecraft:grindstone[face=floor,facing=east]")
+    h.lamp(5, 6, 2)
+    return h
+
+
+HALLS = {"dawi_great_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury,
+         "dawi_runic_forge": runic_forge}
 DATA_VERSION = 4790                                                      # 26.1.2's, as the bridge's structure_save writes it
 
 

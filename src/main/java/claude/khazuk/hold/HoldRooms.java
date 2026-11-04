@@ -31,6 +31,8 @@ public final class HoldRooms {
     public static final Rooms.Function BREWERY = Rooms.Function.of("DAWI_BREWERY");
     /** D3: the hold's hoard: more gold from every ore, and the hoard grows (hold/Brewhouse). */
     public static final Rooms.Function TREASURY = Rooms.Function.of("DAWI_TREASURY");
+    /** D5: the Runesmith's hall, where the hold's runes are struck (hold/Runes). */
+    public static final Rooms.Function RUNIC_FORGE = Rooms.Function.of("DAWI_RUNIC_FORGE");
 
     public static final List<Rooms.Room> RAISED = List.of(
             new Rooms.Room("dawi_hold_gate", "Hold Gate", 40, GATE,
@@ -59,7 +61,10 @@ public final class HoldRooms {
                     15, 8, 13, 0, 1, 6, List.of(), List.of(), List.of()),
             new Rooms.Room("dawi_treasury", "Treasury", 25, TREASURY,
                     "The hoard behind a strong door: heaps of gold under an ancestor's eye. Every ore pays more, and gold draws gold.",
-                    13, 8, 11, 0, 1, 5, List.of(), List.of(), List.of()));
+                    13, 8, 11, 0, 1, 5, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_runic_forge", "Runic Forge", 30, RUNIC_FORGE,
+                    "The Runesmith's hall: the rune anvil in a ring of soul fire, the forge's lava behind bars, runes cut into the walls.",
+                    15, 9, 13, 0, 1, 6, List.of(), List.of(), List.of(new Rooms.Station("anvil", 9, 1, 6, Direction.WEST))));
 
     public static final List<Rooms.Room> ALL = all();
 

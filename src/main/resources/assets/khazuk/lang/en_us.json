@@ -14,5 +14,8 @@
   "item.khazuk.plan_keep": "Ancestors' Plan: Keep",
   "item.khazuk.plan_brewery": "Ancestors' Plan: Brewery",
   "item.khazuk.plan_treasury": "Ancestors' Plan: Treasury",
-  "item.khazuk.dammaz_kron": "Dammaz Kron, the Book of Grudges"
+  "item.khazuk.dammaz_kron": "Dammaz Kron, the Book of Grudges",
+  "item.khazuk.plan_runic_forge": "Ancestors' Plan: Runic Forge",
+  "entity.khazuk.runesmith": "Runesmith",
+  "item.khazuk.runesmith_spawn_egg": "Runesmith Spawn Egg"
 }

@@ -36,6 +36,7 @@ def main():
     plan_item()
     throne_item()
     book_item()
+    runesmith_egg()
     print("ok")
 
 
@@ -65,6 +66,8 @@ PLANS = {
                   ["minecraft:stone_bricks", "minecraft:rail"]),
     "plan_brewery": ("Brewery", ["..gggggg..", ".g......g.", ".gggggggg.", ".g......g.", ".gggggggg.", ".g......g.", "..gggggg.."],
                      ["minecraft:stone_bricks", "minecraft:barrel"]),
+    "plan_runic_forge": ("Runic Forge", ["...gg.....", "..g..g....", ".gggggggg.", "...gggg...", "...gggg...", "..gg..gg..", ".gggggggg."],
+                         ["minecraft:stone_bricks", "minecraft:anvil"]),
     "plan_treasury": ("Treasury", ["....gg....", "...gggg...", "..gggggg..", "....gg....", ".gg.gg.gg.", "gggggggggg", "gggggggggg"],
                       ["minecraft:stone_bricks", "minecraft:gold_ingot", "minecraft:iron_ingot"]),
 }
@@ -136,6 +139,30 @@ def book_item():
     with open(lang, encoding="utf-8") as f:
         d = json.load(f)
     d["item.khazuk.dammaz_kron"] = "Dammaz Kron, the Book of Grudges"
+    out("assets/khazuk/lang/en_us.json", d)
+
+
+def runesmith_egg():
+    """The Runesmith's spawn egg: the Miner's egg recoloured, steel and soul-fire blue. Its item files and name, and his entity's."""
+    import json
+    src = Image.open(os.path.join(RES, "assets", "khazuk", "textures", "item", "miner_spawn_egg.png")).convert("RGBA")
+    im = Image.new("RGBA", src.size)
+    for y in range(src.size[1]):
+        for x in range(src.size[0]):
+            r, g, b, a = src.getpixel((x, y))
+            if a == 0:
+                im.putpixel((x, y), (0, 0, 0, 0))
+                continue
+            lum = (r + g + b) / 3
+            im.putpixel((x, y), (int(lum * 0.55), int(lum * 0.8), min(255, int(lum * 1.25 + 30)), a))   # steel, gone soul-blue
+    im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "runesmith_spawn_egg.png"))
+    out("assets/khazuk/items/runesmith_spawn_egg.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/runesmith_spawn_egg"}})
+    out("assets/khazuk/models/item/runesmith_spawn_egg.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/runesmith_spawn_egg"}})
+    lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
+    with open(lang, encoding="utf-8") as f:
+        d = json.load(f)
+    d["entity.khazuk.runesmith"] = "Runesmith"
+    d["item.khazuk.runesmith_spawn_egg"] = "Runesmith Spawn Egg"
     out("assets/khazuk/lang/en_us.json", d)
 
 
