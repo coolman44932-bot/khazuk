@@ -53,9 +53,9 @@ public final class KRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<Runelord>> RUNELORD = ENTITIES.register("runelord",
             () -> EntityType.Builder.of(Runelord::new, MobCategory.CREATURE).sized(0.8f, 1.55f).eyeHeight(1.25f).clientTrackingRange(10)
                     .build(key("runelord")));
-    /** D5b: the Anvil of Doom, the god's to stand on and strike: a platform 2 blocks across, the anvil and its two Guard on it. */
+    /** D5b: the Anvil of Doom, the god's to stand on and strike: the detail session's deck 2.75 x 2.44 blocks, the anvil's face 1.56 up. */
     public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.hold.AnvilOfDoom>> ANVIL_OF_DOOM = ENTITIES.register("anvil_of_doom",
-            () -> EntityType.Builder.of(claude.khazuk.hold.AnvilOfDoom::new, MobCategory.MISC).sized(2.0f, 1.3f).eyeHeight(1.0f).fireImmune()
+            () -> EntityType.Builder.of(claude.khazuk.hold.AnvilOfDoom::new, MobCategory.MISC).sized(2.6f, 1.6f).eyeHeight(1.2f).fireImmune()
                     .clientTrackingRange(10).build(key("anvil_of_doom")));
 
     /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */

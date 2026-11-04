@@ -68,8 +68,7 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.THRONE.get(), ThroneRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNESMITH.get(), RunesmithRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNELORD.get(), RunelordRenderer::new);
-        e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), ctx -> new com.geckolib.renderer.GeoEntityRenderer<claude.khazuk.hold.AnvilOfDoom,
-                LivingEntityRenderState>(ctx, KRegistry.ANVIL_OF_DOOM.get()));
+        e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
     }
 
     @SubscribeEvent

@@ -81,6 +81,10 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
 
     static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.anvil_of_doom.idle");
     static final RawAnimation STRIKE = RawAnimation.begin().thenPlay("animation.anvil_of_doom.strike");
+    /** The detail session's showpiece (handoffs/anvil_of_doom_2026-11-03_done.md): a strike of its own for each rune of power. */
+    static final RawAnimation STRIKE_WRATH = RawAnimation.begin().thenPlay("animation.anvil_of_doom.strike_wrath");
+    static final RawAnimation STRIKE_HEARTH = RawAnimation.begin().thenPlay("animation.anvil_of_doom.strike_hearth");
+    static final RawAnimation STRIKE_OATH = RawAnimation.begin().thenPlay("animation.anvil_of_doom.strike_oath");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable private UUID owner;
@@ -245,7 +249,7 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
             return 0;
         }
         cooling[p.ordinal()] = COOLDOWN_SECONDS * 20 / (lordNear() ? 2 : 1);
-        triggerAnim("strike", "strike");
+        triggerAnim("strike", "strike_" + p.name().toLowerCase(java.util.Locale.ROOT));   // the struck rune's own clip
         level.playSound(null, blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 1.2f, 0.6f);
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 1.4, getZ(), 40, 0.6, 0.4, 0.6, 0.2);
         if (god != null) {
@@ -297,9 +301,19 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
         return false;
     }
 
+    /**
+     * The god's place: on the ring behind the anvil, measured with a rider in the bridge game by the detail session (handoffs/
+     * anvil_of_doom_2026-11-03_done.md: -Z is behind, as the Throne's; 1.22 puts his feet on the ring).
+     */
     @Override
     protected Vec3 getPassengerAttachmentPoint(net.minecraft.world.entity.Entity passenger, net.minecraft.world.entity.EntityDimensions dims, float scale) {
-        return new Vec3(0, 1.0, 0.7).yRot(-getYRot() * net.minecraft.util.Mth.DEG_TO_RAD);   // on the platform, behind the anvil
+        return new Vec3(0, 1.22, -0.5).yRot(-getYRot() * net.minecraft.util.Mth.DEG_TO_RAD);
+    }
+
+    /** He stands at the anvil: sitting, his legs would stick out over it. */
+    @Override
+    public boolean shouldRiderSit() {
+        return false;
     }
 
     // ------------------------------------------------------------------ saves
@@ -334,7 +348,8 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<AnvilOfDoom>("main", 4, test -> test.setAndContinue(IDLE)));
         controllers.add(new AnimationController<AnvilOfDoom>("strike", 2, test -> com.geckolib.animation.object.PlayState.STOP)
-                .triggerableAnim("strike", STRIKE));
+                .triggerableAnim("strike", STRIKE).triggerableAnim("strike_wrath", STRIKE_WRATH)
+                .triggerableAnim("strike_hearth", STRIKE_HEARTH).triggerableAnim("strike_oath", STRIKE_OATH));
     }
 
     @Override

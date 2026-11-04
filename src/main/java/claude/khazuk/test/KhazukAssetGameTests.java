@@ -88,4 +88,25 @@ public class KhazukAssetGameTests {
         }
         h.succeed();
     }
+
+    /** The Anvil of Doom's showpiece (the detail session's): its geo bakes, its five clips bake, and its glowmask is in the jar. */
+    @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
+    public static void theAnvilOfDoomsModelAndClipsBake(GameTestHelper h) throws Exception {
+        Identifier id = unit("anvil_of_doom");
+        Geometry geo;
+        try (InputStreamReader r = open(h, path(h, GeckoLibResources.MODELS_PATH, id, ".geo.json"))) {
+            geo = Geometry.GSON.fromJson(r, Geometry.class);
+        }
+        h.assertTrue(ModelFormatVersion.match(geo.formatVersion()) != null, "the Anvil's geo format " + geo.formatVersion() + " is none GeckoLib knows");
+        geo.bake(id);
+        BakedAnimations baked;
+        try (InputStreamReader r = open(h, path(h, GeckoLibResources.ANIMATIONS_PATH, id, ".animation.json"))) {
+            baked = ActorAnimations.GSON.fromJson(r, ActorAnimations.class).bake(id, MathParser.create());
+        }
+        for (String clip : List.of("idle", "strike", "strike_wrath", "strike_hearth", "strike_oath")) {
+            h.assertTrue(baked.getAnimation("animation.anvil_of_doom." + clip) != null, "the Anvil has no " + clip + ": " + baked.animations().keySet());
+        }
+        open(h, "assets/khazuk/textures/entity/anvil_of_doom_glowmask.png").close();
+        h.succeed();
+    }
 }
