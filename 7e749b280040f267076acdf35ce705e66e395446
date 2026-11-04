@@ -1,0 +1,1 @@
+REVIEW PASS 7e749b280040f267076acdf35ce705e66e395446: while a dig or site is open, the round's new Dawi come up only below 8 up, which matches the pre-4120042 behaviour exactly; skipped ones stay in the reserve with nothing lost; the no-dig tests take the unchanged d663709 path. (fix-reviewer, 2026-11-04)
