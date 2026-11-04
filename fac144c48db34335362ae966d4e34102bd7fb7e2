@@ -1,0 +1,1 @@
+REVIEW PASS fac144c: the five 3eaaab9 findings fixed (slot ids, spendCurrency, kit dropped on a break, main hand only, lore kept) and traced against LevelChunk; new tests exercise them (covers 3eaaab9)
