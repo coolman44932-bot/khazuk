@@ -1,0 +1,1 @@
+REVIEW PASS 7e75d5c: no blocking bug; notes (the single Anvil item could despawn or be lost for good; leashable; a strike reaching no one still cooled; the save test vacuous) fixed in the next commit
