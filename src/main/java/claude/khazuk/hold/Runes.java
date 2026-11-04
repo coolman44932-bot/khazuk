@@ -390,7 +390,10 @@ public final class Runes {
         String gift = "";
         if (!anvilGiven) {
             anvilGiven = true;
-            Containers.dropItemStack(level, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, new ItemStack(KRegistry.ANVIL_OF_DOOM_ITEM.get()));
+            net.minecraft.world.entity.item.ItemEntity relic = new net.minecraft.world.entity.item.ItemEntity(level, anvil.getX() + 0.5,
+                    anvil.getY() + 1.1, anvil.getZ() + 0.5, new ItemStack(KRegistry.ANVIL_OF_DOOM_ITEM.get()));
+            relic.setUnlimitedLifetime();                        // it waits for its god however long he's away (the review of 2f93cc2)
+            level.addFreshEntity(relic);
             gift = " He brings up the hold's oldest relic with him: the Anvil of Doom lies by the rune anvil. Set it down, stand on it, and strike it.";
         }
         hold.tellOwner(hold.settlementName() + ": " + struck + " runes struck, and the Runesmith is a Runelord now." + gift, ChatFormatting.GOLD);

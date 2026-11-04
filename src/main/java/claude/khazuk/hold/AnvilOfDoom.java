@@ -124,6 +124,12 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
         return false;
     }
 
+    /** No lead drags it off (the review of 2f93cc2: a Mob is leashable, and a lead is handled before its god's own use). */
+    @Override
+    public boolean canBeLeashed() {
+        return false;
+    }
+
     @Override
     protected void doPush(net.minecraft.world.entity.Entity e) {
     }
@@ -193,19 +199,20 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
                 r -> r.isAlive() && r.settlement() != null && owner != null && owner.equals(r.settlement().owner())).isEmpty();
     }
 
-    /** {@code god} strikes the rune of power {@code p}. */
-    public void strike(ServerLevel level, @Nullable ServerPlayer god, Power p) {
-        cooling[p.ordinal()] = COOLDOWN_SECONDS * 20 / (lordNear() ? 2 : 1);
-        triggerAnim("strike", "strike");
-        level.playSound(null, blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 1.2f, 0.6f);
-        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 1.4, getZ(), 40, 0.6, 0.4, 0.6, 0.2);
+    /**
+     * {@code god} strikes the rune of power {@code p}: how many it reached. One that reaches no one (no foe in range, no Dwarf of his near)
+     * doesn't cool: the strike isn't spent (the review of 2f93cc2).
+     */
+    public int strike(ServerLevel level, @Nullable ServerPlayer god, Power p) {
         AABB reach = getBoundingBox().inflate(RADIUS);
+        int reached = 0;
         switch (p) {
             case WRATH -> {
                 List<Mob> foes = level.getEntitiesOfClass(Mob.class, reach, m -> m.isAlive() && Muster.foe(m));
                 foes.sort(Comparator.comparingDouble(this::distanceToSqr));
                 DamageSource src = level.damageSources().indirectMagic(this, god);
                 for (Mob m : foes.subList(0, Math.min(WRATH_TARGETS, foes.size()))) {
+                    reached++;
                     LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.TRIGGERED);
                     if (bolt != null) {
                         bolt.snapTo(m.getX(), m.getY(), m.getZ());
@@ -218,6 +225,7 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
             }
             case HEARTH, OATH -> {
                 for (LivingEntity e : blessed(level, reach, god)) {
+                    reached++;
                     if (p == Power.HEARTH) {
                         e.heal(HEARTH_HEAL);
                         e.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, BLESS_SECONDS * 20, 0));
@@ -230,9 +238,20 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
                 }
             }
         }
+        if (reached == 0) {
+            if (god != null) {
+                god.sendSystemMessage(Component.literal("The " + p.title + " finds no one to reach: it isn't spent.").withStyle(ChatFormatting.GRAY));
+            }
+            return 0;
+        }
+        cooling[p.ordinal()] = COOLDOWN_SECONDS * 20 / (lordNear() ? 2 : 1);
+        triggerAnim("strike", "strike");
+        level.playSound(null, blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 1.2f, 0.6f);
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 1.4, getZ(), 40, 0.6, 0.4, 0.6, 0.2);
         if (god != null) {
             god.sendSystemMessage(Component.literal("The " + p.title + " rings out from the Anvil of Doom.").withStyle(ChatFormatting.GOLD));
         }
+        return reached;
     }
 
     /** Who a blessing reaches: the god, and every Dwarf of his within reach. */

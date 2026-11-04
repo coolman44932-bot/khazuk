@@ -122,6 +122,12 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
         return owner;
     }
 
+    /** No lead drags it off from under its god (a Mob is leashable, and a lead is handled before mobInteract: the review of 2f93cc2). */
+    @Override
+    public boolean canBeLeashed() {
+        return false;
+    }
+
     @Nullable
     public UUID grudge() {
         return grudge;

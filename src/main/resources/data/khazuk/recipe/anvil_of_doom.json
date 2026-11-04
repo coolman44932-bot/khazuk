@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:anvil",
+    "minecraft:gold_block",
+    "minecraft:gold_block",
+    "minecraft:diamond_block"
+  ],
+  "result": {
+    "id": "khazuk:anvil_of_doom",
+    "count": 1
+  }
+}

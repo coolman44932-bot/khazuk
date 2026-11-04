@@ -143,12 +143,19 @@ public class AnvilGameTests {
         float hp = a.getHealth();
         a.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(z), 50f);
         h.assertTrue(a.getHealth() == hp && a.isAlive(), "the Anvil took harm: " + a.getHealth());
-        Runes r = new Runes();
         CompoundTag tag = new CompoundTag();
-        r.save(tag);
+        tag.putInt("rune_struck", 7);
+        tag.putBoolean("rune_lord", true);
+        tag.putBoolean("rune_anvil_given", true);
         Runes back = new Runes();
         back.load(tag);
-        h.assertTrue(!back.lord() && back.struck() == 0, "a fresh hold's runes came back changed");
+        CompoundTag again = new CompoundTag();
+        back.save(again);
+        h.assertTrue(back.lord() && back.struck() == 7 && again.getIntOr("rune_struck", 0) == 7 && again.getBooleanOr("rune_lord", false)
+                && again.getBooleanOr("rune_anvil_given", false), "the Runelord's runes didn't come back from a save: " + again);
+        // with no Dwarf of its god near, Hearth and Home reaches no one: it isn't spent
+        h.assertTrue(a.strike(h.getLevel(), null, AnvilOfDoom.Power.HEARTH) == 0 && a.cooling(AnvilOfDoom.Power.HEARTH) == 0,
+                "Hearth and Home reached no one and still cooled: " + a.cooling(AnvilOfDoom.Power.HEARTH));
         h.succeed();
     }
 
