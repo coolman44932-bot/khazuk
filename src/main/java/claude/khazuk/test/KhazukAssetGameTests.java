@@ -107,6 +107,8 @@ public class KhazukAssetGameTests {
             h.assertTrue(baked.getAnimation("animation.anvil_of_doom." + clip) != null, "the Anvil has no " + clip + ": " + baked.animations().keySet());
         }
         open(h, "assets/khazuk/textures/entity/anvil_of_doom_glowmask.png").close();
+        open(h, "assets/khazuk/textures/entity/runesmith_glowmask.png").close();   // the heroes' showpieces glow too
+        open(h, "assets/khazuk/textures/entity/runelord_glowmask.png").close();
         h.succeed();
     }
 }

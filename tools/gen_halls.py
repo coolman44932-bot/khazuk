@@ -340,6 +340,9 @@ def runic_forge():
         h.put(x, 0, z, GOLD)
     h.put(9, 1, 6, "minecraft:anvil[facing=north]")                     # the rune anvil: its station
     h.stations.append(("anvil", 9, 1, 6, "west"))
+    # the Runesmith's work spot, a step up before the anvil: on it a Dwarf's hammer comes down square on the anvil's face (the detail
+    # session's handoff, handoffs/runesmith_runelord_2026-11-03_done.md: the anvil's top, 1 block up, is over his shoulder)
+    h.put(8, 1, 6, "minecraft:polished_deepslate_slab[type=bottom]")
     for (x, z) in ((7, 4), (7, 8), (11, 4), (11, 8)):                    # soul fire round it, blue: the runes' own light
         h.put(x, 0, z, "minecraft:soul_campfire[lit=true]")
         h.put(x, 1, z, "minecraft:iron_bars")

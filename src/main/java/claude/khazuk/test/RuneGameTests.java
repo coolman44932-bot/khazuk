@@ -68,6 +68,8 @@ public class RuneGameTests {
         h.assertTrue(cells.size() == r.sizeX() * r.sizeY() * r.sizeZ(), "the forge's template has " + cells.size() + " cells");
         h.assertTrue(cells.stream().anyMatch(e -> e.local().equals(new BlockPos(9, 1, 6)) && e.state().is(Blocks.ANVIL)), "no anvil at the forge's station");
         h.assertTrue(r.stations().stream().anyMatch(s -> s.x() == 9 && s.y() == 1 && s.z() == 6 && s.role().equals("anvil")), "the forge has no anvil station: " + r.stations());
+        h.assertTrue(cells.stream().anyMatch(e -> e.local().equals(new BlockPos(8, 1, 6)) && e.state().getBlock() instanceof net.minecraft.world.level.block.SlabBlock),
+                "no slab at the Runesmith's work spot before the anvil");
         h.succeed();
     }
 

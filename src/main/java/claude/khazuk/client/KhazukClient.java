@@ -97,6 +97,7 @@ public final class KhazukClient {
     static final class RunesmithRenderer extends HordeRenderer<claude.khazuk.Runesmith, LivingEntityRenderState> {
         RunesmithRenderer(EntityRendererProvider.Context ctx) {
             super(ctx, new RunesmithModel());
+            withRenderLayer(com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer::new);   // his runes, the detail session's glowmask
             this.shadowRadius = 0.45f;
         }
     }
@@ -110,6 +111,7 @@ public final class KhazukClient {
     static final class RunelordRenderer extends HordeRenderer<claude.khazuk.Runelord, LivingEntityRenderState> {
         RunelordRenderer(EntityRendererProvider.Context ctx) {
             super(ctx, new RunelordModel());
+            withRenderLayer(com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer::new);
             this.shadowRadius = 0.5f;
         }
     }

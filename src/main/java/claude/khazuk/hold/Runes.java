@@ -299,6 +299,24 @@ public final class Runes {
         return null;
     }
 
+    /** The forge's local cell the Runesmith works from: a slab a step before the anvil (gen_halls.py), his blow square on its face. */
+    static final BlockPos WORK_SPOT = new BlockPos(8, 1, 6);
+
+    /** Where he stands to work: on the slab's top, in the middle of its cell; null without a forge whose placement is known. */
+    public static @Nullable Vec3 workSpot(ShrineBlockEntity hold) {
+        for (Building b : hold.buildings()) {
+            if (!"dawi_runic_forge".equals(b.room())) {
+                continue;
+            }
+            PlanPlacement pl = BuildingBook.placementOf(b);
+            if (pl != null) {
+                BlockPos c = pl.world(WORK_SPOT);
+                return new Vec3(c.getX() + 0.5, c.getY() + 0.5, c.getZ() + 0.5);
+            }
+        }
+        return null;
+    }
+
     /** The hold's Runesmith near its anvil, if he's up. */
     public static @Nullable Runesmith runesmith(ServerLevel level, ShrineBlockEntity hold, BlockPos anvil) {
         for (Runesmith r : level.getEntitiesOfClass(Runesmith.class, new AABB(anvil).inflate(48))) {
@@ -335,7 +353,8 @@ public final class Runes {
                 Runesmith r = (lord ? KRegistry.RUNELORD : KRegistry.RUNESMITH).get().create(level, EntitySpawnReason.MOB_SUMMONED);
                 if (r != null) {
                     r.bindTo(hold);
-                    r.emergeAt(anvil.getX() + 0.5, anvil.getY(), anvil.getZ() - 1.5);
+                    Vec3 at = workSpot(hold);
+                    r.emergeAt(at != null ? at.x : anvil.getX() + 0.5, at != null ? at.y : anvil.getY(), at != null ? at.z : anvil.getZ() - 1.5);
                     r.standAt(anvil);
                     level.addFreshEntity(r);
                     hold.tellOwner(hold.settlementName() + ": the " + (lord ? "Runelord" : "Runesmith") + " comes up out of the stone to the rune anvil.",
@@ -351,11 +370,23 @@ public final class Runes {
             smith.setDigging(false);
             return;
         }
-        if (smith.distanceToSqr(Vec3.atCenterOf(anvil)) > AT_ANVIL * AT_ANVIL) {
+        Vec3 spot = workSpot(hold);
+        if (spot == null) {
+            spot = new Vec3(anvil.getX() + 0.5, anvil.getY(), anvil.getZ() - 1.5);
+        }
+        if (smith.distanceToSqr(spot) > 1.5 * 1.5) {
             smith.setDigging(false);
-            smith.getNavigation().moveTo(anvil.getX() + 0.5, anvil.getY(), anvil.getZ() - 1.5, 1.0);
+            smith.getNavigation().moveTo(spot.x, spot.y, spot.z, 1.0);
             return;
         }
+        // on his spot, squarely: the work clip's blow comes down straight ahead of him (the detail session's handoff), so he stands in the
+        // middle of the slab with his body turned to the anvil, not only his head
+        smith.getNavigation().stop();
+        smith.setPos(spot.x, spot.y, spot.z);
+        float yaw = (float) (net.minecraft.util.Mth.atan2(anvil.getZ() + 0.5 - spot.z, anvil.getX() + 0.5 - spot.x) * net.minecraft.util.Mth.RAD_TO_DEG) - 90f;
+        smith.setYRot(yaw);
+        smith.setYBodyRot(yaw);
+        smith.setYHeadRot(yaw);
         smith.setDigging(true);
         smith.getLookControl().setLookAt(Vec3.atCenterOf(anvil));
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, 6, 0.2, 0.1, 0.2, 0.05);
