@@ -176,13 +176,16 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
             rounds++;
             int workers = brood.add(false, 2, WORKER_COST);
             int guards = brood.add(true, 1, GUARD_COST);
-            for (int i = 0; i < workers + guards; i++) {
-                brood.bringUp(i >= workers, getBlockPos().above());
-            }
-            // the deeps' waiting Dawi, while the halls have room and nothing is being dug or raised: a dig's or a site's crew comes up out of
-            // the deeps right at its work, and Dawi brought up first would walk there instead (the laptop's run of 4120042: the Great Hall
-            // 95 s slower)
+            // while a hall is dug or raised the hold keeps to UP_AT_ONCE up, as before the halls made room: a dig's or a site's crew comes up
+            // out of the deeps right at its work, and Dawi brought up first would walk there instead (the laptop's runs of 4120042 and
+            // 33e8376: the Great Hall 95 s, then about 30 s, slower)
             boolean building = !works().digs().isEmpty() || !works().sites().isEmpty();
+            for (int i = 0; i < workers + guards; i++) {
+                if (!building || peopleCount() < UP_AT_ONCE) {
+                    brood.bringUp(i >= workers, getBlockPos().above());
+                }
+            }
+            // the deeps' waiting Dawi, while the halls have room and nothing is being dug or raised
             for (int i = 0; !building && i < RISE_PER_ROUND && peopleCount() < peopleCap(); i++) {
                 boolean soldier = i % 3 == 2;
                 if (brood.bringUp(soldier, getBlockPos().above()) == null && brood.bringUp(!soldier, getBlockPos().above()) == null) {
