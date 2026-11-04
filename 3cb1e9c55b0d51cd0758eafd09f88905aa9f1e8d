@@ -1,0 +1,3 @@
+REVIEW FAIL 3cb1e9c: the mustSee=false Marksman target goal still refused unseen foes at acquisition (TargetingConditions checks line of sight by default); fixed in the next commit with a walled-hold test
+
+REVIEW PASS 3cb1e9c: covered by the re-review of 027a6c4
