@@ -31,7 +31,7 @@ public final class Ranks {
     /** How many Longbeards of {@code type} the hold keeps up round its Shrine now. */
     public static int count(ServerLevel level, ShrineBlockEntity hold, EntityType<? extends Longbeard> type) {
         return level.getEntitiesOfClass(Longbeard.class, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
-                m -> m.isAlive() && m.settlement() == hold && m.getType() == type).size();
+                m -> m.isAlive() && m.settlement() == hold && m.getType() == type && !m.veteran()).size();   // the Great Hall's own
     }
 
     /** How many of {@code kind} the hold keeps up round its Shrine now. */
@@ -73,7 +73,12 @@ public final class Ranks {
         return true;
     }
 
-    /** A Warrior's beard has grown long in the hold's wars: he is a Longbeard now, where he stands (off the roll: the brood makes another Warrior). */
+    /**
+     * A Warrior's beard has grown long in the hold's wars: he is a Longbeard now, where he stands, with his orders (his guard post too).
+     * The Warrior goes back to the hold the engine's way (Shrine#absorb: off the roll, out of a crew, or a muster's defender back into the
+     * reserve), so the engine's count stays whole; the Longbeard is the hold's own beside it, as the Great Hall's are, not counted against
+     * what the Hall raises (the review of f66dd12).
+     */
     public static Longbeard promote(ServerLevel level, ShrineBlockEntity hold, Warrior w) {
         Longbeard d = KRegistry.LONGBEARD.get().create(level, EntitySpawnReason.MOB_SUMMONED);
         if (d == null) {
@@ -87,7 +92,9 @@ public final class Ranks {
         }
         d.setHealth(d.getMaxHealth() * Math.max(0.1f, w.getHealth() / w.getMaxHealth()));
         d.copyKills(w);
-        hold.takeFromRoll(w.getUUID());
+        d.takeOrders(w);
+        d.markVeteran();
+        hold.absorb(w);
         w.discard();
         level.addFreshEntity(d);
         level.sendParticles(net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER, d.getX(), d.getY() + 1, d.getZ(), 20, 0.4, 0.6, 0.4, 0.05);

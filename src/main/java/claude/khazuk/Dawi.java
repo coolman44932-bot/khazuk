@@ -149,6 +149,12 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         return guardPos;
     }
 
+    /** {@code from}'s orders carried over (a Warrior grown into a Longbeard): his mode, and his post if he guards one. */
+    public void takeOrders(Dawi from) {
+        entityData.set(DATA_MODE, from.getMode().ordinal());
+        guardPos = from.guardPos == null ? null : from.guardPos.immutable();
+    }
+
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         ShrineBlockEntity h = settlement();

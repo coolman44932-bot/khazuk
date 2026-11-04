@@ -293,7 +293,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     }
 
     /** A unit of this Shrine is back at it: off the roll (or out of its crew) and into the reserve. */
-    void absorb(Dawi unit) {
+    public void absorb(Dawi unit) {
         boolean soldier = !unit.isWorker();
         if (works().forget(unit.getUUID())) {
             return;

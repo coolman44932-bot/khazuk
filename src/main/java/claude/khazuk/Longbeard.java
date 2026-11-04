@@ -32,6 +32,8 @@ public class Longbeard extends Warrior {
 
     /** Dawi he has steadied, for the tests. */
     public int steadiedForTests;
+    /** Grown from a Warrior of the hold (saved): not one of the Great Hall's own, so not counted against what it raises. */
+    private boolean veteran;
 
     public Longbeard(EntityType<? extends Longbeard> type, Level level) {
         super(type, level);
@@ -40,11 +42,31 @@ public class Longbeard extends Warrior {
     public static AttributeSupplier.Builder createAttributes(boolean great) {
         return baseAttributes()
                 .add(Attributes.MAX_HEALTH, MAX_HEALTH)
-                .add(Attributes.MOVEMENT_SPEED, 0.25)
+                .add(Attributes.MOVEMENT_SPEED, 0.26)          // a Warrior's pace: growing old in the hold's wars costs him nothing
                 .add(Attributes.ATTACK_DAMAGE, great ? GREAT_DAMAGE : DAMAGE)
                 .add(Attributes.ARMOR, great ? GREAT_ARMOR : ARMOR)
                 .add(Attributes.ARMOR_TOUGHNESS, TOUGHNESS)
                 .add(Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE);
+    }
+
+    public boolean veteran() {
+        return veteran;
+    }
+
+    public void markVeteran() {
+        veteran = true;
+    }
+
+    @Override
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput out) {
+        super.addAdditionalSaveData(out);
+        out.putBoolean("veteran", veteran);
+    }
+
+    @Override
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput in) {
+        super.readAdditionalSaveData(in);
+        veteran = in.getBooleanOr("veteran", false);
     }
 
     /** Whether he carries the great axe (and no shield). */

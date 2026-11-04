@@ -103,7 +103,9 @@ public class LongbeardGameTests {
         ShrineBlockEntity heart = hold(h);
         Warrior w = bound(h, KRegistry.WARRIOR.get(), heart, new BlockPos(6, 1, 6));
         heart.addPerson(w);
-        int people = heart.peopleCount();
+        w.setMode(claude.settlementcore.unit.SettlerMob.Mode.GUARD);            // posted on guard: the post goes with him (the review of f66dd12)
+        BlockPos post = w.guardPos();
+        int people = heart.peopleCount(), reserve = heart.reserveSoldiers();
         for (int i = 0; i < Warrior.VETERAN_KILLS; i++) {
             Zombie z = still(h, new BlockPos(2 + i * 2, 1, 18));
             z.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(w), 1000f);
@@ -116,7 +118,12 @@ public class LongbeardGameTests {
                     h.assertTrue(lbs.size() == 1 && lbs.get(0).getType() == KRegistry.LONGBEARD.get() && lbs.get(0).settlement() == heart,
                             "where the Warrior stood: " + lbs);
                     h.assertTrue(lbs.get(0).kills() == Warrior.VETERAN_KILLS, "the Longbeard forgot his " + Warrior.VETERAN_KILLS + " kills");
-                    h.assertTrue(heart.peopleCount() == people - 1, "the roll: " + heart.peopleCount() + " (was " + people + ")");
+                    h.assertTrue(heart.peopleCount() == people - 1 && heart.reserveSoldiers() == reserve + 1, "the roll: " + heart.peopleCount()
+                            + " (was " + people + "), the reserve's Warriors " + heart.reserveSoldiers() + " (was " + reserve + ")");
+                    h.assertTrue(lbs.get(0).getMode() == claude.settlementcore.unit.SettlerMob.Mode.GUARD && post != null && post.equals(lbs.get(0).guardPos()),
+                            "the Longbeard's orders: " + lbs.get(0).getMode() + " at " + lbs.get(0).guardPos() + " (the Warrior's post " + post + ")");
+                    h.assertTrue(lbs.get(0).veteran() && Ranks.count(h.getLevel(), heart, KRegistry.LONGBEARD.get()) == 0,
+                            "the grown Longbeard counts against the Great Hall's own");
                 })
                 .thenSucceed();
     }
@@ -141,6 +148,30 @@ public class LongbeardGameTests {
             h.assertTrue(Math.abs(bite - Math.min(Longbeard.GREAT_BITE_MAX, plated.getArmorValue() * Longbeard.GREAT_BITE)) < 1e-6 && bite > 0,
                     "the great axe bites " + bite + " into armour " + plated.getArmorValue());
             h.assertTrue(shield.greatBite(plated) == 0, "the shield Longbeard's axe bites armour");
+            h.succeed();
+        });
+    }
+
+    /** The great axe's bite through a real blow: a husk in iron takes more than the axe alone would do through its armour, and the bite is gone after. Normal. */
+    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazukhostile")
+    public static void theGreatAxesBiteLandsWithTheBlowAndIsGoneAfter(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        Longbeard great = bound(h, KRegistry.LONGBEARD_GREAT.get(), heart, new BlockPos(4, 1, 4));
+        great.setNoAi(true);
+        var husk = h.spawn(EntityType.HUSK, new BlockPos(6, 1, 4));
+        husk.setNoAi(true);
+        husk.setPersistenceRequired();
+        husk.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+        h.runAfterDelay(2, () -> {
+            float hp = husk.getHealth();
+            var src = h.getLevel().damageSources().mobAttack(great);
+            float plain = net.minecraft.world.damagesource.CombatRules.getDamageAfterAbsorb(husk, (float) Longbeard.GREAT_DAMAGE, src,
+                    husk.getArmorValue(), (float) husk.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR_TOUGHNESS));
+            great.doHurtTarget(h.getLevel(), husk);
+            float dealt = hp - husk.getHealth();
+            h.assertTrue(dealt > plain + 0.5f, "the great axe did " + dealt + " through armour " + husk.getArmorValue() + "; without its bite " + plain);
+            h.assertTrue(Math.abs(great.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) - Longbeard.GREAT_DAMAGE) < 1e-6,
+                    "the bite stayed on his blow: " + great.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE));
             h.succeed();
         });
     }
