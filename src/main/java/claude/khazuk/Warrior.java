@@ -26,6 +26,8 @@ public class Warrior extends Dawi {
     public static final double MAX_HEALTH = 40, DAMAGE = 11, ARMOR = 14, TOUGHNESS = 4, KNOCKBACK_RESISTANCE = 0.8;
     public static final double SHIELD_ARC = 60;
     public static final float SHIELD_MELEE = 0.6f, SHIELD_SHOT = 0.5f;
+    /** Foes felled before a Warrior's beard grows long: he becomes a Longbeard (hold/Ranks#promote). */
+    public static final int VETERAN_KILLS = 8;
 
     /** Shots the shield stopped, and blows it turned, for the tests. */
     public int shotsStoppedForTests, blowsTurnedForTests;
@@ -59,10 +61,25 @@ public class Warrior extends Dawi {
         return Vec3.directionFromRotation(0, yBodyRot).dot(dir) >= arc || Vec3.directionFromRotation(0, getYHeadRot()).dot(dir) >= arc;
     }
 
+    /** Whether he carries a shield (a great-axe Longbeard doesn't). */
+    protected boolean hasShield() {
+        return true;
+    }
+
+    /** A Warrior who has felled {@value #VETERAN_KILLS} foes grows into a Longbeard, once a second's look. */
+    @Override
+    public void aiStep() {
+        super.aiStep();
+        if (level() instanceof ServerLevel sl && getClass() == Warrior.class && kills >= VETERAN_KILLS && tickCount % 20 == 11 && isAlive()
+                && !isBurrowing() && settlement() != null) {
+            claude.khazuk.hold.Ranks.promote(sl, settlement(), this);
+        }
+    }
+
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
         Vec3 from = source.getSourcePosition();
-        if (from != null && !isBurrowing() && !source.is(DamageTypeTags.BYPASSES_SHIELD) && shieldFaces(from)) {
+        if (from != null && hasShield() && !isBurrowing() && !source.is(DamageTypeTags.BYPASSES_SHIELD) && shieldFaces(from)) {
             if (source.is(DamageTypeTags.IS_PROJECTILE)) {
                 if (getRandom().nextFloat() < SHIELD_SHOT) {
                     shotsStoppedForTests++;

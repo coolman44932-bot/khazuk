@@ -180,7 +180,8 @@ def anvil_items():
             lum = (r + g + b) / 3
             im.putpixel((x, y), (0, 0, 0, 0) if a == 0 else (min(255, int(lum * 1.3 + 20)), min(255, int(lum * 1.05 + 10)), int(lum * 0.5), a))
     im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "runelord_spawn_egg.png"))
-    for kind, tint in (("quarreller", (0.75, 0.85, 0.55)), ("thunderer", (1.1, 0.75, 0.45))):     # D6: olive and copper
+    for kind, tint in (("quarreller", (0.75, 0.85, 0.55)), ("thunderer", (1.1, 0.75, 0.45)),      # D6: olive and copper
+                       ("longbeard", (1.15, 1.1, 1.05)), ("longbeard_great", (1.0, 0.95, 1.2))):     # 0.11: grey-white beards
         eg = Image.new("RGBA", src.size)
         for y in range(src.size[1]):
             for x in range(src.size[0]):
@@ -227,6 +228,10 @@ def anvil_items():
     d["item.khazuk.quarreller_spawn_egg"] = "Quarreller Spawn Egg"
     d["entity.khazuk.thunderer"] = "Thunderer"
     d["item.khazuk.thunderer_spawn_egg"] = "Thunderer Spawn Egg"
+    d["entity.khazuk.longbeard"] = "Longbeard"
+    d["item.khazuk.longbeard_spawn_egg"] = "Longbeard Spawn Egg"
+    d["entity.khazuk.longbeard_great"] = "Longbeard (Great Weapon)"
+    d["item.khazuk.longbeard_great_spawn_egg"] = "Longbeard (Great Weapon) Spawn Egg"
     d["item.khazuk.anvil_of_doom"] = "Anvil of Doom"
     out("assets/khazuk/lang/en_us.json", d)
 

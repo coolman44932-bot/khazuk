@@ -107,6 +107,17 @@ public final class Grudges {
         return !bears.isEmpty() && bears.contains(typeId(target));
     }
 
+    /** Whether any grudge in the Book, open or settled, names {@code target}'s kind (the Longbeards remember them all). */
+    public boolean written(Entity target) {
+        String id = typeId(target);
+        for (Grudge g : book) {
+            if (g.type.equals(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Set<String> borne() {
         return Set.copyOf(bears);
     }

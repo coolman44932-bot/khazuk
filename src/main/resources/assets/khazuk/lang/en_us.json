@@ -31,5 +31,9 @@
   "item.khazuk.grimnirs_fury": "Grimnir's Fury",
   "entity.khazuk.grungnis_hammer": "Grungni's Hammer",
   "death.attack.khazuk.grungnis_hammer": "%1$s was struck down by Grungni's Hammer",
-  "death.attack.khazuk.grungnis_hammer.player": "%1$s was struck down by %2$s's Hammer of Grungni"
+  "death.attack.khazuk.grungnis_hammer.player": "%1$s was struck down by %2$s's Hammer of Grungni",
+  "entity.khazuk.longbeard": "Longbeard",
+  "item.khazuk.longbeard_spawn_egg": "Longbeard Spawn Egg",
+  "entity.khazuk.longbeard_great": "Longbeard (Great Weapon)",
+  "item.khazuk.longbeard_great_spawn_egg": "Longbeard (Great Weapon) Spawn Egg"
 }

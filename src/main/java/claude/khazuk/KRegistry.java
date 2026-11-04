@@ -49,6 +49,14 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Runesmith::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("runesmith")));
 
+    /** 0.11: the Longbeards, the hold's veterans: hand weapon and shield, or the great axe. A Dwarf under a great-horned helm. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Longbeard>> LONGBEARD = ENTITIES.register("longbeard",
+            () -> EntityType.Builder.of(Longbeard::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("longbeard")));
+    public static final DeferredHolder<EntityType<?>, EntityType<Longbeard>> LONGBEARD_GREAT = ENTITIES.register("longbeard_great",
+            () -> EntityType.Builder.of(Longbeard::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("longbeard_great")));
+
     /** D6: the hold's missile troops, raised by its Barracks: the Quarreller (crossbow) and the Thunderer (handgun). */
     public static final DeferredHolder<EntityType<?>, EntityType<Quarreller>> QUARRELLER = ENTITIES.register("quarreller",
             () -> EntityType.Builder.of(Quarreller::new, MobCategory.CREATURE).sized(0.8f, 1.45f).eyeHeight(1.2f).clientTrackingRange(10)
@@ -108,6 +116,10 @@ public final class KRegistry {
             p -> new SpawnEggItem(p.spawnEgg(QUARRELLER.get())));
     public static final DeferredItem<SpawnEggItem> THUNDERER_EGG = ITEMS.registerItem("thunderer_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(THUNDERER.get())));
+    public static final DeferredItem<SpawnEggItem> LONGBEARD_EGG = ITEMS.registerItem("longbeard_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(LONGBEARD.get())));
+    public static final DeferredItem<SpawnEggItem> LONGBEARD_GREAT_EGG = ITEMS.registerItem("longbeard_great_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(LONGBEARD_GREAT.get())));
     /** D5b: the Anvil of Doom, carried: set it down on the ground, facing the way you face. */
     public static final DeferredItem<claude.khazuk.hold.AnvilOfDoomItem> ANVIL_OF_DOOM_ITEM = ITEMS.registerItem("anvil_of_doom",
             p -> new claude.khazuk.hold.AnvilOfDoomItem(p.stacksTo(1).fireResistant()));
@@ -147,6 +159,8 @@ public final class KRegistry {
                 out.accept(RUNELORD_EGG.get());
                 out.accept(QUARRELLER_EGG.get());
                 out.accept(THUNDERER_EGG.get());
+                out.accept(LONGBEARD_EGG.get());
+                out.accept(LONGBEARD_GREAT_EGG.get());
                 out.accept(ANVIL_OF_DOOM_ITEM.get());
                 out.accept(GRUNGNIS_HAMMER.get());
                 out.accept(VALAYAS_WARD.get());
@@ -181,6 +195,8 @@ public final class KRegistry {
         e.put(RUNELORD.get(), Runelord.createAttributes().build());
         e.put(QUARRELLER.get(), Quarreller.createAttributes().build());
         e.put(THUNDERER.get(), Thunderer.createAttributes().build());
+        e.put(LONGBEARD.get(), Longbeard.createAttributes(false).build());
+        e.put(LONGBEARD_GREAT.get(), Longbeard.createAttributes(true).build());
         e.put(ANVIL_OF_DOOM.get(), claude.khazuk.hold.AnvilOfDoom.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }

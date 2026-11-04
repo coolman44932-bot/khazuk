@@ -368,7 +368,8 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     private int lastHurtTick = -10000;
 
     public boolean isStubborn() {
-        return getHealth() < getMaxHealth() * STUBBORN_BELOW || claude.khazuk.god.AncestorPowers.furious(this);   // D7: no fear in Grimnir's Fury
+        return getHealth() < getMaxHealth() * STUBBORN_BELOW || claude.khazuk.god.AncestorPowers.furious(this)   // D7: no fear in Grimnir's Fury
+                || steadied();                                   // 0.11: a Longbeard's grumbling steadies him
     }
 
     /** What he takes of a blow of {@code amount}: all of it, or less when he's stubborn. A Warrior's shield comes before this. */
@@ -531,6 +532,50 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         super.setTarget(target);
     }
 
+    /** Whether he bears a grudge against {@code target}: its kind's grudge settled (a Longbeard remembers every one written). */
+    protected boolean bearsGrudge(ShrineBlockEntity h, net.minecraft.world.entity.Entity target) {
+        return h.grudges().bears(target);
+    }
+
+    /** Whether he'd strike {@code target} as a grudgebearer now (his hold's Book), for the tests. */
+    public boolean bearsGrudgeAgainst(net.minecraft.world.entity.Entity target) {
+        ShrineBlockEntity h = settlement();
+        return h != null && bearsGrudge(h, target);
+    }
+
+    // ------------------------------------------------------------------ steadied by the Longbeards, and the foes he has felled (0.11)
+
+    private long steadiedUntil;
+    /** Foes he has felled (saved): a Warrior with enough grows into a Longbeard (Warrior#VETERAN_KILLS). */
+    protected int kills;
+
+    /** A Longbeard's grumbling steadies him until game tick {@code until}: stubborn whatever his wounds. */
+    public void steady(long until) {
+        steadiedUntil = Math.max(steadiedUntil, until);
+    }
+
+    public boolean steadied() {
+        return level().getGameTime() < steadiedUntil;
+    }
+
+    public int kills() {
+        return kills;
+    }
+
+    /** {@code from}'s tally carried over (a Warrior grown into a Longbeard). */
+    public void copyKills(Dawi from) {
+        kills = from.kills;
+    }
+
+    /** A foe felled by his hand counts towards his beard. */
+    @Override
+    public boolean killedEntity(ServerLevel level, LivingEntity victim, DamageSource source) {
+        if (victim instanceof net.minecraft.world.entity.monster.Enemy) {
+            kills++;
+        }
+        return super.killedEntity(level, victim, source);
+    }
+
     /** Blows that landed and played the attack clip, for the tests. */
     public int attacksForTests;
 
@@ -539,7 +584,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     public boolean doHurtTarget(ServerLevel level, net.minecraft.world.entity.Entity target) {
         ShrineBlockEntity h = settlement();
         var dmg = getAttribute(Attributes.ATTACK_DAMAGE);
-        boolean bears = h != null && dmg != null && h.grudges().bears(target);
+        boolean bears = h != null && dmg != null && bearsGrudge(h, target);
         if (bears) {                                             // D4: a grudgebearer strikes a foe of a settled grudge's kind harder
             dmg.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(GRUDGE, claude.khazuk.hold.Grudges.BEARER_PERCENT / 100.0,
                     net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
@@ -582,6 +627,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         out.storeNullable("heart", BlockPos.CODEC, heartPos);
         out.storeNullable("guard_pos", BlockPos.CODEC, guardPos);
         out.putInt("mode", getMode().ordinal());
+        out.putInt("kills", kills);
     }
 
     @Override
@@ -590,6 +636,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         heartPos = in.read("heart", BlockPos.CODEC).orElse(null);
         entityData.set(DATA_MODE, in.getIntOr("mode", Mode.WORK.ordinal()));
         guardPos = in.read("guard_pos", BlockPos.CODEC).orElse(null);
+        kills = in.getIntOr("kills", 0);
     }
 
     @Override

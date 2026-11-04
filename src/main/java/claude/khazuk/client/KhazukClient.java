@@ -70,6 +70,8 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.RUNELORD.get(), RunelordRenderer::new);
         e.registerEntityRenderer(KRegistry.QUARRELLER.get(), ctx -> new UnitRenderer<>(ctx, "quarreller"));
         e.registerEntityRenderer(KRegistry.THUNDERER.get(), ctx -> new UnitRenderer<>(ctx, "thunderer"));
+        e.registerEntityRenderer(KRegistry.LONGBEARD.get(), ctx -> new UnitRenderer<>(ctx, "longbeard"));
+        e.registerEntityRenderer(KRegistry.LONGBEARD_GREAT.get(), ctx -> new UnitRenderer<>(ctx, "longbeard_great"));
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
         e.registerEntityRenderer(KRegistry.GRUNGNIS_HAMMER_STRIKE.get(), HammerRenderer::new);
     }
