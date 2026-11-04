@@ -1,0 +1,1 @@
+REVIEW PASS 027a6c4: Mark's ignoreLineOfSight survives range() and is correct; canShoot still gates LOS in unwalled holds; the walled test's geometry holds (covers 3cb1e9c and 63f8c6c)
