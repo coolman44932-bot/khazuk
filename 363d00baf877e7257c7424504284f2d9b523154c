@@ -1,0 +1,1 @@
+REVIEW PASS 363d00baf877e7257c7424504284f2d9b523154c: both commits pass, b077375 also passes separately; nothing else in the jar changes (the version and licence string only), and the README claims match the code. (fix-reviewer, 2026-11-04)
