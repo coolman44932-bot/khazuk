@@ -137,4 +137,32 @@ public class RanksGameTests {
         h.assertTrue(t.getTarget() == null, "the Thunderer took his own god for his mark");
         h.succeed();
     }
+
+    /**
+     * Over the battlements: a walled hold's Thunderer marks a foe he can't see outside its walls, and shoots it (the re-review of 3948034:
+     * vanilla's targeting had refused any foe out of sight). A 3-high stone ring 6 out from the Shrine walls it in; Normal: the batch sets it.
+     */
+    @GameTest(template = "arena", timeoutTicks = 200, batch = "khazukhostile")
+    public static void aWalledHoldsThundererShootsOverTheBattlements(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        for (int d = -6; d <= 6; d++) {
+            for (int y = 1; y <= 3; y++) {
+                for (BlockPos p : new BlockPos[]{HEART.offset(d, y - 1, -6), HEART.offset(d, y - 1, 6), HEART.offset(-6, y - 1, d), HEART.offset(6, y - 1, d)}) {
+                    h.setBlock(p, net.minecraft.world.level.block.Blocks.STONE_BRICKS);
+                }
+            }
+        }
+        heart.walls().scan(h.getLevel(), h.absolutePos(HEART), 10);
+        h.assertTrue(heart.walled(), "the ring didn't wall the hold in");
+        Thunderer t = h.spawn(KRegistry.THUNDERER.get(), HEART.offset(0, 0, -3));
+        t.bindTo(heart);
+        Zombie outside = h.spawn(EntityType.ZOMBIE, HEART.offset(0, 0, 9));
+        outside.setNoAi(true);
+        outside.setPersistenceRequired();
+        h.assertTrue(!t.getSensing().hasLineOfSight(outside), "the Thunderer can see over the wall: the test needs it hidden");
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(t.getTarget() == outside, "he never marked the foe outside the walls: his mark is " + t.getTarget()))
+                .thenWaitUntil(() -> h.assertTrue(t.shotsForTests > 0, "he marked it but never shot over the wall"))
+                .thenSucceed();
+    }
 }

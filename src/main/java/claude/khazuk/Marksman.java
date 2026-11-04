@@ -55,8 +55,20 @@ public abstract class Marksman extends Dawi {
         goalSelector.addGoal(2, new Shoot(this));
         // marks found as he shoots them: unseen ones too, when his walled hold's walls stand between (the review of 88e429a: Dawi's own target
         // goal must see its mark, so a foe behind the wall was never his)
-        targetSelector.addGoal(2, new net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class,
-                10, false, false, (m, level) -> m instanceof net.minecraft.world.entity.Mob mob && claude.settlementcore.defence.Muster.foe(mob) && canShoot(mob)));
+        targetSelector.addGoal(2, new Mark(this));
+    }
+
+    /**
+     * Marks as he shoots them: any foe {@link #canShoot} allows. Vanilla's targeting checks the line of sight itself whatever its goal says (the
+     * re-review of 3948034: mustSee only governs giving up), so it's told not to; canShoot asks for the line of sight unless the mark is
+     * outside his walled hold's walls.
+     */
+    static final class Mark extends net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal<net.minecraft.world.entity.Mob> {
+        Mark(Marksman m) {
+            super(m, net.minecraft.world.entity.Mob.class, 10, false, false,
+                    (t, level) -> t instanceof net.minecraft.world.entity.Mob mob && claude.settlementcore.defence.Muster.foe(mob) && m.canShoot(mob));
+            targetConditions.ignoreLineOfSight();
+        }
     }
 
     /** Whether he can put a shot on {@code mark}: in range, and seen, or outside his walled hold's walls (over the battlements). */
