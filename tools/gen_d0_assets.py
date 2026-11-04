@@ -38,6 +38,7 @@ def main():
     book_item()
     runesmith_egg()
     anvil_items()
+    god_items()
     print("ok")
 
 
@@ -268,6 +269,97 @@ def throne_item():
         d = json.load(f)
     d["entity.khazuk.throne_of_power"] = "Throne of Power"
     d["item.khazuk.throne_of_power"] = "Thorgrim's Throne of Power"
+    out("assets/khazuk/lang/en_us.json", d)
+
+
+
+
+GOD_ITEMS = {
+    # id: (name, the drawing (16 x 16: g gold, G light gold, d dark gold, w wood, W dark wood, r rune light, s steel, f flame, F deep flame),
+    #      the shaped recipe, its key)
+    "grungnis_hammer": ("Grungni's Hammer", [
+        "................",
+        "...dddddddd.....",
+        "..dGGGGGGGGd....",
+        "..dGgrgggrgd....",
+        "..dGgggrgggd....",
+        "..dGgrgggrgd....",
+        "..dggggggggd....",
+        "...dddwwddd.....",
+        "......wW........",
+        ".......wW.......",
+        "........wW......",
+        ".........wW.....",
+        "..........wW....",
+        "...........wW...",
+        "............dd..",
+        "................"], ["GIG", " S ", " S "], {"G": "minecraft:gold_block", "I": "minecraft:iron_block", "S": "minecraft:stick"}),
+    "valayas_ward": ("Valaya's Ward", [
+        "................",
+        ".....dddddd.....",
+        "...ddGGGGGGdd...",
+        "..dGGggggggGGd..",
+        "..dGgsssssssgd..",
+        ".dGgss.rr.ssgGd.",
+        ".dGgs.rrrr.sgGd.",
+        ".dGgsrr..rrsgGd.",
+        ".dGgs.rrrr.sgGd.",
+        ".dGgss.rr.ssgGd.",
+        "..dGgsssssssgd..",
+        "..dGGggggggGGd..",
+        "...ddGGGGGGdd...",
+        ".....dddddd.....",
+        "................",
+        "................"], ["GIG", "ISI", "GIG"], {"G": "minecraft:gold_ingot", "I": "minecraft:iron_ingot", "S": "minecraft:shield"}),
+    "grimnirs_fury": ("Grimnir's Fury", [
+        "........f.......",
+        ".......fFf......",
+        "......fFFFf.....",
+        ".....ssssfFf....",
+        "....sssssssF....",
+        "...ssssrsssd....",
+        "...sssrrrsdw....",
+        "...ssssrsdw.....",
+        "....sssssdw.....",
+        ".....sssdw......",
+        ".......dw.......",
+        "......dw........",
+        ".....gw.........",
+        "....wd..........",
+        "...gw...........",
+        "................"], [" B ", "GAG", " B "], {"B": "minecraft:blaze_powder", "G": "minecraft:gold_ingot", "A": "minecraft:iron_axe"}),
+}
+
+
+def god_items():
+    """D7: the Ancestor Gods' three tokens (an icon, the item files, a shaped recipe each), Grungni's Hammer's blow as a damage type with
+    its death messages, and the names."""
+    import json
+    pal = {"g": GOLD, "G": GOLD_L, "d": GOLD_D, "w": (128, 84, 48), "W": (86, 54, 30), "r": (150, 236, 255), "s": (168, 174, 182),
+           "f": (255, 170, 40), "F": (230, 70, 20)}
+    r = random.Random(41)
+    for kind, (name, rows, pattern, key) in GOD_ITEMS.items():
+        im = Image.new("RGBA", (16, 16))
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch in pal:
+                    f = 1.0 if ch in "rfF" else 0.92 + 0.16 * r.random()
+                    im.putpixel((x, y), tuple(min(255, int(v * f)) for v in pal[ch]) + (255,))
+        im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", kind + ".png"))
+        out(f"assets/khazuk/items/{kind}.json", {"model": {"type": "minecraft:model", "model": f"khazuk:item/{kind}"}})
+        out(f"assets/khazuk/models/item/{kind}.json", {"parent": "minecraft:item/handheld", "textures": {"layer0": f"khazuk:item/{kind}"}})
+        out(f"data/khazuk/recipe/{kind}.json", {"type": "minecraft:crafting_shaped", "category": "misc", "pattern": pattern, "key": key,
+                                               "result": {"id": f"khazuk:{kind}", "count": 1}})
+    out("data/khazuk/damage_type/grungnis_hammer.json", {"message_id": "khazuk.grungnis_hammer", "scaling": "when_caused_by_living_non_player",
+                                                         "exhaustion": 0.1})
+    lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
+    with open(lang, encoding="utf-8") as f:
+        d = json.load(f)
+    for kind, (name, *_rest) in GOD_ITEMS.items():
+        d["item.khazuk." + kind] = name
+    d["entity.khazuk.grungnis_hammer"] = "Grungni's Hammer"
+    d["death.attack.khazuk.grungnis_hammer"] = "%1$s was struck down by Grungni's Hammer"
+    d["death.attack.khazuk.grungnis_hammer.player"] = "%1$s was struck down by %2$s's Hammer of Grungni"
     out("assets/khazuk/lang/en_us.json", d)
 
 

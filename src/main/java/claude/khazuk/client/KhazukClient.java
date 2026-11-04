@@ -71,6 +71,7 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.QUARRELLER.get(), ctx -> new UnitRenderer<>(ctx, "quarreller"));
         e.registerEntityRenderer(KRegistry.THUNDERER.get(), ctx -> new UnitRenderer<>(ctx, "thunderer"));
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
+        e.registerEntityRenderer(KRegistry.GRUNGNIS_HAMMER_STRIKE.get(), HammerRenderer::new);
     }
 
     @SubscribeEvent

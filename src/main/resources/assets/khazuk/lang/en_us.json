@@ -25,5 +25,11 @@
   "entity.khazuk.quarreller": "Quarreller",
   "item.khazuk.quarreller_spawn_egg": "Quarreller Spawn Egg",
   "entity.khazuk.thunderer": "Thunderer",
-  "item.khazuk.thunderer_spawn_egg": "Thunderer Spawn Egg"
+  "item.khazuk.thunderer_spawn_egg": "Thunderer Spawn Egg",
+  "item.khazuk.grungnis_hammer": "Grungni's Hammer",
+  "item.khazuk.valayas_ward": "Valaya's Ward",
+  "item.khazuk.grimnirs_fury": "Grimnir's Fury",
+  "entity.khazuk.grungnis_hammer": "Grungni's Hammer",
+  "death.attack.khazuk.grungnis_hammer": "%1$s was struck down by Grungni's Hammer",
+  "death.attack.khazuk.grungnis_hammer.player": "%1$s was struck down by %2$s's Hammer of Grungni"
 }

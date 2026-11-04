@@ -111,4 +111,27 @@ public class KhazukAssetGameTests {
         open(h, "assets/khazuk/textures/entity/runelord_glowmask.png").close();
         h.succeed();
     }
+
+    /** Grungni's Hammer (D7; the fast stand-in until the detail session's showpiece): its geo bakes, its strike bakes, its glowmask is in the jar. */
+    @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
+    public static void grungnisHammersModelAndStrikeBake(GameTestHelper h) throws Exception {
+        Identifier id = unit("grungnis_hammer");
+        Geometry geo;
+        try (InputStreamReader r = open(h, path(h, GeckoLibResources.MODELS_PATH, id, ".geo.json"))) {
+            geo = Geometry.GSON.fromJson(r, Geometry.class);
+        }
+        h.assertTrue(ModelFormatVersion.match(geo.formatVersion()) != null, "the Hammer's geo format " + geo.formatVersion() + " is none GeckoLib knows");
+        geo.bake(id);
+        BakedAnimations baked;
+        try (InputStreamReader r = open(h, path(h, GeckoLibResources.ANIMATIONS_PATH, id, ".animation.json"))) {
+            baked = ActorAnimations.GSON.fromJson(r, ActorAnimations.class).bake(id, MathParser.create());
+        }
+        h.assertTrue(baked.getAnimation("animation.grungnis_hammer.strike") != null, "the Hammer has no strike: " + baked.animations().keySet());
+        open(h, "assets/khazuk/textures/entity/grungnis_hammer_glowmask.png").close();
+        for (String token : List.of("grungnis_hammer", "valayas_ward", "grimnirs_fury")) {
+            open(h, "assets/khazuk/textures/item/" + token + ".png").close();
+            open(h, "assets/khazuk/items/" + token + ".json").close();
+        }
+        h.succeed();
+    }
 }

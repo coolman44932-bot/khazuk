@@ -365,7 +365,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     private int lastHurtTick = -10000;
 
     public boolean isStubborn() {
-        return getHealth() < getMaxHealth() * STUBBORN_BELOW;
+        return getHealth() < getMaxHealth() * STUBBORN_BELOW || claude.khazuk.god.AncestorPowers.furious(this);   // D7: no fear in Grimnir's Fury
     }
 
     /** What he takes of a blow of {@code amount}: all of it, or less when he's stubborn. A Warrior's shield comes before this. */
@@ -441,6 +441,48 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         } else {
             a.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(id, amount,
                     net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+        }
+    }
+
+    // ------------------------------------------------------------------ Grimnir's Fury (D7)
+
+    static final net.minecraft.resources.Identifier FURY = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "grimnirs_fury");
+    private boolean furyUp;
+
+    /** Whether Grimnir's Fury is on him now. */
+    public boolean furyUp() {
+        return furyUp;
+    }
+
+    /** Grimnir's Fury on him or spent (AncestorPowers): half again as hard a blow, a quarter faster, unmoved by blows; on and off with it. */
+    public void feelFury() {
+        boolean up = claude.khazuk.god.AncestorPowers.furious(this);
+        if (up == furyUp) {
+            return;
+        }
+        furyUp = up;
+        var dmg = getAttribute(Attributes.ATTACK_DAMAGE);
+        var spd = getAttribute(Attributes.MOVEMENT_SPEED);
+        var kb = getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+        if (up) {
+            if (dmg != null) {
+                dmg.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(FURY, claude.khazuk.god.AncestorPowers.FURY_DAMAGE,
+                        net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+            }
+            if (spd != null) {
+                spd.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(FURY, claude.khazuk.god.AncestorPowers.FURY_SPEED,
+                        net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+            }
+            if (kb != null) {
+                kb.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(FURY, claude.khazuk.god.AncestorPowers.FURY_STEADY,
+                        net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+            }
+        } else {
+            for (var a : new net.minecraft.world.entity.ai.attributes.AttributeInstance[]{dmg, spd, kb}) {
+                if (a != null) {
+                    a.removeModifier(FURY);
+                }
+            }
         }
     }
 

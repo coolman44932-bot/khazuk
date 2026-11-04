@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GIG",
+    " S ",
+    " S "
+  ],
+  "key": {
+    "G": "minecraft:gold_block",
+    "I": "minecraft:iron_block",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "khazuk:grungnis_hammer",
+    "count": 1
+  }
+}

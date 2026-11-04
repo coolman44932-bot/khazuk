@@ -217,8 +217,10 @@ public final class Grudges {
         int gold = GOLD_BASE + GOLD_PER * g.need;
         hold.addCurrency(gold, "A grudge settled");
         hold.brew().addAle(ALE_REWARD);
+        hold.devotion().add(claude.khazuk.god.Devotion.GRUDGE_SETTLED);  // D7: the Ancestors are pleased, and the hold's devotion rises
         hold.tellOwner(hold.settlementName() + ": the grudge against " + g.name + " is settled and struck out. The Ancestors are pleased: "
-                + gold + " gold to the hoard and " + ALE_REWARD + " ale to the barrels"
+                + gold + " gold to the hoard, " + ALE_REWARD + " ale to the barrels and " + claude.khazuk.god.Devotion.GRUDGE_SETTLED
+                + " devotion"
                 + (newly ? ", and the Dawi bear it: they strike " + nameOf(g) + " " + BEARER_PERCENT + "% harder from now on." : "."),
                 ChatFormatting.GOLD);
         book(level, hold, "grudge_settled");

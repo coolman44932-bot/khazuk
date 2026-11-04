@@ -96,7 +96,8 @@ public abstract class Marksman extends Dawi {
         level.playSound(null, getX(), getY(), getZ(), report(), getSoundSource(), 1.0f, 0.9f + getRandom().nextFloat() * 0.2f);
         triggerAnim("attack", "attack");
         foeShotAt();                                             // the engine's word for a ranged blow: he is getting at his foe
-        if (mark.hurtServer(level, level.damageSources().mobProjectile(this, this), shotDamageOn(mark))) {
+        float shot = shotDamageOn(mark) * (furyUp() ? claude.khazuk.god.AncestorPowers.FURY_SHOT : 1f);   // D7: Grimnir's Fury
+        if (mark.hurtServer(level, level.damageSources().mobProjectile(this, this), shot)) {
             shotsForTests++;
             setLastHurtMob(mark);
         }
@@ -144,7 +145,7 @@ public abstract class Marksman extends Dawi {
             m.getNavigation().stop();
             if (--cooldown <= 0 && m.level() instanceof ServerLevel sl) {
                 m.shoot(sl, t);
-                cooldown = m.reload();
+                cooldown = m.furyUp() ? Math.round(m.reload() * claude.khazuk.god.AncestorPowers.FURY_RELOAD) : m.reload();
             }
         }
     }

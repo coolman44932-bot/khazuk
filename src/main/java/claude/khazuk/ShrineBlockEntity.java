@@ -52,6 +52,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     private final claude.khazuk.hold.Runes runes = new claude.khazuk.hold.Runes();
     /** D6: the Barracks' missile troops. */
     private final claude.khazuk.hold.Ranks ranks = new claude.khazuk.hold.Ranks();
+    /** D7: the hold's devotion, what the Ancestor Gods' powers are paid from. */
+    private final claude.khazuk.god.Devotion devotion = new claude.khazuk.god.Devotion();
 
     public ShrineBlockEntity(BlockPos pos, BlockState state) {
         super(KRegistry.SHRINE_ENTITY.get(), pos, state, KEYS);
@@ -104,6 +106,10 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return ranks;
     }
 
+    public claude.khazuk.god.Devotion devotion() {
+        return devotion;
+    }
+
     /** Broken: the kit at the Runesmith's anvil drops where the Shrine stood, never lost (the review of a3aecff). */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
@@ -121,7 +127,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         brew.second(level, this);
         runes.second(level, this);
         ranks.second(level, this);
-        if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty()) {
+        devotion.second(level, this);
+        if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty() | devotion.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
     }
@@ -134,6 +141,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         brew.save(tag);
         grudges.save(tag);
         runes.save(tag);
+        devotion.save(tag);
         out.store("khazuk", CompoundTag.CODEC, tag);
         out.storeNullable("rune_kit", net.minecraft.world.item.ItemStack.CODEC, runes.kit().isEmpty() ? null : runes.kit());
     }
@@ -146,6 +154,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         brew.load(tag);
         grudges.load(tag);
         runes.load(tag);
+        devotion.load(tag);
         runes.kit(in.read("rune_kit", net.minecraft.world.item.ItemStack.CODEC).orElse(net.minecraft.world.item.ItemStack.EMPTY));
     }
 

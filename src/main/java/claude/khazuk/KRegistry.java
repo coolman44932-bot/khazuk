@@ -65,6 +65,21 @@ public final class KRegistry {
             () -> EntityType.Builder.of(claude.khazuk.hold.AnvilOfDoom::new, MobCategory.MISC).sized(2.6f, 1.6f).eyeHeight(1.2f).fireImmune()
                     .clientTrackingRange(10).build(key("anvil_of_doom")));
 
+    /** D7: Grungni's Hammer as it falls (god.GrungniHammer): drawn from the sky down, so its box is a block and it is never culled. */
+    public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.god.GrungniHammer>> GRUNGNIS_HAMMER_STRIKE = ENTITIES.register("grungnis_hammer",
+            () -> EntityType.Builder.<claude.khazuk.god.GrungniHammer>of(claude.khazuk.god.GrungniHammer::new, MobCategory.MISC).sized(1.0f, 1.0f)
+                    .clientTrackingRange(16).updateInterval(20).noSave().build(key("grungnis_hammer")));
+    /** Its blow (data/khazuk/damage_type/grungnis_hammer.json): "struck down by Grungni's Hammer". */
+    public static final ResourceKey<net.minecraft.world.damagesource.DamageType> HAMMER_DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE,
+            Identifier.fromNamespaceAndPath(Khazuk.MODID, "grungnis_hammer"));
+    /** D7: the Ancestor Gods' tokens (god.AncestorPowers): each calls its power on its hold's devotion. */
+    public static final DeferredItem<claude.khazuk.god.AncestorPowers.Token> GRUNGNIS_HAMMER = ITEMS.registerItem("grungnis_hammer",
+            p -> new claude.khazuk.god.AncestorPowers.Token(p.stacksTo(1).fireResistant(), claude.khazuk.god.AncestorPowers.Power.HAMMER));
+    public static final DeferredItem<claude.khazuk.god.AncestorPowers.Token> VALAYAS_WARD = ITEMS.registerItem("valayas_ward",
+            p -> new claude.khazuk.god.AncestorPowers.Token(p.stacksTo(1).fireResistant(), claude.khazuk.god.AncestorPowers.Power.WARD));
+    public static final DeferredItem<claude.khazuk.god.AncestorPowers.Token> GRIMNIRS_FURY = ITEMS.registerItem("grimnirs_fury",
+            p -> new claude.khazuk.god.AncestorPowers.Token(p.stacksTo(1).fireResistant(), claude.khazuk.god.AncestorPowers.Power.FURY));
+
     /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_KEEP = ITEMS.registerItem("plan_keep",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_keep"));
@@ -133,6 +148,9 @@ public final class KRegistry {
                 out.accept(QUARRELLER_EGG.get());
                 out.accept(THUNDERER_EGG.get());
                 out.accept(ANVIL_OF_DOOM_ITEM.get());
+                out.accept(GRUNGNIS_HAMMER.get());
+                out.accept(VALAYAS_WARD.get());
+                out.accept(GRIMNIRS_FURY.get());
                 out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
                 out.accept(MINER_EGG.get());
