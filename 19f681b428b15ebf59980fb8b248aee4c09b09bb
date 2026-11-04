@@ -1,0 +1,2 @@
+fix-reviewer (Sonnet 5.5 agent), 2026-11-02: the review of 745c3f5's fixes (throne return in dropAllDeathLoot, besideTheBlow restoring i-frames, crag retry). Open: a retry cell whose chunk unloads is dropped; a restart mid-wait forgets held cells and the owner's message; the retry path is untested; retried not cleared with its gate.
+REVIEW PASS WITH NOTES 19f681b
