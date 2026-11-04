@@ -44,14 +44,19 @@ public class Warrior extends Dawi {
                 .add(Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_RESISTANCE);
     }
 
-    /** Whether {@code from} is in front of him, within the shield's arc (level ground: height doesn't count). */
+    /**
+     * Whether {@code from} is in front of him, within the shield's arc of where his body faces or where he looks (the body lags the head by
+     * up to 75 degrees: a foe he has turned his head to is one he brings the shield round to; the review of 08527b2). Level ground: height
+     * doesn't count.
+     */
     public boolean shieldFaces(Vec3 from) {
         Vec3 to = new Vec3(from.x - getX(), 0, from.z - getZ());
         if (to.lengthSqr() < 1e-6) {
             return false;                                        // from inside him: no side to turn it from
         }
-        Vec3 facing = Vec3.directionFromRotation(0, yBodyRot);
-        return facing.dot(to.normalize()) >= Math.cos(Math.toRadians(SHIELD_ARC));
+        Vec3 dir = to.normalize();
+        double arc = Math.cos(Math.toRadians(SHIELD_ARC));
+        return Vec3.directionFromRotation(0, yBodyRot).dot(dir) >= arc || Vec3.directionFromRotation(0, getYHeadRot()).dot(dir) >= arc;
     }
 
     @Override
