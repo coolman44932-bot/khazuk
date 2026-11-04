@@ -57,7 +57,7 @@ public class KhazukAssetGameTests {
     /** Both units' geo files are where GeckoLib looks, read with a known format version, bake, and carry every bone the race's code and the renderer name. */
     @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
     public static void theUnitsModelsBakeInGeckoLib(GameTestHelper h) throws Exception {
-        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord")) {
+        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord", "quarreller", "thunderer")) {
             String path = path(h, GeckoLibResources.MODELS_PATH, unit(kind), ".geo.json");
             Geometry geo;
             try (InputStreamReader r = open(h, path)) {
@@ -75,7 +75,7 @@ public class KhazukAssetGameTests {
     /** Both units' animation files are where GeckoLib looks, bake, with every clip the units' animation controller plays. */
     @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
     public static void theUnitsClipsBakeInGeckoLib(GameTestHelper h) throws Exception {
-        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord")) {
+        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord", "quarreller", "thunderer")) {
             String path = path(h, GeckoLibResources.ANIMATIONS_PATH, unit(kind), ".animation.json");
             BakedAnimations baked;
             try (InputStreamReader r = open(h, path)) {

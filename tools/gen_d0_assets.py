@@ -179,6 +179,16 @@ def anvil_items():
             lum = (r + g + b) / 3
             im.putpixel((x, y), (0, 0, 0, 0) if a == 0 else (min(255, int(lum * 1.3 + 20)), min(255, int(lum * 1.05 + 10)), int(lum * 0.5), a))
     im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "runelord_spawn_egg.png"))
+    for kind, tint in (("quarreller", (0.75, 0.85, 0.55)), ("thunderer", (1.1, 0.75, 0.45))):     # D6: olive and copper
+        eg = Image.new("RGBA", src.size)
+        for y in range(src.size[1]):
+            for x in range(src.size[0]):
+                r_, g_, b_, a_ = src.getpixel((x, y))
+                lum = (r_ + g_ + b_) / 3
+                eg.putpixel((x, y), (0, 0, 0, 0) if a_ == 0 else tuple(min(255, int(lum * f + 15)) for f in tint) + (a_,))
+        eg.save(os.path.join(RES, "assets", "khazuk", "textures", "item", kind + "_spawn_egg.png"))
+        out(f"assets/khazuk/items/{kind}_spawn_egg.json", {"model": {"type": "minecraft:model", "model": f"khazuk:item/{kind}_spawn_egg"}})
+        out(f"assets/khazuk/models/item/{kind}_spawn_egg.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"khazuk:item/{kind}_spawn_egg"}})
     out("assets/khazuk/items/runelord_spawn_egg.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/runelord_spawn_egg"}})
     out("assets/khazuk/models/item/runelord_spawn_egg.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/runelord_spawn_egg"}})
     r = random.Random(29)
@@ -212,6 +222,10 @@ def anvil_items():
     d["entity.khazuk.runelord"] = "Runelord"
     d["item.khazuk.runelord_spawn_egg"] = "Runelord Spawn Egg"
     d["entity.khazuk.anvil_of_doom"] = "Anvil of Doom"
+    d["entity.khazuk.quarreller"] = "Quarreller"
+    d["item.khazuk.quarreller_spawn_egg"] = "Quarreller Spawn Egg"
+    d["entity.khazuk.thunderer"] = "Thunderer"
+    d["item.khazuk.thunderer_spawn_egg"] = "Thunderer Spawn Egg"
     d["item.khazuk.anvil_of_doom"] = "Anvil of Doom"
     out("assets/khazuk/lang/en_us.json", d)
 

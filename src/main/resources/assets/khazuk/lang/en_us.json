@@ -21,5 +21,9 @@
   "entity.khazuk.runelord": "Runelord",
   "item.khazuk.runelord_spawn_egg": "Runelord Spawn Egg",
   "entity.khazuk.anvil_of_doom": "Anvil of Doom",
-  "item.khazuk.anvil_of_doom": "Anvil of Doom"
+  "item.khazuk.anvil_of_doom": "Anvil of Doom",
+  "entity.khazuk.quarreller": "Quarreller",
+  "item.khazuk.quarreller_spawn_egg": "Quarreller Spawn Egg",
+  "entity.khazuk.thunderer": "Thunderer",
+  "item.khazuk.thunderer_spawn_egg": "Thunderer Spawn Egg"
 }

@@ -68,6 +68,8 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.THRONE.get(), ThroneRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNESMITH.get(), RunesmithRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNELORD.get(), RunelordRenderer::new);
+        e.registerEntityRenderer(KRegistry.QUARRELLER.get(), ctx -> new UnitRenderer<>(ctx, "quarreller"));
+        e.registerEntityRenderer(KRegistry.THUNDERER.get(), ctx -> new UnitRenderer<>(ctx, "thunderer"));
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
     }
 
@@ -113,6 +115,20 @@ public final class KhazukClient {
             super(ctx, new RunelordModel());
             withRenderLayer(com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer::new);
             this.shadowRadius = 0.5f;
+        }
+    }
+
+    /** D6's rank-and-file on their fast models: any Dawi drawn by the crowd renderer from its own model. */
+    static final class UnitModel<T extends claude.khazuk.Dawi> extends HordeGeoModel<T> {
+        UnitModel(String kind) {
+            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, kind), true);
+        }
+    }
+
+    static final class UnitRenderer<T extends claude.khazuk.Dawi> extends HordeRenderer<T, LivingEntityRenderState> {
+        UnitRenderer(EntityRendererProvider.Context ctx, String kind) {
+            super(ctx, new UnitModel<>(kind));
+            this.shadowRadius = 0.4f;
         }
     }
 

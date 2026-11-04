@@ -50,6 +50,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     private final claude.khazuk.hold.Grudges grudges = new claude.khazuk.hold.Grudges();
     /** D5: the hold's runes, and the Runesmith's work at its anvil. */
     private final claude.khazuk.hold.Runes runes = new claude.khazuk.hold.Runes();
+    /** D6: the Barracks' missile troops. */
+    private final claude.khazuk.hold.Ranks ranks = new claude.khazuk.hold.Ranks();
 
     public ShrineBlockEntity(BlockPos pos, BlockState state) {
         super(KRegistry.SHRINE_ENTITY.get(), pos, state, KEYS);
@@ -98,6 +100,10 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return runes;
     }
 
+    public claude.khazuk.hold.Ranks ranks() {
+        return ranks;
+    }
+
     /** Broken: the kit at the Runesmith's anvil drops where the Shrine stood, never lost (the review of a3aecff). */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
@@ -114,6 +120,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         crags.second(level, this, HoldCrag.PER_SECOND);
         brew.second(level, this);
         runes.second(level, this);
+        ranks.second(level, this);
         if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }

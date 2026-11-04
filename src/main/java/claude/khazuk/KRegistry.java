@@ -49,6 +49,13 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Runesmith::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("runesmith")));
 
+    /** D6: the hold's missile troops, raised by its Barracks: the Quarreller (crossbow) and the Thunderer (handgun). */
+    public static final DeferredHolder<EntityType<?>, EntityType<Quarreller>> QUARRELLER = ENTITIES.register("quarreller",
+            () -> EntityType.Builder.of(Quarreller::new, MobCategory.CREATURE).sized(0.8f, 1.45f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("quarreller")));
+    public static final DeferredHolder<EntityType<?>, EntityType<Thunderer>> THUNDERER = ENTITIES.register("thunderer",
+            () -> EntityType.Builder.of(Thunderer::new, MobCategory.CREATURE).sized(0.8f, 1.45f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("thunderer")));
     /** D5b: the Runelord, the Runesmith raised to a lord. */
     public static final DeferredHolder<EntityType<?>, EntityType<Runelord>> RUNELORD = ENTITIES.register("runelord",
             () -> EntityType.Builder.of(Runelord::new, MobCategory.CREATURE).sized(0.8f, 1.55f).eyeHeight(1.25f).clientTrackingRange(10)
@@ -82,6 +89,10 @@ public final class KRegistry {
             p -> new SpawnEggItem(p.spawnEgg(RUNESMITH.get())));
     public static final DeferredItem<SpawnEggItem> RUNELORD_EGG = ITEMS.registerItem("runelord_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(RUNELORD.get())));
+    public static final DeferredItem<SpawnEggItem> QUARRELLER_EGG = ITEMS.registerItem("quarreller_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(QUARRELLER.get())));
+    public static final DeferredItem<SpawnEggItem> THUNDERER_EGG = ITEMS.registerItem("thunderer_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(THUNDERER.get())));
     /** D5b: the Anvil of Doom, carried: set it down on the ground, facing the way you face. */
     public static final DeferredItem<claude.khazuk.hold.AnvilOfDoomItem> ANVIL_OF_DOOM_ITEM = ITEMS.registerItem("anvil_of_doom",
             p -> new claude.khazuk.hold.AnvilOfDoomItem(p.stacksTo(1).fireResistant()));
@@ -119,6 +130,8 @@ public final class KRegistry {
                 out.accept(PLAN_RUNIC_FORGE.get());
                 out.accept(RUNESMITH_EGG.get());
                 out.accept(RUNELORD_EGG.get());
+                out.accept(QUARRELLER_EGG.get());
+                out.accept(THUNDERER_EGG.get());
                 out.accept(ANVIL_OF_DOOM_ITEM.get());
                 out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
@@ -148,6 +161,8 @@ public final class KRegistry {
         e.put(WARRIOR.get(), Warrior.createAttributes().build());
         e.put(RUNESMITH.get(), Runesmith.createAttributes().build());
         e.put(RUNELORD.get(), Runelord.createAttributes().build());
+        e.put(QUARRELLER.get(), Quarreller.createAttributes().build());
+        e.put(THUNDERER.get(), Thunderer.createAttributes().build());
         e.put(ANVIL_OF_DOOM.get(), claude.khazuk.hold.AnvilOfDoom.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }
