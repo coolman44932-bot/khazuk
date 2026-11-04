@@ -19,7 +19,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 /**
  * The Dwarfs' look: its two units drawn by the engine's crowd renderer (HordeRenderer: far ones throttled, simplified and kept),
- * on the test race's Blockbench figures (block bench/bbsrc/testrace_build.js) until D2 models them; the engine's caches cleared when resources reload, as every race does.
+ * on D2's Blockbench figures (block bench/bbsrc/khazuk_build.js: the candle-crowned Miner, the horned Warrior with axe and round shield);
+ * the engine's caches cleared when resources reload, as every race does.
  */
 @EventBusSubscriber(modid = Khazuk.MODID, value = Dist.CLIENT)
 public final class KhazukClient {

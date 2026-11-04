@@ -37,11 +37,11 @@ public final class KRegistry {
 
     /** About 1.5 blocks tall: a small worker. */
     public static final DeferredHolder<EntityType<?>, EntityType<Miner>> MINER = ENTITIES.register("miner",
-            () -> EntityType.Builder.of(Miner::new, MobCategory.CREATURE).sized(0.6f, 1.5f).eyeHeight(1.3f).clientTrackingRange(10)
+            () -> EntityType.Builder.of(Miner::new, MobCategory.CREATURE).sized(0.8f, 1.45f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("miner")));
     /** About 1.8 blocks tall: the worker's armoured kin. */
     public static final DeferredHolder<EntityType<?>, EntityType<Warrior>> WARRIOR = ENTITIES.register("dwarf_warrior",
-            () -> EntityType.Builder.of(Warrior::new, MobCategory.CREATURE).sized(0.7f, 1.8f).eyeHeight(1.6f).clientTrackingRange(10)
+            () -> EntityType.Builder.of(Warrior::new, MobCategory.CREATURE).sized(0.8f, 1.45f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("dwarf_warrior")));
 
     /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */

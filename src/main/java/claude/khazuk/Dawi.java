@@ -308,6 +308,9 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
             return;
         }
         super.aiStep();
+        if (!level().isClientSide()) {
+            mend();
+        }
     }
 
     private void tickSink() {
@@ -343,6 +346,45 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     @Override
     public boolean isInvulnerableTo(ServerLevel level, DamageSource source) {
         return isBurrowing() && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY) || super.isInvulnerableTo(level, source);
+    }
+
+    // ------------------------------------------------------------------ Dawi grit (D2)
+
+    /**
+     * Stubborn (the army book's Dwarfs hold where others run): below {@value #STUBBORN_BELOW} of his health a Dwarf takes only
+     * {@value #STUBBORN_TAKEN} of a blow. /kill and the void get past it.
+     */
+    public static final float STUBBORN_BELOW = 0.4f, STUBBORN_TAKEN = 0.75f;
+    /** Out of the fight ({@value #CALM_TICKS} ticks unhurt, no foe), he mends {@value #HEAL} health every {@value #HEAL_TICKS} ticks. */
+    public static final int CALM_TICKS = 200, HEAL_TICKS = 20;
+    public static final float HEAL = 1f;
+    private int lastHurtTick = -10000;
+
+    public boolean isStubborn() {
+        return getHealth() < getMaxHealth() * STUBBORN_BELOW;
+    }
+
+    /** What he takes of a blow of {@code amount}: all of it, or less when he's stubborn. A Warrior's shield comes before this. */
+    protected float taken(DamageSource source, float amount) {
+        return isStubborn() && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY) ? amount * STUBBORN_TAKEN : amount;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        boolean hurt = super.hurtServer(level, source, taken(source, amount));
+        if (hurt) {
+            lastHurtTick = tickCount;
+        }
+        return hurt;
+    }
+
+    /** Out of the fight he mends (called each server tick). */
+    private void mend() {
+        if (!isAlive() || getTarget() != null || tickCount - lastHurtTick < CALM_TICKS || tickCount % HEAL_TICKS != 0
+                || getHealth() >= getMaxHealth()) {
+            return;
+        }
+        heal(HEAL);
     }
 
     /** Blows that landed and played the attack clip, for the tests. */
