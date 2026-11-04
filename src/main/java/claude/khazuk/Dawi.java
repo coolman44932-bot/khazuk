@@ -166,7 +166,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
 
     @Override
     public float tempo() {
-        return 0.9f + Math.floorMod(getUUID().hashCode(), 31) / 100f;
+        return (0.9f + Math.floorMod(getUUID().hashCode(), 31) / 100f) * (aleUp ? ALE_TEMPO : 1f);
     }
 
     @Override
@@ -310,6 +310,9 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         super.aiStep();
         if (!level().isClientSide()) {
             mend();
+            if (tickCount % 40 == 13) {
+                drink();
+            }
         }
     }
 
@@ -385,6 +388,48 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
             return;
         }
         heal(HEAL);
+    }
+
+    // ------------------------------------------------------------------ ale (D3)
+
+    /** With ale in the hold's barrels (hold/Brewhouse) a Dwarf hits {@value #ALE_DAMAGE} harder, walks a tenth faster and works a quarter faster. */
+    public static final double ALE_DAMAGE = 2, ALE_SPEED = 0.1;
+    public static final float ALE_TEMPO = 1.25f;
+    static final net.minecraft.resources.Identifier ALE = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "ale");
+    private boolean aleUp;
+
+    /** Whether he has ale in him now (refreshed every 2 s from his Shrine's barrels). */
+    public boolean aleUp() {
+        return aleUp;
+    }
+
+    /** His Shrine's barrels: ale in him while they hold any, the bonuses on and off with it. */
+    void drink() {
+        ShrineBlockEntity h = settlement();
+        boolean up = h != null && h.brew().aleUp();
+        if (up == aleUp) {
+            return;
+        }
+        aleUp = up;
+        var dmg = getAttribute(Attributes.ATTACK_DAMAGE);
+        var spd = getAttribute(Attributes.MOVEMENT_SPEED);
+        if (up) {
+            if (dmg != null) {
+                dmg.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(ALE, ALE_DAMAGE,
+                        net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE));
+            }
+            if (spd != null) {
+                spd.addOrUpdateTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(ALE, ALE_SPEED,
+                        net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+            }
+        } else {
+            if (dmg != null) {
+                dmg.removeModifier(ALE);
+            }
+            if (spd != null) {
+                spd.removeModifier(ALE);
+            }
+        }
     }
 
     /** Blows that landed and played the attack clip, for the tests. */

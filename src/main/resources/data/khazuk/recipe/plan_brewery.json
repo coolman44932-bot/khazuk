@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:stone_bricks",
+    "minecraft:barrel",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "khazuk:plan_brewery",
+    "count": 1
+  }
+}

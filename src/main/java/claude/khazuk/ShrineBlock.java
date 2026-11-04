@@ -122,6 +122,16 @@ public class ShrineBlock extends BaseEntityBlock {
             stack.setCount(0);
             return InteractionResult.SUCCESS;
         }
+        int malt = stack.is(net.minecraft.world.item.Items.WHEAT) ? claude.khazuk.hold.Brewhouse.MALT_PER_WHEAT
+                : stack.is(net.minecraft.world.item.Items.HAY_BLOCK) ? claude.khazuk.hold.Brewhouse.MALT_PER_HAY : 0;
+        if (malt > 0) {                                          // D3: wheat for the brewery
+            int took = heart.brew().addMalt(malt * stack.getCount());
+            stack.shrink((took + malt - 1) / malt);
+            player.sendSystemMessage(Component.literal(heart.settlementName() + ": " + heart.brew().malt() + " malt for the brewery"
+                    + (heart.has(claude.khazuk.hold.HoldRooms.BREWERY) ? "." : ". Dig a Brewery (the Ancestors' Plan) to brew it into ale."))
+                    .withStyle(ChatFormatting.GOLD));
+            return InteractionResult.SUCCESS;
+        }
         int each = Fare.nutrition(stack);
         if (each > 0) {
             heart.addFood(heart.foodValue(each) * stack.getCount(), Fare.grade(stack), "the Shrine's owner");
@@ -140,7 +150,8 @@ public class ShrineBlock extends BaseEntityBlock {
         }
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart) {
             player.sendSystemMessage(Component.literal(heart.settlementName() + ": " + heart.peopleCount() + " up, " + heart.reserveWorkers()
-                    + " Miners and " + heart.reserveSoldiers() + " Warriors in the deeps, food " + heart.food() + ", gold " + heart.currency())
+                    + " Miners and " + heart.reserveSoldiers() + " Warriors in the deeps, food " + heart.food() + ", gold " + heart.currency()
+                    + ", ale " + heart.brew().ale() + " (malt " + heart.brew().malt() + ")")
                     .withStyle(ChatFormatting.GREEN));
         }
         return InteractionResult.SUCCESS;

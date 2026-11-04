@@ -27,6 +27,10 @@ public final class HoldRooms {
     public static final Rooms.Function GREAT_HALL = Rooms.Function.of("DAWI_GREAT_HALL");
     public static final Rooms.Function BARRACKS = Rooms.Function.of("DAWI_BARRACKS");
     public static final Rooms.Function KEEP = Rooms.Function.of("DAWI_KEEP");
+    /** D3: the hold brews its ale here (hold/Brewhouse). */
+    public static final Rooms.Function BREWERY = Rooms.Function.of("DAWI_BREWERY");
+    /** D3: the hold's hoard: more gold from every ore, and the hoard grows (hold/Brewhouse). */
+    public static final Rooms.Function TREASURY = Rooms.Function.of("DAWI_TREASURY");
 
     public static final List<Rooms.Room> RAISED = List.of(
             new Rooms.Room("dawi_hold_gate", "Hold Gate", 40, GATE,
@@ -49,7 +53,13 @@ public final class HoldRooms {
                     15, 8, 15, 0, 1, 7, List.of(), List.of(), List.of(
                             new Rooms.Station("drift", 14, 1, 7, Direction.EAST),
                             new Rooms.Station("drift", 7, 1, 0, Direction.NORTH),
-                            new Rooms.Station("drift", 7, 1, 14, Direction.SOUTH))));
+                            new Rooms.Station("drift", 7, 1, 14, Direction.SOUTH))),
+            new Rooms.Room("dawi_brewery", "Brewery", 15, BREWERY,
+                    "Copper mash tuns over fires, a still, barrels racked to the vault: the hold's ale, brewed from the wheat brought to the Shrine.",
+                    15, 8, 13, 0, 1, 6, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_treasury", "Treasury", 25, TREASURY,
+                    "The hoard behind a strong door: heaps of gold under an ancestor's eye. Every ore pays more, and gold draws gold.",
+                    13, 8, 11, 0, 1, 5, List.of(), List.of(), List.of()));
 
     public static final List<Rooms.Room> ALL = all();
 

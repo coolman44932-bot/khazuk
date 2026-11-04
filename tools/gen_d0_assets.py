@@ -62,6 +62,10 @@ PLANS = {
                       ["minecraft:stone_bricks", "minecraft:iron_ingot"]),
     "plan_mine": ("Mine", ["...gggg...", "..g....g..", ".g..gg..g.", "....gg....", "....gg....", "....gg....", "....gg...."],
                   ["minecraft:stone_bricks", "minecraft:rail"]),
+    "plan_brewery": ("Brewery", ["..gggggg..", ".g......g.", ".gggggggg.", ".g......g.", ".gggggggg.", ".g......g.", "..gggggg.."],
+                     ["minecraft:stone_bricks", "minecraft:barrel"]),
+    "plan_treasury": ("Treasury", ["....gg....", "...gggg...", "..gggggg..", "....gg....", ".gg.gg.gg.", "gggggggggg", "gggggggggg"],
+                      ["minecraft:stone_bricks", "minecraft:gold_ingot", "minecraft:iron_ingot"]),
 }
 
 

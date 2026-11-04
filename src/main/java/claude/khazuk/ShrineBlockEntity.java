@@ -44,6 +44,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     public int rounds;
     /** The mountains the god raises round the hold's gates. */
     private final HoldCrag crags = new HoldCrag();
+    /** D3: the hold's malt, ale and hoard. */
+    private final claude.khazuk.hold.Brewhouse brew = new claude.khazuk.hold.Brewhouse();
 
     public ShrineBlockEntity(BlockPos pos, BlockState state) {
         super(KRegistry.SHRINE_ENTITY.get(), pos, state, KEYS);
@@ -80,12 +82,17 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         return crags;
     }
 
+    public claude.khazuk.hold.Brewhouse brew() {
+        return brew;
+    }
+
     /** The engine's second, then a second's rise of a gate's mountain. */
     @Override
     public void second(ServerLevel level) {
         super.second(level);
         crags.second(level, this, HoldCrag.PER_SECOND);
-        if (crags.takeDirty()) {
+        brew.second(level, this);
+        if (crags.takeDirty() | brew.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
     }
@@ -95,13 +102,16 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         super.saveAdditional(out);
         CompoundTag tag = new CompoundTag();
         crags.save(tag);
+        brew.save(tag);
         out.store("khazuk", CompoundTag.CODEC, tag);
     }
 
     @Override
     protected void loadAdditional(ValueInput in) {
         super.loadAdditional(in);
-        crags.load(in.read("khazuk", CompoundTag.CODEC).orElseGet(CompoundTag::new));
+        CompoundTag tag = in.read("khazuk", CompoundTag.CODEC).orElseGet(CompoundTag::new);
+        crags.load(tag);
+        brew.load(tag);
     }
 
     @Override
@@ -216,21 +226,22 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     }
 
     /**
-     * Gold ore a dig cuts through goes to the hold's gold, two to the ore (a dwarf gets more out of it than a player's pick). A container
+     * Gold ore a dig cuts through goes to the hold's gold, two to the ore (a dwarf gets more out of it than a player's pick), three with a
+     * Treasury dug (D3). A container
      * it cuts (one set down in the way after the dig began: the ones there before are left standing, keepOutCells) spills what it held
      * where it stood, before the dig empties it.
      */
     @Override
     public void takeSpoils(ServerLevel level, BlockPos pos, BlockState was, @Nullable BlockEntity be) {
         if (was.is(net.minecraft.tags.BlockTags.GOLD_ORES)) {
-            addCurrency(GOLD_PER_ORE, "Gold dug out");
+            addCurrency(GOLD_PER_ORE + (has(claude.khazuk.hold.HoldRooms.TREASURY) ? TREASURY_BONUS : 0), "Gold dug out");
         }
         if (be instanceof net.minecraft.world.Container c && !c.isEmpty()) {
             net.minecraft.world.Containers.dropContents(level, pos, c);
         }
     }
 
-    public static final int GOLD_PER_ORE = 2;
+    public static final int GOLD_PER_ORE = 2, TREASURY_BONUS = 1;
 
     /** Tests: one round of spawning now, whatever its clock says. */
     public void roundForTests(ServerLevel level) {

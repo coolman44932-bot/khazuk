@@ -1,11 +1,15 @@
-"""The hold's first dug halls (Khazuk! D1, behind the Hold Gate): the Great Hall, the barracks and the mine, as room templates the
-engine's dig side digs out (Works#dig): the Miners cut the rock and set the hall's own stone, pillars, lamps and tables as they go.
+"""The hold's dug halls: D1's first ones behind the Hold Gate (the Great Hall, the barracks and the mine) and D3's (the brewery and the
+treasury), as room templates the engine's dig side digs out (Works#dig): the Miners cut the rock and set the hall's own stone, pillars,
+lamps and tables as they go.
 
 Every template is in the engine's frame: x away from the door (the door on the x = 0 face, at y 1), y up (y 0 the floor), z across.
 Each hall is lined in dressed stone (its walls, floor and vault are part of it), so it reads as a dwarf hall whatever rock it is cut in.
 
     python tools/gen_halls.py                       the block maps and their sizes
     python tools/gen_halls.py --at x y z            and build each in the running bridge game, side by side from x y z, for saving
+    python tools/gen_halls.py --write dawi_brewery dawi_treasury
+                                                    write those templates straight to data/khazuk/structure/room (no game needed: every
+                                                    cell of the box in 26.1's data version, as the bridge's structure_save writes it)
 """
 import json, os, random, sys
 
@@ -243,13 +247,122 @@ def mine():
     return h
 
 
-HALLS = {"dawi_great_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine}
+def brewery():
+    """The brewery (D3), 15 long, 8 high, 13 wide: two copper mash tuns over fires, a still of copper with its pipe up into the vault,
+    racks of barrels three high along both walls, sacks of grain (hay) by the door, a long tasting table, lanterns on chains. The hold
+    brews its ale here from the wheat its god brings to the Shrine."""
+    h = Hall(15, 8, 13, 6, 3, 4, 17)
+    h.shell()
+    for z in (1, 11):                                                    # barrel racks along both walls, three high, oak frames between
+        for x in range(2, 13):
+            if x % 4 == 1:
+                for y in range(1, 4):
+                    h.put(x, y, z, "minecraft:stripped_spruce_log[axis=y]")
+            else:
+                for y in range(1, 4):
+                    h.put(x, y, z, "minecraft:barrel[facing=" + ("south" if z == 1 else "north") + "]")
+        for x in range(2, 13):
+            h.put(x, 4, z, "minecraft:spruce_slab[type=bottom]")
+    for (x, z) in ((10, 4), (10, 8)):                                    # the mash tuns: cauldrons of water over fires in a copper ring
+        h.put(x, 0, z, FIRE)
+        h.put(x, 1, z, "minecraft:water_cauldron[level=3]")
+        for dx, dz in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            h.put(x + dx, 1, z + dz, "minecraft:waxed_cut_copper_stairs[facing=" + {(-1, 0): "east", (1, 0): "west", (0, -1): "south", (0, 1): "north"}[(dx, dz)] + ",half=bottom]")
+    for y in range(1, 4):                                                # the still at the far end: a copper column, its pipe to the vault
+        h.put(13, y, 6, "minecraft:waxed_copper_block" if y < 3 else "minecraft:waxed_exposed_copper")
+    for y in range(4, 7):
+        h.put(13, y, 6, "minecraft:lightning_rod[facing=up]")
+    h.put(12, 1, 6, "minecraft:brewing_stand")
+    for z in range(4, 9):                                                # the tasting table down the middle, stools by it
+        h.put(6, 1, z, "minecraft:dark_oak_slab[type=top]")
+        h.put(5, 1, z, "minecraft:dark_oak_trapdoor[facing=east,half=bottom,open=false]" if z % 2 == 0 else AIR)
+    h.put(6, 2, 5, "minecraft:decorated_pot")
+    h.put(6, 2, 7, "minecraft:flower_pot")
+    for (x, z) in ((2, 3), (2, 9), (3, 3)):                              # sacks of grain by the door
+        h.put(x, 1, z, "minecraft:hay_block[axis=y]")
+    h.put(2, 2, 3, "minecraft:hay_block[axis=x]")
+    h.lamp(4, 6, 2)
+    h.lamp(10, 6, 2)
+    return h
+
+
+def treasury():
+    """The treasury (D3), 13 long, 8 high, 11 wide: the hold's hoard. Heaps of gold block and raw gold along the walls, a gold-banded
+    vault, a strong door's iron bars either side of the doorway, an ancestor's face over a gold dais at the far end, and a strongbox
+    (a barrel bound in iron) on it. With one dug, the hold gets more gold out of every ore and its hoard grows."""
+    h = Hall(13, 8, 11, 5, 3, 4, 19)
+    h.shell()
+    for x in range(1, 12):                                               # a gold band round the walls at head height
+        for z in (0, 10):
+            h.put(x, 4, z, GOLD)
+    for z in range(1, 10):
+        h.put(12, 4, z, GOLD)
+    for y in range(1, 4):                                                # iron bars either side of the doorway: the strong door
+        h.put(1, y, 3, "minecraft:iron_bars")
+        h.put(1, y, 7, "minecraft:iron_bars")
+    heaps = [(3, 1, 2), (4, 1, 1), (5, 1, 1), (3, 1, 9), (4, 1, 9), (7, 1, 1), (8, 1, 1), (8, 1, 9), (9, 1, 9), (7, 1, 9)]
+    for i, (x, y, z) in enumerate(heaps):                                # the heaps: gold block piled two high, raw gold on top
+        h.put(x, y, z, GOLD)
+        if i % 2 == 0:
+            h.put(x, y + 1, z, "minecraft:raw_gold_block")
+    for z in range(3, 8):                                                # the dais at the far end, gold-edged
+        for x in range(9, 12):
+            h.put(x, 1, z, CHIS if x == 9 else POL)
+        h.put(9, 2, z, "minecraft:gold_block" if z in (3, 7) else AIR)
+    h.put(10, 2, 5, "minecraft:barrel[facing=up]")                       # the strongbox
+    h.put(10, 3, 5, "minecraft:heavy_weighted_pressure_plate")
+    h.put(10, 2, 4, "minecraft:gold_block")
+    h.put(10, 2, 6, "minecraft:gold_block")
+    h.face(11, 5, 2)
+    h.lamp(4, 5, 2)
+    h.lamp(8, 5, 2)
+    return h
+
+
+HALLS = {"dawi_great_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury}
+DATA_VERSION = 4790                                                      # 26.1.2's, as the bridge's structure_save writes it
+
+
+def write(h, path):
+    """The hall's template straight to an .nbt file: every cell of its box, as structure_save writes it (gen_keep.py's way)."""
+    sys.path.insert(0, os.path.join(HERE, "..", "..", "tools", "structgen"))
+    import nbtio
+    cells = sorted(h.b.items(), key=lambda kv: (kv[0][1], kv[0][2], kv[0][0]))
+    palette, index, blocks = [], {}, []
+    for (x, y, z), st in cells:
+        if st not in index:
+            index[st] = len(palette)
+            name, props = st, {}
+            if "[" in st:
+                name, rest = st.split("[", 1)
+                props = dict(kv.split("=") for kv in rest.rstrip("]").split(","))
+            entry = {"Name": nbtio.String(name)}
+            if props:
+                entry["Properties"] = nbtio.Compound({k: nbtio.String(v) for k, v in props.items()})
+            palette.append(nbtio.Compound(entry))
+        blocks.append(nbtio.Compound({"pos": nbtio.List([nbtio.Int(x), nbtio.Int(y), nbtio.Int(z)]), "state": nbtio.Int(index[st])}))
+    root = nbtio.Compound({
+        "DataVersion": nbtio.Int(DATA_VERSION),
+        "size": nbtio.List([nbtio.Int(h.sx), nbtio.Int(h.sy), nbtio.Int(h.sz)]),
+        "palette": nbtio.List(palette, nbtio.COMPOUND),
+        "blocks": nbtio.List(blocks, nbtio.COMPOUND),
+        "entities": nbtio.List([], nbtio.COMPOUND),
+    })
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    nbtio.write(path, root)
 
 
 def main():
     built = {k: f() for k, f in HALLS.items()}
     for k, h in built.items():
         print(f"{k}: size ({h.sx}, {h.sy}, {h.sz}), door (0, 1, {h.door_z}), stations {h.stations}")
+    if "--write" in sys.argv:
+        for k in sys.argv[sys.argv.index("--write") + 1:]:
+            if k.startswith("--"):
+                break
+            path = os.path.join(HERE, "..", "src", "main", "resources", "data", "khazuk", "structure", "room", k + ".nbt")
+            write(built[k], path)
+            print(f"  wrote {os.path.relpath(path)}")
     if "--at" in sys.argv:
         i = sys.argv.index("--at")
         o = [int(v) for v in sys.argv[i + 1:i + 4]]

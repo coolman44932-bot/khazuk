@@ -55,6 +55,10 @@ public final class KRegistry {
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_barracks"));
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_MINE = ITEMS.registerItem("plan_mine",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_mine"));
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_BREWERY = ITEMS.registerItem("plan_brewery",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_brewery"));
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_TREASURY = ITEMS.registerItem("plan_treasury",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_treasury"));
 
     /** Thorgrim's Throne of Power, the god's mount: 2.4 across the bearers' shields, the seat 2 up (a rider sits above its box). */
     public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.throne.ThroneOfPower>> THRONE = ENTITIES.register("throne_of_power",
@@ -83,6 +87,8 @@ public final class KRegistry {
                 out.accept(PLAN_HOLD_GATE.get());
                 out.accept(PLAN_GREAT_HALL.get());
                 out.accept(PLAN_BARRACKS.get());
+                out.accept(PLAN_BREWERY.get());
+                out.accept(PLAN_TREASURY.get());
                 out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
                 out.accept(MINER_EGG.get());
