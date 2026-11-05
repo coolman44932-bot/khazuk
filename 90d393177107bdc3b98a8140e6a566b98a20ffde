@@ -1,0 +1,1 @@
+REVIEW PASS 90d393177107bdc3b98a8140e6a566b98a20ffde: the statue, client/server split, saves, triggers, sync and tests are sound; its note (getUpdateTag set sentLit) is fixed in 8a969dc. (fix-reviewer, 2026-11-04)
