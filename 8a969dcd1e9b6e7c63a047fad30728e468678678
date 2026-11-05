@@ -1,0 +1,1 @@
+REVIEW PASS 8a969dcd1e9b6e7c63a047fad30728e468678678: sentLit is now set only in syncRunes, so no player's update is swallowed; the raid round-trip test runs in the existing khazukhostile batch (Normal) and is unlikely to be flaky; the png is a genuine screenshot. (fix-reviewer, 2026-11-04)
