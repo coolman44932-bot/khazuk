@@ -133,6 +133,38 @@ public class HallGameTests {
     }
 
     /**
+     * With no cap on a dig's crew (Settlement Core 0.5.6), the whole reserve may come up to dig; if the muster then finds the reserve empty,
+     * the diggers turn out (Works#draft): let go of the dig, no crew any more on themselves too (so saved as any defender, and not sent back
+     * to the dig mid-alarm), the dig left to take crew again.
+     */
+    @GameTest(template = "digsite", timeoutTicks = 400, batch = "khazuk")
+    public static void aBigDigTakesTheReserveAndItsDiggersTurnOutWhenCalled(GameTestHelper h) {
+        ShrineBlockEntity hold = hold(h);
+        hold.addToReserve(10, 0);
+        Rooms.Room room = HoldRooms.room("dawi_barracks");
+        PlanPlacement pl = PlanPlacement.compute(room, h.absolutePos(POCKET.offset(4, 1, 0)), Direction.EAST);
+        List<String> told = new ArrayList<>();
+        h.assertTrue(AncestorPlan.dig(hold, h.getLevel(), pl, true, c -> told.add(c.getString())), "the dig was refused: " + told);
+        int want = hold.works().digs().get(0).crewWanted();
+        h.assertTrue(want > 6, "the barracks' dig wants only " + want + " diggers");
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(hold.works().crewCount() >= 8, "only " + hold.works().crewCount() + " diggers up of the 10"))
+                .thenExecute(() -> {
+                    int crew = hold.works().crewCount();
+                    var drafted = hold.works().draft(h.getLevel(), 3, pl.door());
+                    h.assertTrue(drafted.size() == 3 && hold.works().crewCount() == crew - 3, "drafted " + drafted.size() + ", crew " + crew
+                            + " -> " + hold.works().crewCount());
+                    for (var r : drafted) {
+                        h.assertTrue(!r.isCrew() && !hold.works().isCrew(r.getUUID()) && r.shouldBeSaved(),
+                                "a drafted digger is still crew (on itself " + r.isCrew() + ", to the works " + hold.works().isCrew(r.getUUID())
+                                        + ") or wouldn't be saved");
+                    }
+                    h.assertTrue(hold.works().digs().size() == 1, "the dig stopped when its diggers were drafted");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * A dug mine is the engine's Ore Mine: handed over, the hold's works have its MineWork, its three drift mouths, and its Miners drive a
      * drift out into the rock (the review of 06cd0cf: the hold's land, a cube round the Shrine, counted as "another room" to the mine,
      * and every drift stopped at its first cell).

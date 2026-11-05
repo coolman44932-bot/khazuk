@@ -14,7 +14,7 @@ the deeps to dig your hold, mine its gold and fight for it."""
 [[dependencies.khazuk]]
     modId = "settlementcore"
     type = "required"
-    versionRange = "[${settlementcore_version}]"
+    versionRange = "[${settlementcore_version},0.6)"
     ordering = "AFTER"
     side = "BOTH"
 
