@@ -7,13 +7,26 @@ import claude.settlementcore.settlement.Settlement;
 import claude.settlementcore.settlement.SettlementBlockEntity;
 import claude.settlementcore.settlement.Spawning;
 import claude.settlementcore.unit.SettlerMob;
+import com.geckolib.animatable.GeoBlockEntity;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -27,8 +40,37 @@ import java.util.List;
  * The Dwarfs' settlement: the engine's {@link SettlementBlockEntity} with the race's hooks answered in the plainest way. Its people eat
  * a little, a round of spawning every {@value #ROUND_SECONDS} s makes two workers for every guard out of food, and it brings them up beside
  * it while it has room ({@value #UP_AT_ONCE} up at once, {@value #RESERVE_CAP} in all). Its land is a {@value #RADIUS}-block square round it.
+ * <p>
+ * It is drawn as the statue of the three Ancestors (the detail session's GeckoLib model, handoffs/ancestor_shrine_2026-11-04_done.md;
+ * client/ShrineRenderer), two controllers in this order, the later winning on a bone both key: "main" loops {@code idle}; "rite" plays,
+ * when triggered, {@code pray} as the hold prays (god/Devotion) and an Ancestor's answer as his power is paid from this hold's devotion
+ * (god/AncestorPowers). Its band of ten runes reads the devotion, one lit for every {@value #DEVOTION_PER_RUNE}. That count is all the
+ * client is sent of it, and only when it changes.
  */
-public class ShrineBlockEntity extends SettlementBlockEntity {
+public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlockEntity {
+
+    /** The statue's clips: GeckoLib 5.5.2 throws on a clip missing from the file, so these are the file's exact names (KhazukAssetGameTests). */
+    public static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.ancestor_shrine.idle");
+    public static final RawAnimation PRAY = RawAnimation.begin().thenPlay("animation.ancestor_shrine.pray");
+    public static final RawAnimation ANSWER_GRUNGNI = RawAnimation.begin().thenPlay("animation.ancestor_shrine.answer_grungni");
+    public static final RawAnimation ANSWER_VALAYA = RawAnimation.begin().thenPlay("animation.ancestor_shrine.answer_valaya");
+    public static final RawAnimation ANSWER_GRIMNIR = RawAnimation.begin().thenPlay("animation.ancestor_shrine.answer_grimnir");
+    /** The triggered controller, and its prayer's trigger (each trigger is named as its clip). */
+    public static final String RITE = "rite", PRAY_TRIGGER = "pray";
+    /** The rite's triggers and their clips, in order: what registerControllers registers, and the tests read. */
+    public static final java.util.Map<String, RawAnimation> RITES;
+
+    static {
+        java.util.LinkedHashMap<String, RawAnimation> rites = new java.util.LinkedHashMap<>();
+        rites.put(PRAY_TRIGGER, PRAY);
+        rites.put("answer_grungni", ANSWER_GRUNGNI);
+        rites.put("answer_valaya", ANSWER_VALAYA);
+        rites.put("answer_grimnir", ANSWER_GRIMNIR);
+        RITES = java.util.Collections.unmodifiableMap(rites);
+    }
+    /** The devotion one rune of the band stands for, and the band's runes (bones devotion_1 to devotion_10): a full hold lights them all. */
+    public static final int DEVOTION_PER_RUNE = 20, RUNES = 10;
+    private static final String LIT_KEY = "lit_runes";
 
     static final Keys KEYS = new Keys("hold_name", "gold", "people", "reserve_miners", "reserve_warriors");
     public static final int ROUND_SECONDS = 30;
@@ -61,6 +103,11 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
     private final claude.khazuk.hold.Ranks ranks = new claude.khazuk.hold.Ranks();
     /** D7: the hold's devotion, what the Ancestor Gods' powers are paid from. */
     private final claude.khazuk.god.Devotion devotion = new claude.khazuk.god.Devotion();
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    /** The client's: the band's runes lit, as the server last sent. */
+    private int litRunes;
+    /** The server's: the lit runes the clients were last sent (-1 before the first). */
+    private int sentLit = -1;
 
     public ShrineBlockEntity(BlockPos pos, BlockState state) {
         super(KRegistry.SHRINE_ENTITY.get(), pos, state, KEYS);
@@ -138,6 +185,91 @@ public class ShrineBlockEntity extends SettlementBlockEntity {
         if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty() | devotion.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
+        syncRunes();
+    }
+
+    // ------------------------------------------------------------------ the statue
+
+    /** How many of the band's runes {@code devotion} lights: one for every {@value #DEVOTION_PER_RUNE}, up to {@value #RUNES}. */
+    public static int litFor(int devotion) {
+        return Math.max(0, Math.min(RUNES, devotion / DEVOTION_PER_RUNE));
+    }
+
+    /** The band's runes lit: on the server from the devotion, on the client as last sent. */
+    public int litRunes() {
+        return level != null && level.isClientSide() ? litRunes : litFor(devotion.devotion());
+    }
+
+    /** The clients are sent the lit runes when the count changes (a block update of a few bytes, a few times an hour at most). */
+    public void syncRunes() {
+        int now = litFor(devotion.devotion());
+        if (now != sentLit && level instanceof ServerLevel sl) {
+            sentLit = now;
+            sl.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** The hold prayed (god/Devotion): the band's lit runes swell, the gods' eyes kindle. */
+    public void prayed() {
+        if (level instanceof ServerLevel) {
+            triggerAnim(RITE, PRAY_TRIGGER);
+        }
+    }
+
+    /** {@code p} was paid out of this hold's devotion (god/AncestorPowers): its Ancestor answers on the statue. */
+    public void answered(claude.khazuk.god.AncestorPowers.Power p) {
+        if (level instanceof ServerLevel) {
+            triggerAnim(RITE, answerTrigger(p));
+            syncRunes();                                         // the price may have put out a rune or two
+        }
+    }
+
+    /** The trigger (and clip) of the Ancestor who grants {@code p}. There is no plain "answer". */
+    public static String answerTrigger(claude.khazuk.god.AncestorPowers.Power p) {
+        return switch (p) {
+            case HAMMER -> "answer_grungni";
+            case WARD -> "answer_valaya";
+            case FURY -> "answer_grimnir";
+        };
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<ShrineBlockEntity>("main", 0, test -> test.setAndContinue(IDLE)));
+        AnimationController<ShrineBlockEntity> rite = new AnimationController<>(RITE, 2, test -> PlayState.STOP);
+        RITES.forEach(rite::triggerableAnim);
+        controllers.add(rite);                                   // after "main": its clips win on the bones they key
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return cache;
+    }
+
+    /** What a client is sent of the Shrine, on the chunk's load and on a block update: only the lit runes (the rest is the server's). */
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        int now = litFor(devotion.devotion());
+        tag.putInt(LIT_KEY, now);
+        sentLit = now;
+        return tag;
+    }
+
+    @Override
+    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    /** The client reads only the lit runes, never the engine's whole load (the update doesn't carry it). */
+    @Override
+    public void onDataPacket(Connection net, ValueInput in) {
+        litRunes = in.getIntOr(LIT_KEY, 0);
+    }
+
+    @Override
+    public void handleUpdateTag(ValueInput in) {
+        litRunes = in.getIntOr(LIT_KEY, 0);
     }
 
     @Override

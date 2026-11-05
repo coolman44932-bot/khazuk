@@ -6,7 +6,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
@@ -29,8 +28,12 @@ public final class KRegistry {
     private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Khazuk.MODID);
 
     public static final DeferredBlock<ShrineBlock> SHRINE = BLOCKS.registerBlock("ancestor_shrine", ShrineBlock::new,
-            p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN).strength(3f, 6f).sound(SoundType.AMETHYST).lightLevel(s -> 9));
-    public static final DeferredItem<BlockItem> SHRINE_ITEM = ITEMS.registerSimpleBlockItem("ancestor_shrine", SHRINE, Item.Properties::new);
+            // noOcclusion: the statue (a GeckoLib block entity, drawn past the block) is lit by the light in its own cell, and an occluding block
+            // holds none there, which draws it black (handoffs/ancestor_shrine_2026-11-04_done.md); its 1x1 collision stays
+            p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN).strength(3f, 6f).sound(SoundType.AMETHYST).lightLevel(s -> 9).noOcclusion());
+    /** The Shrine's item: the statue itself in hand and in the inventory (GeckoLib's item render, client/ShrineRenderer). */
+    public static final DeferredItem<ShrineItem> SHRINE_ITEM = ITEMS.registerItem("ancestor_shrine",
+            p -> new ShrineItem(SHRINE.get(), p.useBlockDescriptionPrefix()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ShrineBlockEntity>> SHRINE_ENTITY = BLOCK_ENTITIES.register("ancestor_shrine",
             () -> new BlockEntityType<>(ShrineBlockEntity::new, SHRINE.get()));

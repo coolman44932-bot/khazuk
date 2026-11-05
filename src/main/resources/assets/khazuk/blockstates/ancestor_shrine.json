@@ -1,6 +1,15 @@
 {
   "variants": {
-    "": {
+    "facing=north": {
+      "model": "khazuk:block/ancestor_shrine"
+    },
+    "facing=east": {
+      "model": "khazuk:block/ancestor_shrine"
+    },
+    "facing=south": {
+      "model": "khazuk:block/ancestor_shrine"
+    },
+    "facing=west": {
       "model": "khazuk:block/ancestor_shrine"
     }
   }

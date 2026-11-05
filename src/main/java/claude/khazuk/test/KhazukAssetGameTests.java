@@ -200,4 +200,96 @@ public class KhazukAssetGameTests {
         }
         h.succeed();
     }
+
+    /**
+     * The Ancestor Shrine's statue (the detail session's showpiece, handoffs/ancestor_shrine_2026-11-04_done.md): its geo bakes with the band's
+     * ten gauge runes and their swells; its clips bake, with every clip the Shrine's two controllers play or can be triggered to (GeckoLib 5.5.2
+     * throws on a missing name and takes the client down, and there is no plain "answer"), each trigger named as its clip; the controllers
+     * come "main" then "rite" (the later wins on a bone both key); and its sheet, glowmask and GeckoLib item model are in the jar.
+     */
+    @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
+    public static void theShrinesStatueBakesWithItsGaugeAndEveryClipItPlays(GameTestHelper h) throws Exception {
+        Identifier id = Identifier.fromNamespaceAndPath(Khazuk.MODID, "block/ancestor_shrine");
+        Geometry geo;
+        try (InputStreamReader r = open(h, path(h, GeckoLibResources.MODELS_PATH, id, ".geo.json"))) {
+            geo = Geometry.GSON.fromJson(r, Geometry.class);
+        }
+        h.assertTrue(ModelFormatVersion.match(geo.formatVersion()) != null, "the statue's geo format " + geo.formatVersion() + " is none GeckoLib knows");
+        BakedGeoModel model = geo.bake(id);
+        for (int i = 1; i <= claude.khazuk.ShrineBlockEntity.RUNES; i++) {
+            h.assertTrue(model.getBone("devotion_" + i).isPresent(), "the statue has no gauge rune devotion_" + i);
+            h.assertTrue(model.getBone("devotion_" + i + "_swell").isPresent(), "the statue's rune " + i + " has no swell");
+        }
+        h.assertTrue(model.getBone("devotion_" + (claude.khazuk.ShrineBlockEntity.RUNES + 1)).isEmpty(), "the band has more runes than the gauge lights");
+        BakedAnimations baked;
+        try (InputStreamReader r = open(h, path(h, GeckoLibResources.ANIMATIONS_PATH, id, ".animation.json"))) {
+            baked = ActorAnimations.GSON.fromJson(r, ActorAnimations.class).bake(id, MathParser.create());
+        }
+        List<com.geckolib.animation.RawAnimation> played = new java.util.ArrayList<>(List.of(claude.khazuk.ShrineBlockEntity.IDLE));
+        played.addAll(claude.khazuk.ShrineBlockEntity.RITES.values());
+        for (com.geckolib.animation.RawAnimation anim : played) {
+            for (com.geckolib.animation.RawAnimation.Stage stage : anim.getAnimationStages()) {
+                h.assertTrue(baked.getAnimation(stage.animationName()) != null, "the statue has no clip " + stage.animationName() + ": " + baked.animations().keySet());
+            }
+        }
+        claude.khazuk.ShrineBlockEntity.RITES.forEach((trigger, anim) -> h.assertTrue(anim.getAnimationStages().size() == 1
+                && anim.getAnimationStages().get(0).animationName().equals("animation.ancestor_shrine." + trigger), "the trigger " + trigger + " plays " + anim));
+        h.assertTrue(claude.khazuk.ShrineBlockEntity.RITES.containsKey(claude.khazuk.ShrineBlockEntity.PRAY_TRIGGER), "the rite has no prayer");
+        for (claude.khazuk.god.AncestorPowers.Power p : claude.khazuk.god.AncestorPowers.Power.values()) {
+            String trigger = claude.khazuk.ShrineBlockEntity.answerTrigger(p);
+            h.assertTrue(claude.khazuk.ShrineBlockEntity.RITES.containsKey(trigger), p + "'s answer " + trigger + " isn't a trigger of the rite");
+        }
+        var shrine = new claude.khazuk.ShrineBlockEntity(h.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1)), claude.khazuk.KRegistry.SHRINE.get().defaultBlockState());
+        var controllers = new com.geckolib.animatable.manager.AnimatableManager<>(shrine).getAnimationControllers();
+        h.assertTrue(List.copyOf(controllers.keySet()).equals(List.of("main", claude.khazuk.ShrineBlockEntity.RITE)), "the Shrine's controllers are " + controllers.keySet());
+        open(h, "assets/khazuk/textures/entity/ancestor_shrine_statue.png").close();
+        open(h, "assets/khazuk/textures/entity/ancestor_shrine_statue_glowmask.png").close();
+        String item;
+        try (InputStreamReader r = open(h, "assets/khazuk/items/ancestor_shrine.json")) {
+            item = new java.io.BufferedReader(r).lines().collect(java.util.stream.Collectors.joining(" "));
+        }
+        h.assertTrue(item.contains("\"geckolib:geckolib\"") && item.contains("\"khazuk:item/ancestor_shrine\""), "the Shrine's item isn't GeckoLib's render: " + item);
+        open(h, "assets/khazuk/models/item/ancestor_shrine.json").close();
+        h.succeed();
+    }
+
+    /**
+     * The Shrine's block, for its statue: it has a facing (NORTH by default, so a Shrine saved before the statue loads facing north), it
+     * doesn't occlude (else its own cell holds no light and the statue draws black), it draws no cube (the statue is the block entity's),
+     * its collision is still the whole block, and set down by a god standing on any side and looking at it, it faces him (the statue looks
+     * along its facing).
+     */
+    @SuppressWarnings("removal")
+    @GameTest(template = "field", timeoutTicks = 40, batch = "khazuk")
+    public static void theShrineFacesItsPlacerAndLetsTheLightIn(GameTestHelper h) {
+        var block = claude.khazuk.KRegistry.SHRINE.get();
+        var d = block.defaultBlockState();
+        h.assertTrue(d.hasProperty(claude.khazuk.ShrineBlock.FACING) && d.getValue(claude.khazuk.ShrineBlock.FACING) == net.minecraft.core.Direction.NORTH,
+                "the Shrine's default state doesn't face north: " + d);
+        h.assertTrue(!d.canOcclude(), "the Shrine occludes: its statue would draw black");
+        h.assertTrue(d.getRenderShape() == net.minecraft.world.level.block.RenderShape.INVISIBLE, "the Shrine still draws its cube under the statue");
+        net.minecraft.core.BlockPos at = new net.minecraft.core.BlockPos(12, 3, 12);
+        net.minecraft.core.BlockPos abs = h.absolutePos(at);
+        h.setBlock(at.below(), net.minecraft.world.level.block.Blocks.STONE);
+        var god = h.makeMockServerPlayerInLevel();
+        god.setGameMode(net.minecraft.world.level.GameType.CREATIVE);   // a creative god may set one anywhere (ShrineBlock#mayRoot)
+        for (net.minecraft.core.Direction side : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+            h.setBlock(at, net.minecraft.world.level.block.Blocks.AIR);
+            net.minecraft.world.phys.Vec3 centre = net.minecraft.world.phys.Vec3.atBottomCenterOf(abs);
+            net.minecraft.world.phys.Vec3 stand = centre.add(side.getStepX() * 3, 0, side.getStepZ() * 3);
+            god.snapTo(stand.x, stand.y, stand.z, side.getOpposite().toYRot(), 20f);   // on that side, looking at the spot
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(abs.below()).add(0, 0.5, 0),
+                    net.minecraft.core.Direction.UP, abs.below(), false);
+            var placed = block.getStateForPlacement(new net.minecraft.world.item.context.BlockPlaceContext(god, net.minecraft.world.InteractionHand.MAIN_HAND,
+                    new net.minecraft.world.item.ItemStack(claude.khazuk.KRegistry.SHRINE_ITEM.get()), hit));
+            h.assertTrue(placed != null, "a creative god couldn't set a Shrine down");
+            net.minecraft.core.Direction facing = placed.getValue(claude.khazuk.ShrineBlock.FACING);
+            net.minecraft.world.phys.Vec3 toGod = god.position().subtract(centre);
+            h.assertTrue(facing == side && facing.getUnitVec3().dot(toGod) > 0, "set down by a god to its " + side + ", the Shrine faces " + facing);
+            h.setBlock(at, placed);
+            h.assertTrue(h.getLevel().getBlockEntity(abs) instanceof claude.khazuk.ShrineBlockEntity, "no Shrine's block entity where it was set facing " + facing);
+            h.assertTrue(h.getLevel().getBlockState(abs).isCollisionShapeFullBlock(h.getLevel(), abs), "the Shrine's collision isn't the whole block");
+        }
+        h.succeed();
+    }
 }

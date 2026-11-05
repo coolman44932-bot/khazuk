@@ -74,6 +74,7 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.LONGBEARD_GREAT.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.LONGBEARD_GREAT));
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
         e.registerEntityRenderer(KRegistry.GRUNGNIS_HAMMER_STRIKE.get(), HammerRenderer::new);
+        e.registerBlockEntityRenderer(KRegistry.SHRINE_ENTITY.get(), ShrineRenderer::new);   // the statue of the three Ancestors
     }
 
     @SubscribeEvent

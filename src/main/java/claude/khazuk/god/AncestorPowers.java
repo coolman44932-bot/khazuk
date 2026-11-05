@@ -198,6 +198,7 @@ public final class AncestorPowers {
         if (!hold.devotion().spend(cost)) {
             return tooLittle(hold, Power.HAMMER, cost);
         }
+        hold.answered(Power.HAMMER);                             // its Ancestor answers on the hold's statue
         float bless = blessing(level, god.getUUID(), god.position(), at);
         level.addFreshEntity(GrungniHammer.of(level, god, at, god.getYRot(), bless));
         god.sendSystemMessage(Component.literal("Grungni's Hammer falls" + blessed(bless) + ".").withStyle(ChatFormatting.GOLD), true);
@@ -210,6 +211,7 @@ public final class AncestorPowers {
         if (!hold.devotion().spend(cost)) {
             return tooLittle(hold, Power.WARD, cost);
         }
+        hold.answered(Power.WARD);                               // its Ancestor answers on the hold's statue
         float bless = blessing(level, god.getUUID(), god.position(), null);
         double r = WARD_RADIUS * bless;
         long until = level.getGameTime() + Math.round(WARD_TICKS * bless);
@@ -235,6 +237,7 @@ public final class AncestorPowers {
         if (!hold.devotion().spend(cost)) {
             return tooLittle(hold, Power.FURY, cost);
         }
+        hold.answered(Power.FURY);                               // its Ancestor answers on the hold's statue
         float bless = blessing(level, god.getUUID(), god.position(), null);
         double r = FURY_RADIUS * bless;
         int ticks = Math.round(FURY_TICKS * bless);

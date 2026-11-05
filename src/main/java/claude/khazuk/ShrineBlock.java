@@ -5,6 +5,7 @@ import claude.settlementcore.settlement.SettlementBlockEntity;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -14,11 +15,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 
@@ -28,9 +35,31 @@ import org.jspecify.annotations.Nullable;
  */
 public class ShrineBlock extends BaseEntityBlock {
     public static final MapCodec<ShrineBlock> CODEC = simpleCodec(ShrineBlock::new);
+    /**
+     * The way the statue of the three Ancestors looks (the detail session's model faces -Z, and GeckoLib's GeoBlockRenderer turns it by
+     * this, NORTH unturned): set down, it looks at whoever set it, so on the dais at the end of the Hold Gate's passage it looks down the
+     * passage to the gate. A Shrine saved before the statue had no facing, and loads as NORTH, the default.
+     */
+    public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
 
     public ShrineBlock(Properties props) {
         super(props);
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) {
+        b.add(FACING);
+    }
+
+    @Override
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     @Override
@@ -40,7 +69,7 @@ public class ShrineBlock extends BaseEntityBlock {
 
     @Override
     protected RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.INVISIBLE;                            // the statue is the block entity's (client/ShrineRenderer); no cube under it
     }
 
     @Override
@@ -71,7 +100,8 @@ public class ShrineBlock extends BaseEntityBlock {
                     + "the dais in the hall at its end.").withStyle(ChatFormatting.RED));
             return null;
         }
-        return super.getStateForPlacement(ctx);
+        BlockState placed = super.getStateForPlacement(ctx);
+        return placed == null ? null : placed.setValue(FACING, ctx.getHorizontalDirection().getOpposite());   // it looks at its placer
     }
 
     /** Whether a Shrine takes root for a player: a creative one always, else only the god who woke the Dawi. */

@@ -165,6 +165,42 @@ public class HallGameTests {
     }
 
     /**
+     * A raid while a big dig has the whole reserve up: the muster drafts the diggers (the reserve is empty), the foe falls, and at the all-clear
+     * every drafted Dawi goes home into the reserve, none lost (Muster's homeward, the review of ffb5306): the reserve and the crew are the
+     * ten they were.
+     */
+    @GameTest(template = "digsite", timeoutTicks = 2400, batch = "khazuk")
+    public static void diggersDraftedForARaidAllComeHome(GameTestHelper h) {
+        ShrineBlockEntity hold = hold(h);
+        hold.addToReserve(10, 0);
+        Rooms.Room room = HoldRooms.room("dawi_barracks");
+        PlanPlacement pl = PlanPlacement.compute(room, h.absolutePos(POCKET.offset(4, 1, 0)), Direction.EAST);
+        List<String> told = new ArrayList<>();
+        h.assertTrue(AncestorPlan.dig(hold, h.getLevel(), pl, true, c -> told.add(c.getString())), "the dig was refused: " + told);
+        java.util.Set<java.util.UUID> drafted = new java.util.HashSet<>();
+        net.minecraft.world.entity.monster.zombie.Zombie[] foe = new net.minecraft.world.entity.monster.zombie.Zombie[1];
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(hold.reserveWorkers() == 0, "the dig hasn't taken the reserve: " + hold.reserveWorkers() + " left"))
+                .thenExecute(() -> {
+                    foe[0] = h.spawn(net.minecraft.world.entity.EntityType.ZOMBIE, POCKET.offset(-2, 1, 2));
+                    foe[0].setPersistenceRequired();
+                })
+                .thenWaitUntil(() -> {
+                    drafted.addAll(hold.muster().defenderIds());
+                    h.assertTrue(!drafted.isEmpty(), "no digger was drafted with the reserve empty");
+                })
+                .thenExecute(() -> foe[0].discard())
+                .thenWaitUntil(() -> h.assertTrue(hold.muster().defenderIds().isEmpty(), "the muster hasn't stood down"))
+                .thenWaitUntil(() -> {
+                    boolean allHome = drafted.stream().noneMatch(id -> h.getLevel().getEntity(id) != null);
+                    h.assertTrue(allHome && hold.reserveWorkers() + hold.works().crewCount() == 10, "after the all-clear: reserve "
+                            + hold.reserveWorkers() + " + crew " + hold.works().crewCount() + " (not 10), drafted still out "
+                            + drafted.stream().filter(id -> h.getLevel().getEntity(id) != null).count());
+                })
+                .thenSucceed();
+    }
+
+    /**
      * A dug mine is the engine's Ore Mine: handed over, the hold's works have its MineWork, its three drift mouths, and its Miners drive a
      * drift out into the rock (the review of 06cd0cf: the hold's land, a cube round the Shrine, counted as "another room" to the mine,
      * and every drift stopped at its first cell).

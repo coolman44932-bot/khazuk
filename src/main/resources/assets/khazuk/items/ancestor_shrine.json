@@ -1,6 +1,9 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "khazuk:block/ancestor_shrine"
+    "type": "minecraft:special",
+    "base": "khazuk:item/ancestor_shrine",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
   }
 }

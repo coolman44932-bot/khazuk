@@ -237,8 +237,8 @@ if SHRINE_HALL:
     box(-2, DOOR_Y + 4, HZ1 + 1, 2, DOOR_Y + 8, HZ1 + 1, TUFF_POL)
     for dy, row in enumerate(["ggggg", "ggggg", "..g..", "..g..", ".ggg."]):
         for i, ch in enumerate(row):
-            if ch == "g":
-                put(i - 2, DOOR_Y + 8 - dy, HZ1, GOLD)
+            if ch == "g":                                        # set in the wall, flush: the statue's answers (the ward's dome)
+                put(i - 2, DOOR_Y + 8 - dy, HZ1 + 1, GOLD)       # reach 2.5 round the Shrine (the detail session's clearances)
     for x, z in ((-3, 11), (3, 11), (-3, 15), (3, 15)):         # lanterns on chains from the roof
         put(x, HTOP, z, "minecraft:iron_chain")
         put(x, HTOP - 1, z, "minecraft:lantern[hanging=true]")

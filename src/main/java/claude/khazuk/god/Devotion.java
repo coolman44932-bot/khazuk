@@ -64,7 +64,7 @@ public final class Devotion {
         gifts(level, hold);
     }
 
-    /** A minute's prayers (the clock's, and the tests'): how much they added. */
+    /** A minute's prayers (the clock's, and the tests'): how much they added. Any at all, and the statue plays its prayer. */
     public float pray(ServerLevel level, ShrineBlockEntity hold) {
         float n = hold.peopleCount();
         if (hold.brew().aleUp()) {
@@ -73,6 +73,9 @@ public final class Devotion {
         n += SMITH_PRAYER * level.getEntitiesOfClass(Runesmith.class, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
                 s -> s.isAlive() && s.settlement() == hold).size();
         add(n);
+        if (n > 0) {
+            hold.prayed();                                       // the statue's band swells (ShrineBlockEntity's rite)
+        }
         return n;
     }
 

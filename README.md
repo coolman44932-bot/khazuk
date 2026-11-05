@@ -5,7 +5,7 @@ The Dwarfs, as a race mod on [Settlement Core](https://github.com/coolman44932-b
 its gold, brew its ale, keep the Book of Grudges and fight for it.
 
 - **Minecraft 26.1.2**, NeoForge 26.1.2.125, GeckoLib 5.5.2, Java 25.
-- Needs **Settlement Core 0.5.5** and **GeckoLib** (both required).
+- Needs **Settlement Core 0.5.6** or a later 0.5.x, and **GeckoLib** (both required).
 - Mod id `khazuk`, package `claude.khazuk`. MIT licence (`LICENSE`).
 
 ## In the game
