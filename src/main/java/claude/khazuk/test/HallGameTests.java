@@ -172,6 +172,9 @@ public class HallGameTests {
     @GameTest(template = "digsite", timeoutTicks = 2400, batch = "khazukhostile")   // a live foe: the peaceful batch deletes it
     public static void diggersDraftedForARaidAllComeHome(GameTestHelper h) {
         ShrineBlockEntity hold = hold(h);
+        @SuppressWarnings("removal")
+        var god = h.makeMockServerPlayerInLevel();
+        hold.claim(god, "Karak Test");                          // the muster watches only a hold with an owner (the laptop's run of 8a969dc)
         hold.addToReserve(10, 0);
         Rooms.Room room = HoldRooms.room("dawi_barracks");
         PlanPlacement pl = PlanPlacement.compute(room, h.absolutePos(POCKET.offset(4, 1, 0)), Direction.EAST);
