@@ -1,0 +1,1 @@
+REVIEW PASS 1ba8771f94351a8a0e5f5da3978b0f4dd9d385af: only the jar and pin changed; sha256 39ea7991 matches the pin; no race uses DigWork or CrewGoal.Approach. (fix-reviewer, 2026-11-04)
