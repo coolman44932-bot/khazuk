@@ -1,0 +1,1 @@
+REVIEW PASS dd3693cc59e30d5068e32ab23489f4eafd6f440f: the gate now founds a second hold anywhere outside the god's own hold land and still sets out inside it, the first Great Hall is restored byte-identical under its old id with the grand hall as dawi_grand_hall, the new tests prove both paths, and 31991f2's remainder stands. (fix-reviewer, 2026-11-04)
