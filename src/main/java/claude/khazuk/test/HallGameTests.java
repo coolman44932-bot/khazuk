@@ -169,7 +169,7 @@ public class HallGameTests {
      * every drafted Dawi goes home into the reserve, none lost (Muster's homeward, the review of ffb5306): the reserve and the crew are the
      * ten they were.
      */
-    @GameTest(template = "digsite", timeoutTicks = 2400, batch = "khazuk")
+    @GameTest(template = "digsite", timeoutTicks = 2400, batch = "khazukhostile")   // a live foe: the peaceful batch deletes it
     public static void diggersDraftedForARaidAllComeHome(GameTestHelper h) {
         ShrineBlockEntity hold = hold(h);
         hold.addToReserve(10, 0);

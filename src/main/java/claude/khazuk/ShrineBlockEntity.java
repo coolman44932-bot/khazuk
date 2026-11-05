@@ -252,8 +252,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         CompoundTag tag = new CompoundTag();
         int now = litFor(devotion.devotion());
         tag.putInt(LIT_KEY, now);
-        sentLit = now;
-        return tag;
+        return tag;                                              // no state written: a chunk sent to one player mustn't stop the update the
+                                                                 // others tracking it are owed (the review of 90d3931)
     }
 
     @Override
