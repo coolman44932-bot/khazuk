@@ -113,7 +113,7 @@ public class HoldGateGameTests {
         h.assertTrue(hold.crags().risen(h.getLevel(), door), "the mountain hasn't finished after " + seconds + " seconds");
         h.assertTrue(hold.crags().takeDirty(), "the last step of the rise wasn't marked for saving (a restart would raise the summit again)");
         int risen = solid(h) - before;
-        h.assertTrue(risen >= 34000, "the mountain is only " + risen + " blocks");
+        h.assertTrue(risen >= 33000, "the mountain is only " + risen + " blocks");   // 33574 cells since the Shrine's hall (0.13.0)
         h.assertBlockPresent(Blocks.AIR, DOOR_GROUND.above(3).east(14));
         h.assertBlockPresent(Blocks.AIR, DOOR_GROUND.above(3).east(24));   // 10 into the passage, through the mountain
         h.assertTrue(!hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND) && !hold.crags().takeDirty(),

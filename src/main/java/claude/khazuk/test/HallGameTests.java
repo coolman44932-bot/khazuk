@@ -77,7 +77,7 @@ public class HallGameTests {
         BlockPos wall = new BlockPos(100, 70, 50);
         PlanPlacement pl = AncestorPlan.aimed(hall, wall, 64, Direction.EAST);
         h.assertTrue(pl.door().equals(new BlockPos(100, 64, 50)), "the door is at " + pl.door() + ", not the wall at the feet's level");
-        h.assertTrue(pl.box().minX() == 100 && pl.box().maxX() == 126 && pl.box().minY() == 63, "the hall runs " + pl.box() + ", not east from the door");
+        h.assertTrue(pl.box().minX() == 100 && pl.box().maxX() == 132 && pl.box().minY() == 63, "the hall runs " + pl.box() + ", not east from the door");
         h.succeed();
     }
 

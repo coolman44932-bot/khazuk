@@ -12,10 +12,14 @@ import java.util.Set;
  * The hold's buildings and what each is for, registered with the engine (their templates in data/khazuk/structure/room/, door on the
  * x = 0 face at y 1, facing west; y 0 the floor):
  * <ul>
- * <li>{@link #KEEP}: the Keep (tools/gen_keep.py), the hold's founding hall (the engine's Founding): raised by the god before the hold
- * exists, a stone keep in a walled yard; the Shrine is set on its dais, and the hold is born owning it.</li>
- * <li>{@link #GATE}: the Hold Gate (tools/gen_hold_gate.py --template; the user's picture of a karak's gate), raised: the Miners raise its
- * gatehouse from the Ancestors' Plan, then the god raises the mountain it is cut into ({@link HoldCrag}).</li>
+ * <li>{@link #GATE}: the Hold Gate (tools/gen_hold_gate.py --template --write; the user's picture of a karak's gate), since 0.13.0 the
+ * hold's founding hall (the user, 2026-11-04: the hold goes behind its gate, not before it): raised by the god before the hold exists
+ * (the engine's Founding), its passage running into the Shrine's hall, where the Shrine is set on the dais; the hold is born owning the
+ * gate, and the god raises the mountain it is cut into round it ({@link HoldCrag}). In a hold founded before (on a Keep), its plan sets
+ * it out for the Miners to raise, as before.</li>
+ * <li>{@link #KEEP}: the hold's keep. Since 0.13.0 the King's Throne Room, dug off the hold's halls (tools/gen_halls.py), where
+ * Thorgrim's Throne of Power stands; the old surface Keep (tools/gen_keep.py, "dawi_keep") stays known for the holds founded on one, and
+ * no plan sets one out any more.</li>
  * <li>Dug (tools/gen_halls.py; the engine's dig side, Works#dig): the {@link #GREAT_HALL}, the {@link #BARRACKS} and the mine (the
  * engine's Ore Mine: its Miners drive drifts out from its three drift mouths after ore, into its Ore Carts). Each is dug off a wall of
  * the hold's open space (the gate's passage, a hall), its door where the plan is aimed.</li>
@@ -36,17 +40,23 @@ public final class HoldRooms {
 
     public static final List<Rooms.Room> RAISED = List.of(
             new Rooms.Room("dawi_hold_gate", "Hold Gate", 40, GATE,
-                    "A karak's gate cut into the mountain: ancestors carved on its towers, bronze guardians at its door, a road up to it.",
-                    32, 43, 31, 0, 1, 15, List.of(), List.of(), List.of()),
-            new Rooms.Room("dawi_keep", "Keep", 0, KEEP,
-                    "The hold's founding: a stone keep in a walled yard, its gate shut against foes, the Shrine on the dais inside.",
+                    "A karak's gate cut into the mountain: ancestors carved on its towers, bronze guardians at its door, and down its passage the "
+                            + "Shrine's hall, where the Shrine stands on its dais.",
+                    32, 43, 31, 0, 1, 15, List.of(), List.of(), List.of(
+                            new Rooms.Station(claude.settlementcore.settlement.Founding.HEART, 28, 4, 15, Direction.WEST))),
+            new Rooms.Room("dawi_keep", "Keep", 0, KEEP,                 // the old founding hall (before 0.13.0): known, never set out
+                    "The hold's old founding: a stone keep in a walled yard, its gate shut against foes, the Shrine on the dais inside.",
                     25, 14, 25, 0, 1, 12, List.of(), List.of(), List.of(
                             new Rooms.Station(claude.settlementcore.settlement.Founding.HEART, 14, 1, 12, Direction.WEST))));
 
     public static final List<Rooms.Room> DUG = List.of(
-            new Rooms.Room("dawi_great_hall", "Great Hall", 30, GREAT_HALL,
-                    "The hold's heart under the mountain: pillars banded in gold, a long hearth between the tables, the god's seat on the dais.",
-                    27, 13, 21, 0, 1, 10, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_great_hall", "Great Hall", 30, GREAT_HALL,     // 0.13.0: rebuilt grand (the user: "doesnt look that great")
+                    "The hold's heart under the mountain: ancestor kings carved on gold-banded pillars, a stepped vault, a long hearth between "
+                            + "the feasting tables, and the high seat on the dais under the Ancestors' face.",
+                    33, 17, 25, 0, 1, 12, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_throne_room", "King's Throne Room", 25, KEEP,  // 0.13.0: the hold's keep, dug (it was a surface Keep)
+                    "Eight ancestor kings in their niches, banners and braziers, and a red runner to the dais where Thorgrim's Throne of Power stands.",
+                    19, 13, 17, 0, 1, 8, List.of(), List.of(), List.of(new Rooms.Station("throne", 15, 3, 8, Direction.WEST))),
             new Rooms.Room("dawi_barracks", "Barracks", 15, BARRACKS,
                     "Bunks for the hold's warriors, their grindstones and smithing tables, and a brazier to sit by.",
                     17, 8, 13, 0, 1, 6, List.of(), List.of(), List.of()),

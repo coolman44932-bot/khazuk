@@ -46,14 +46,15 @@ import java.util.Map;
 @GameTestHolder(Khazuk.MODID)
 public class SurvivalRunGameTests {
 
-    private static final BlockPos ROCK = new BlockPos(2, 5, 6), SHRINE = new BlockPos(2, 5, 20);
-    private static final BlockPos HALL_DOOR = new BlockPos(4, 5, 11), BARRACKS_DOOR = new BlockPos(4, 5, 30), MINE_DOOR = new BlockPos(29, 5, 39);
+    private static final BlockPos ROCK = new BlockPos(2, 3, 6), SHRINE = new BlockPos(2, 3, 20);
+    // 0.13.0: the corridors two lower and the doors moved, for the grand Great Hall (33 x 17 x 25: x 4..36, y 2..18, z 0..24)
+    private static final BlockPos HALL_DOOR = new BlockPos(4, 3, 12), BARRACKS_DOOR = new BlockPos(4, 3, 31), MINE_DOOR = new BlockPos(29, 3, 39);
     /** Gold veins in the Great Hall's rock (the dig strikes them: the hold's gold). */
     private static final List<BlockPos> VEINS = List.of(new BlockPos(15, 8, 8), new BlockPos(20, 10, 15), new BlockPos(25, 6, 5),
             new BlockPos(10, 12, 18), new BlockPos(28, 9, 12));
     public static final int FEED_EVERY = 2400, FEED_BREAD = 32;
     /** Budgets, in ticks from the strike: past one, the run has stalled. */
-    public static final int WAKE_BUDGET = 400, HALLS_BUDGET = 30000, RANKS_BUDGET = 2400;
+    public static final int WAKE_BUDGET = 400, HALLS_BUDGET = 40000, RANKS_BUDGET = 2400;   // halls: the Great Hall is twice the cells since 0.13.0
 
     private static void line(GameTestHelper h, ShrineBlockEntity hold, String step) {
         Khazuk.LOG.info("KHAZUK run: {} at tick {} ({} s): food {}, gold {}, people {} up and {}+{} in the deeps", step, h.getTick(), h.getTick() / 20,
@@ -68,14 +69,14 @@ public class SurvivalRunGameTests {
                 new BlockHitResult(Vec3.atCenterOf(at), Direction.UP, at, false));
     }
 
-    @GameTest(template = "digsite", timeoutTicks = 36000, batch = "khazuklong")
+    @GameTest(template = "digsite", timeoutTicks = 48000, batch = "khazuklong")
     public static void aSurvivalHoldFromWakingToLongbeards(GameTestHelper h) {
-        h.getLevel().getServer().tickRateManager().requestGameToSprint(36000);   // as fast as the machine goes: a long run, not a slow one
+        h.getLevel().getServer().tickRateManager().requestGameToSprint(48000);   // as fast as the machine goes: a long run, not a slow one
         // the corridors: down the west side, and along the south
-        for (BlockPos p : BlockPos.betweenClosed(new BlockPos(1, 5, 1), new BlockPos(3, 7, 42))) {
+        for (BlockPos p : BlockPos.betweenClosed(new BlockPos(1, 3, 1), new BlockPos(3, 5, 42))) {
             h.setBlock(p, Blocks.AIR);
         }
-        for (BlockPos p : BlockPos.betweenClosed(new BlockPos(1, 5, 40), new BlockPos(42, 7, 42))) {
+        for (BlockPos p : BlockPos.betweenClosed(new BlockPos(1, 3, 40), new BlockPos(42, 5, 42))) {
             h.setBlock(p, Blocks.AIR);
         }
         for (BlockPos v : VEINS) {

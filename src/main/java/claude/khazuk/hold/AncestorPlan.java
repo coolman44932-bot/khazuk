@@ -17,8 +17,9 @@ import net.minecraft.world.item.context.UseOnContext;
  * The Ancestors' Plan: the god's own plan of one of the hold's buildings, drawn in gold on a stone tablet. Never used up: the gold is the
  * price. Held, it outlines where the building would go (KhazukClient).
  * <ul>
- * <li>A raised building (the Hold Gate): used on the ground in its owner's hold, it sets the building out there, its door toward you and
- * running away from you, and the Miners raise it (Settlement Core's surface builder).</li>
+ * <li>The Hold Gate, the hold's founding (since 0.13.0): used on the ground where no hold of yours is, the god raises it there, its door
+ * toward you and running away from you, and the Shrine goes on the dais at its passage's end ({@link #found}). In a hold of yours (one
+ * founded before, on a Keep), it sets the gate out and the Miners raise it (Settlement Core's surface builder).</li>
  * <li>A dug hall (the Great Hall, the barracks, the mine): used on a wall you stand before (the gate's passage, a hall), its door is cut
  * there at your feet's level and the hall runs on into the rock away from you; the Miners dig it out (the engine's dig side).</li>
  * </ul>
@@ -62,13 +63,14 @@ public class AncestorPlan extends Item {
             return InteractionResult.PASS;
         }
         Rooms.Room room = room();
-        if (claude.settlementcore.settlement.Founding.isFoundingHall(room)) {
+        ShrineBlockEntity hold = ShrineBlockEntity.ownedAt(p, ctx.getClickedPos());
+        if (hold == null && claude.settlementcore.settlement.Founding.isFoundingHall(room)) {
+            // no hold of theirs here: the Hold Gate's plan founds one (in a hold, it is set out for the Miners, as any building)
             return found(level, p, room, ctx.getClickedPos(), p.getDirection(), p::sendSystemMessage) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
         }
-        ShrineBlockEntity hold = ShrineBlockEntity.ownedAt(p, ctx.getClickedPos());
         if (room == null || hold == null) {
-            p.sendSystemMessage(Component.literal("No hold of yours is here. Found one first: the Ancestors' Plan of the Keep (stone bricks, an iron "
-                    + "and a gold ingot, paper), then the Shrine on its dais.").withStyle(ChatFormatting.RED));
+            p.sendSystemMessage(Component.literal("No hold of yours is here. Found one first: set the Ancestors' Plan of the Hold Gate down where the "
+                    + "hold should be, and when the gate stands, set the Shrine on the dais at the end of its passage.").withStyle(ChatFormatting.RED));
             return InteractionResult.FAIL;
         }
         if (!Rooms.isRaised(room.id())) {
@@ -79,13 +81,10 @@ public class AncestorPlan extends Item {
                 ? InteractionResult.SUCCESS : InteractionResult.FAIL;
     }
 
-    /** How near a Shrine of yours the Keep's plan must be used to raise the Keep round it (a hold founded before keeps). */
-    public static final int ROUND_REACH = 12;
-
     /**
-     * The Keep's plan used on {@code ground} by its god {@code p}, facing {@code facing}: round a Shrine of theirs within
-     * {@value #ROUND_REACH} that has no keep yet (the Keep raised round it, its gate toward them), else a new hold's founding there. The god
-     * raises it (the engine's Founding); its Shrine goes on the dais. Only for the Dawi's god (or a creative one). True if begun.
+     * A founding hall's plan (the Hold Gate's) used on {@code ground} by its god {@code p}, facing {@code facing}, where no hold of theirs is:
+     * a new hold's founding there. The god raises the gate (the engine's Founding), and when it stands the Shrine goes on the dais at the end
+     * of its passage. Only for the Dawi's god (or a creative one). True if begun.
      */
     public static boolean found(net.minecraft.server.level.ServerLevel level, net.minecraft.server.level.ServerPlayer p, Rooms.Room room, BlockPos ground,
                                 Direction facing, java.util.function.Consumer<Component> tell) {
@@ -93,23 +92,11 @@ public class AncestorPlan extends Item {
             tell.accept(Component.literal("Only the Dawi's god founds a hold. Wake them first: strike a gold ingot on the deep rock.").withStyle(ChatFormatting.RED));
             return false;
         }
-        var founding = claude.settlementcore.settlement.Founding.of(level);
-        ShrineBlockEntity near = ShrineBlockEntity.ownedAt(p, ground);
-        String no;
-        if (near != null && near.getBlockPos().distSqr(ground) <= ROUND_REACH * ROUND_REACH && !near.has(HoldRooms.KEEP)) {
-            no = founding.beginRound(level, room, near.getBlockPos(), facing, p.getUUID());
-            if (no == null) {
-                tell.accept(Component.literal("The Ancestors raise the " + room.displayName() + " round " + near.settlementName() + "'s Shrine.")
-                        .withStyle(ChatFormatting.GOLD));
-                return true;
-            }
-        } else {
-            no = founding.begin(level, placement(room, ground, facing), p.getUUID());
-            if (no == null) {
-                tell.accept(Component.literal("The Ancestors raise the " + room.displayName() + ". When it stands, set the Shrine on the dais inside.")
-                        .withStyle(ChatFormatting.GOLD));
-                return true;
-            }
+        String no = claude.settlementcore.settlement.Founding.of(level).begin(level, placement(room, ground, facing), p.getUUID());
+        if (no == null) {
+            tell.accept(Component.literal("Grungni raises the " + room.displayName() + ". When it stands, walk its passage and set the Shrine on "
+                    + "the dais in the hall at its end.").withStyle(ChatFormatting.GOLD));
+            return true;
         }
         tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
         return false;

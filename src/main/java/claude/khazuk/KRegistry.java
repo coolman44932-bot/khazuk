@@ -90,7 +90,7 @@ public final class KRegistry {
 
     /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_KEEP = ITEMS.registerItem("plan_keep",
-            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_keep"));
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_throne_room"));   // 0.13.0: the Keep is the King's Throne Room, dug
 
     /** The Ancestors' Plans of the dug halls: used on a wall of the hold's open space, the Miners dig the hall out behind it. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_GREAT_HALL = ITEMS.registerItem("plan_great_hall",

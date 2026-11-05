@@ -204,6 +204,45 @@ for z in (2, 6):
     put(0, DOOR_Y + DH, z, "minecraft:iron_chain")
     put(0, DOOR_Y + DH - 1, z, "minecraft:lantern[hanging=true]")
 
+# ------------------------------------------------------------------ the Shrine's hall at the passage's end (the user, 2026-11-04: the
+# hold goes behind its gate, not before it): the passage opens into a hall 11 wide and 11 high, and on a dais at its far end, under Grungni's
+# rune, stands the Ancestor Shrine. The hold is founded here: its halls are dug off this hall's walls and the passage's.
+SHRINE_HALL = RAISED
+HEART_LOCAL = (0, DOOR_Y + 1, 14)                                # the Shrine's spot: on the dais, in the hall's middle
+if SHRINE_HALL:
+    HZ0, HZ1, HX, HTOP = 9, 16, 5, DOOR_Y + 10                   # the hall: z 9..16, x -5..5, its floor at DOOR_Y - 1, its roof over HTOP
+    box(-HX - 1, DOOR_Y - 1, HZ0, HX + 1, HTOP + 1, HZ1 + 1, "minecraft:deepslate_bricks")
+    clear(-HX, DOOR_Y, HZ0, HX, HTOP, HZ1)
+    box(-HX, DOOR_Y - 1, HZ0, HX, DOOR_Y - 1, HZ1,
+        lambda x, y, z: "minecraft:deepslate_tiles" if (x + z) % 2 else "minecraft:polished_deepslate")
+    for x in range(-1, 2):                                       # a runner of gold-edged tiles from the passage to the dais
+        for z in range(HZ0, 12):
+            put(x, DOOR_Y - 1, z, "minecraft:chiseled_deepslate" if x == 0 else "minecraft:polished_blackstone")
+    for px in (-HX, HX):                                         # four pillars, banded in gold and bronze
+        for pz in (HZ0 + 1, HZ1):
+            for y in range(DOOR_Y, HTOP + 1):
+                band = {DOOR_Y: CARVE, DOOR_Y + 4: GOLD, DOOR_Y + 5: BRONZE, HTOP: CARVE}
+                put(px, y, pz, band.get(y, "minecraft:polished_deepslate"))
+    # the dais: a step up from the hall, the Shrine on it, braziers on its front corners
+    box(-3, DOOR_Y, 13, 3, DOOR_Y, HZ1, "minecraft:polished_deepslate")
+    for x in range(-3, 4):
+        put(x, DOOR_Y, 12, "minecraft:deepslate_brick_stairs[facing=south]")
+    for x in (-3, 3):
+        put(x, DOOR_Y + 1, 13, CARVE)
+        put(x, DOOR_Y + 2, 13, BRONZE_CUT)
+        put(x, DOOR_Y + 3, 13, "minecraft:campfire[lit=true]")
+    put(*HEART_LOCAL, "minecraft:air")
+    # Grungni's rune on the wall behind the Shrine: a tuff panel framed in chiselled stone, the hammer in gold standing out of it
+    box(-3, DOOR_Y + 3, HZ1 + 1, 3, DOOR_Y + 9, HZ1 + 1, CARVE)
+    box(-2, DOOR_Y + 4, HZ1 + 1, 2, DOOR_Y + 8, HZ1 + 1, TUFF_POL)
+    for dy, row in enumerate(["ggggg", "ggggg", "..g..", "..g..", ".ggg."]):
+        for i, ch in enumerate(row):
+            if ch == "g":
+                put(i - 2, DOOR_Y + 8 - dy, HZ1, GOLD)
+    for x, z in ((-3, 11), (3, 11), (-3, 15), (3, 15)):         # lanterns on chains from the roof
+        put(x, HTOP, z, "minecraft:iron_chain")
+        put(x, HTOP - 1, z, "minecraft:lantern[hanging=true]")
+
 # ------------------------------------------------------------------ the ancestor faces, carved deep high on the towers
 
 
@@ -388,6 +427,76 @@ def write_crag():
     print(f"crag: {len(cells)} cells -> {os.path.relpath(CRAG_OUT)}")
 
 
+TEMPLATE_OUT = os.path.join(HERE, "..", "src", "main", "resources", "data", "khazuk", "structure", "room", "dawi_hold_gate.nbt")
+DATA_VERSION = 4790                                              # 26.1.2's, as the bridge's structure_save writes it
+
+
+def _state(name, props):
+    return name + ("[" + ",".join(f"{k}={props[k]}" for k in sorted(props)) + "]" if props else "")
+
+
+def _split(s):
+    if "[" not in s:
+        return s, {}
+    name, rest = s.split("[", 1)
+    return name, dict(kv.split("=") for kv in rest.rstrip("]").split(","))
+
+
+def write_template(cells, size):
+    """The gatehouse's template straight to its .nbt (no game needed), every cell of its box. A cell whose block the shipped template
+    already has, its properties the game's full set of what this script names, keeps the shipped state (the game's own wall and stair
+    shapes), so a change here rewrites only what it changes."""
+    sys.path.insert(0, os.path.join(HERE, "..", "..", "tools", "structgen"))
+    import nbtio
+
+    def val(t):
+        return t.value if hasattr(t, "value") else t
+
+    had = {}
+    if os.path.exists(TEMPLATE_OUT):
+        root = val(nbtio.read(TEMPLATE_OUT))
+        pal = []
+        for e in val(root["palette"]):
+            e = val(e)
+            props = {k: val(v) for k, v in val(e["Properties"]).items()} if "Properties" in e else {}
+            pal.append((val(e["Name"]), props))
+        for b in val(root["blocks"]):
+            b = val(b)
+            had[tuple(val(i) for i in val(b["pos"]))] = pal[val(b["state"])]
+    out, kept = {}, 0
+    for pos, s in cells.items():
+        name, props = _split(s)
+        if not name.startswith("minecraft:"):
+            name = "minecraft:" + name
+        old = had.get(pos)
+        if old and old[0] == name and all(old[1].get(k) == v for k, v in props.items()):
+            out[pos] = old
+            kept += 1
+        else:
+            out[pos] = (name, props)
+    order = sorted(out, key=lambda p: (p[1], p[2], p[0]))
+    palette, index, blocks = [], {}, []
+    for p in order:
+        name, props = out[p]
+        key = _state(name, props)
+        if key not in index:
+            index[key] = len(palette)
+            entry = {"Name": nbtio.String(name)}
+            if props:
+                entry["Properties"] = nbtio.Compound({k: nbtio.String(v) for k, v in sorted(props.items())})
+            palette.append(nbtio.Compound(entry))
+        blocks.append(nbtio.Compound({"pos": nbtio.List([nbtio.Int(p[0]), nbtio.Int(p[1]), nbtio.Int(p[2])]), "state": nbtio.Int(index[key])}))
+    root = nbtio.Compound({
+        "DataVersion": nbtio.Int(DATA_VERSION),
+        "size": nbtio.List([nbtio.Int(size[0]), nbtio.Int(size[1]), nbtio.Int(size[2])]),
+        "palette": nbtio.List(palette, nbtio.COMPOUND),
+        "blocks": nbtio.List(blocks, nbtio.COMPOUND),
+        "entities": nbtio.List([], nbtio.COMPOUND),
+    })
+    nbtio.write(TEMPLATE_OUT, root)
+    print(f"template -> {os.path.relpath(TEMPLATE_OUT)}: {len(out)} cells, {kept} kept as shipped, {len(out) - kept} new")
+
+
 def ops(origin):
     blocks = [[x, y, z, b] for (x, y, z), b in sorted(B.items())]
     return [{"op": "blocks", "origin": list(origin), "blocks": blocks}]
@@ -403,8 +512,11 @@ def main():
     print(f"{len(B)} cells, x {min(xs)}..{max(xs)}, y {min(ys)}..{max(ys)}, z {min(zs)}..{max(zs)}")
     if RAISED:
         cells, size = template_cells()
-        print(f"template {size}, door at (0, 1, {GH})")
+        hx, hy, hz = HEART_LOCAL
+        print(f"template {size}, door at (0, 1, {GH}), heart station at ({hz + 14}, {hy + 1}, {hx + GH})")
         write_crag()
+        if "--write" in sys.argv:
+            write_template(cells, size)
         if "--at" in sys.argv:
             i = sys.argv.index("--at")
             o = [int(v) for v in sys.argv[i + 1:i + 4]]

@@ -25,6 +25,12 @@ Kazakit-ha!"), as the Waaagh! is named after the Orks'. Everything below is my p
 - **Raised:** a gatehouse and walls on the surface (the engine's surface builder and walls, as the Waaagh!'s palisade uses them),
   stone-built and square.
 
+- **0.13.0, behind the gate** (the user, 2026-11-04: "shouldnt it go like after the gate", and "the great hall doesnt look that great"):
+  the Hold Gate is the founding hall. Grungni raises it, the Shrine goes on the dais in the hall at its passage's end, and the mountain
+  rises round it; every hall is dug off the gate's. The Keep is the King's Throne Room, dug, with the Throne of Power's dais; the old
+  surface Keep stays known for holds founded on one. The Great Hall is rebuilt grand (33 x 17 x 25: ancestor-king pillars, a stepped
+  vault, the high seat).
+
 ## 3. Gold, ale and runes
 
 - **Gold** is the money: mined from gold ore (the engine's mined currency), paid for plans and units, and hoarded in the treasury.

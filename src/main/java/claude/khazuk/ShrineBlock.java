@@ -66,9 +66,9 @@ public class ShrineBlock extends BaseEntityBlock {
         }
         if (p != null && !p.isCreative() && ctx.getLevel() instanceof net.minecraft.server.level.ServerLevel sl
                 && !claude.settlementcore.settlement.Founding.of(sl).spot(ctx.getClickedPos(), p.getUUID())) {
-            p.sendSystemMessage(Component.literal("A Shrine stands only on the dais of its Keep. Found the hold first: set the Ancestors' Plan of the "
-                    + "Keep down (stone bricks, an iron and a gold ingot, paper), or use it beside an old Shrine, and when the Keep stands, set the "
-                    + "Shrine on the dais inside.").withStyle(ChatFormatting.RED));
+            p.sendSystemMessage(Component.literal("A Shrine stands only on the dais inside its Hold Gate. Found the hold first: set the Ancestors' "
+                    + "Plan of the Hold Gate down where the hold should be, and when Grungni has raised it, walk its passage and set the Shrine on "
+                    + "the dais in the hall at its end.").withStyle(ChatFormatting.RED));
             return null;
         }
         return super.getStateForPlacement(ctx);
@@ -93,7 +93,7 @@ public class ShrineBlock extends BaseEntityBlock {
             if (level instanceof net.minecraft.server.level.ServerLevel sl) {
                 var keep = claude.settlementcore.settlement.Founding.of(sl).claim(pos, p.getUUID());
                 if (keep != null) {
-                    heart.addBuilding(keep, true);              // set on its Keep's dais: the hold is born owning the Keep
+                    heart.addBuilding(keep, true);              // set on its founding hall's dais: the hold is born owning its gate (or an old Keep)
                 }
             }
             boolean first = god.woke() && !god.firstUp();

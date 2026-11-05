@@ -11,11 +11,13 @@ its gold, brew its ale, keep the Book of Grudges and fight for it.
 ## In the game
 
 - **The waking:** strike a gold ingot on deepslate below y 0 and the first Dawi step out of the stone. They name their hold and hand
-  you the Ancestor Shrine and a founding kit: the Plans of the Hold Gate, the Great Hall and the mine, 90 gold and bread. Set the
-  Shrine down and its first Miners and Warriors come up. Later Shrines are crafted, for a second hold and a third.
-- **The hold:** Ancestors' Plans for the Hold Gate, the Keep, the Great Hall, the mine, the barracks, the brewery, the treasury and the
-  Runic Forge. Miners dig the halls out of the rock; the gatehouse and walls are raised on the surface. The Keep and the halls make room
-  for more Dawi up at once.
+  you the Ancestor Shrine and a founding kit: the Plans of the Hold Gate, the Great Hall, the mine and the King's Throne Room, the Book
+  of Grudges, 90 gold and bread.
+- **The founding:** set the Hold Gate's plan down where the hold should be and Grungni raises the gate. Walk its passage to the hall at
+  its end and set the Shrine on the dais there: the first Miners and Warriors come up, and the mountain rises round their gate. Later
+  Shrines are crafted, for a second hold and a third.
+- **The hold, behind its gate:** Ancestors' Plans for the Great Hall, the King's Throne Room, the mine, the barracks, the brewery, the
+  treasury and the Runic Forge, all dug off the gate's halls by the Miners. The halls make room for more Dawi up at once.
 - **Gold, ale and runes:** gold is mined and paid for plans and units, ale brewed from wheat makes the hold hit harder, walk faster
   and work faster, a Treasury makes gold draw gold, and the Runesmith strikes runes into its kit.
 - **The Book of Grudges (Dammaz Kron):** what kills a Dwarf, breaks the hold or steals its gold is written down. Settle a grudge for

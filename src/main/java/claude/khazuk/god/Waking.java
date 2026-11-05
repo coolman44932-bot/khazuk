@@ -206,7 +206,7 @@ public final class Waking {
         }
         String name = "Karak " + p.getGameProfile().name();
         setGod(p, new God(true, name, god(p).holds(), god(p).firstUp()));
-        give(p, new ItemStack(KRegistry.PLAN_KEEP.get()));
+        give(p, new ItemStack(KRegistry.PLAN_KEEP.get()));          // 0.13.0: the King's Throne Room's plan
         give(p, new ItemStack(KRegistry.SHRINE_ITEM.get()));
         give(p, new ItemStack(KRegistry.PLAN_HOLD_GATE.get()));
         give(p, new ItemStack(KRegistry.PLAN_GREAT_HALL.get()));
@@ -217,8 +217,8 @@ public final class Waking {
         p.sendSystemMessage(Component.literal("The rock splits, and the first Dawi step out of the mountain, beards white with stone dust. They kneel: "
                 + "they call you the Ancestors.").withStyle(ChatFormatting.GOLD));
         p.sendSystemMessage(Component.literal("They hand you their Ancestor Shrine, the plans of a hold and its gold, and go back into the stone to wait. "
-                + "Set the Keep's plan down where the hold should be: the Ancestors raise the Keep, and on its dais you set the Shrine. "
-                + "Then they come up to it.").withStyle(ChatFormatting.YELLOW));
+                + "Set the Hold Gate's plan down where the hold should be: Grungni raises the gate, and on the dais at the end of its passage "
+                + "you set the Shrine. Then they come up to it, and the mountain rises round their gate.").withStyle(ChatFormatting.YELLOW));
         level.playSound(null, at, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 1f, 0.6f);
         if (p.connection != null && p.connection.hasChannel(AskName.TYPE)) {
             PacketDistributor.sendToPlayer(p, new AskName(name));

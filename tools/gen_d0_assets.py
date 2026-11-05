@@ -56,7 +56,7 @@ def out(rel, obj):
 
 PLANS = {
     # id: (name, the gold drawing (10 wide, 7 tall at 3,5), the shapeless recipe beside the paper)
-    "plan_keep": ("Keep", ["g.g.gg.g.g", "gggggggggg", "g.g....g.g", "g.g.gg.g.g", "g.g.gg.g.g", "g.g....g.g", "gggggggggg"],
+    "plan_keep": ("King's Throne Room", ["g.g.gg.g.g", "gggggggggg", "g.g....g.g", "g.g.gg.g.g", "g.g.gg.g.g", "g.g....g.g", "gggggggggg"],
                   ["minecraft:stone_bricks", "minecraft:iron_ingot", "minecraft:gold_ingot"]),
     "plan_hold_gate": ("Hold Gate", ["..gggggg..", ".g......g.", ".g.gggg.g.", ".g.g..g.g.", ".g.g..g.g.", ".g.g..g.g.", "gg.g..g.gg"],
                        ["minecraft:stone_bricks", "minecraft:gold_ingot"]),
