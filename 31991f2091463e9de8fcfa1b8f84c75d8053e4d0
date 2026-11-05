@@ -1,0 +1,1 @@
+REVIEW PASS 31991f2091463e9de8fcfa1b8f84c75d8053e4d0: its FAIL (the gate couldn't found a second hold; the Great Hall resized under saved halls) is fixed in dd3693c, whose review passes both commits. (fix-reviewer, 2026-11-04)
