@@ -1,1 +1,3 @@
 REVIEW PASS 710996281cf8beedfcec42a693f186dc348926eb: re-pin only (libs jar + pin), jar sha256 4c20db02 matches the pin, engine 55438d6 reviewed and passed; no race change needed (its API is additive). (fix-reviewer pattern of c433906/a0bfe2e, checked by sha, 2026-11-04)
+
+REVIEW PASS 710996281cf8beedfcec42a693f186dc348926eb: only the jar and pin changed, the sha256 matches, and no Khazuk! code touches anything the engine range removed or changed. (fix-reviewer, 2026-11-04)
