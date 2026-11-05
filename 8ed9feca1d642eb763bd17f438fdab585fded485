@@ -1,0 +1,1 @@
+REVIEW PASS 8ed9feca1d642eb763bd17f438fdab585fded485: claiming the hold gives it an owner so Muster.second runs; the rest of the path (foe inside, empty-reserve draft, all-clear, homeward absorb) holds up, and the laptop's run passed it (87/87). (fix-reviewer, 2026-11-04)
