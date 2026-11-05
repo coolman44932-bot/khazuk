@@ -73,7 +73,7 @@ public class HallGameTests {
     /** A hall's plan aimed at a wall cuts its door in that wall at the feet's level, the hall running on away from whoever aims it. */
     @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
     public static void aHallIsAimedAtAWallAtYourFeet(GameTestHelper h) {
-        Rooms.Room hall = HoldRooms.room("dawi_great_hall");
+        Rooms.Room hall = HoldRooms.room("dawi_grand_hall");
         BlockPos wall = new BlockPos(100, 70, 50);
         PlanPlacement pl = AncestorPlan.aimed(hall, wall, 64, Direction.EAST);
         h.assertTrue(pl.door().equals(new BlockPos(100, 64, 50)), "the door is at " + pl.door() + ", not the wall at the feet's level");

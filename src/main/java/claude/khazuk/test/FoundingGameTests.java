@@ -57,6 +57,9 @@ public class FoundingGameTests {
         h.assertTrue(Founding.isFoundingHall(keep), "the old Keep isn't known as a founding hall any more (holds founded on one)");
         h.assertTrue(KRegistry.PLAN_KEEP.get().room() != null && !Rooms.isRaised(KRegistry.PLAN_KEEP.get().room().id()),
                 "the Keep's plan doesn't dig the King's Throne Room");
+        h.assertTrue(KRegistry.PLAN_KEEP.get().room().function() == HoldRooms.KEEP, "the Throne Room isn't the hold's keep (its room for 2 more)");
+        h.assertTrue(KRegistry.PLAN_GREAT_HALL.get().room().id().equals("dawi_grand_hall") && HoldRooms.room("dawi_great_hall").sizeX() == 27,
+                "the Great Hall's plan doesn't dig the grand hall, or the first Great Hall isn't kept for the halls dug before");
         h.succeed();
     }
 
@@ -87,6 +90,62 @@ public class FoundingGameTests {
         h.assertTrue(hold.inSettlement(pl.door()), "the gate's door is outside the hold founded behind it");
         hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND);
         h.assertTrue(hold.crags().raised(pl.door()) > 0, "the mountain doesn't rise round the founded gate");
+        h.succeed();
+    }
+
+    /**
+     * A god whose first hold stands far off (loaded, so it is the nearest Shrine of theirs) uses the Hold Gate's plan out on open ground,
+     * through the plan's own use: a second hold is founded there, not the gate set out for the far hold's Miners (the review of 31991f2).
+     */
+    @GameTest(template = "field", timeoutTicks = 60, batch = "khazuk")
+    public static void aGodWithAHoldFarOffFoundsASecondThroughTheGate(GameTestHelper h) {
+        var god = h.makeMockServerPlayerInLevel();
+        Waking.setGod(god, new Waking.God(true, "Karak Hirn", 1, true));
+        BlockPos first = new BlockPos(68, 3, 68);
+        h.setBlock(first, KRegistry.SHRINE.get().defaultBlockState());
+        ShrineBlockEntity far = (ShrineBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(first));
+        far.claim(god, "Karak Hirn");
+        h.runAfterDelay(2, () -> {                               // a Shrine set down this tick registers itself on its first load
+            BlockPos ground = h.absolutePos(DOOR_GROUND);
+            h.assertTrue(ShrineBlockEntity.ownedAt(god, ground) == far && !far.inSettlement(ground),
+                    "the test needs the far hold as the god's nearest, the ground outside its land");
+            god.setYRot(-90f);                                   // facing east: the gate runs east, its door toward the west
+            net.minecraft.world.item.ItemStack plan = new net.minecraft.world.item.ItemStack(KRegistry.PLAN_HOLD_GATE.get());
+            god.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, plan);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(ground).add(0, 0.5, 0), Direction.UP, ground, false);
+            var result = KRegistry.PLAN_HOLD_GATE.get().useOn(new net.minecraft.world.item.context.UseOnContext(god, net.minecraft.world.InteractionHand.MAIN_HAND, hit));
+            PlanPlacement pl = AncestorPlan.placement(HoldRooms.room("dawi_hold_gate"), ground, Direction.EAST);
+            h.assertTrue(result.consumesAction() && Founding.of(h.getLevel()).rising(pl.door()) && far.works().sites().isEmpty(),
+                    "the gate's plan out on open ground didn't found a second hold: " + result + ", rising " + Founding.of(h.getLevel()).rising(pl.door())
+                            + ", far hold's sites " + far.works().sites().size());
+            h.succeed();
+        });
+    }
+
+    /**
+     * The old way still holds for a save from before 0.13.0: a surface Keep risen and waiting for its Shrine (a founding hall of room
+     * dawi_keep) takes the Shrine set on its dais, and the hold is born owning the Keep, its room counted.
+     */
+    @GameTest(template = "field", timeoutTicks = 400, batch = "khazuk")
+    public static void aKeepFromAnOldSaveStillFoundsItsHold(GameTestHelper h) {
+        var god = h.makeMockServerPlayerInLevel();
+        Waking.setGod(god, new Waking.God(true, "Karak Kadrin", 0, false));
+        Rooms.Room keep = HoldRooms.room("dawi_keep");
+        Founding f = Founding.of(h.getLevel());
+        h.assertTrue(f.begin(h.getLevel(), AncestorPlan.placement(keep, h.absolutePos(DOOR_GROUND), Direction.EAST), god.getUUID()) == null,
+                "an old save's Keep couldn't be founded");
+        PlanPlacement pl = AncestorPlan.placement(keep, h.absolutePos(DOOR_GROUND), Direction.EAST);
+        for (int s = 0; s < 200 && f.rising(pl.door()); s++) {
+            f.second(h.getLevel(), Founding.PER_SECOND);
+        }
+        BlockPos spot = Founding.heartSpot(pl);
+        h.assertTrue(f.spot(spot, god.getUUID()), "the old Keep's dais doesn't wait for its Shrine");
+        h.getLevel().setBlockAndUpdate(spot, KRegistry.SHRINE.get().defaultBlockState());
+        KRegistry.SHRINE.get().setPlacedBy(h.getLevel(), spot, KRegistry.SHRINE.get().defaultBlockState(), god, new ItemStack(KRegistry.SHRINE_ITEM.get()));
+        ShrineBlockEntity hold = (ShrineBlockEntity) h.getLevel().getBlockEntity(spot);
+        h.assertTrue(hold.has(HoldRooms.KEEP), "the hold founded on an old Keep doesn't own it");
+        h.assertTrue(hold.peopleCap() == ShrineBlockEntity.UP_AT_ONCE + ShrineBlockEntity.KEEP_ROOM, "the old Keep's room isn't counted: cap "
+                + hold.peopleCap());
         h.succeed();
     }
 }

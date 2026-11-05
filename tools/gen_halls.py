@@ -772,7 +772,7 @@ def throne_room():
     return h
 
 
-HALLS = {"dawi_great_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury,
+HALLS = {"dawi_great_hall": great_hall_v1, "dawi_grand_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury,
          "dawi_runic_forge": runic_forge, "dawi_throne_room": throne_room}
 DATA_VERSION = 4790                                                      # 26.1.2's, as the bridge's structure_save writes it
 

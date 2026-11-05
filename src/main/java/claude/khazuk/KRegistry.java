@@ -88,13 +88,13 @@ public final class KRegistry {
     public static final DeferredItem<claude.khazuk.god.AncestorPowers.Token> GRIMNIRS_FURY = ITEMS.registerItem("grimnirs_fury",
             p -> new claude.khazuk.god.AncestorPowers.Token(p.stacksTo(1).fireResistant(), claude.khazuk.god.AncestorPowers.Power.FURY));
 
-    /** The Ancestors' Plan of the Keep: the hold's founding hall, raised by the god; then the Shrine goes on its dais. */
+    /** The Ancestors' Plan of the Keep: since 0.13.0 the King's Throne Room, dug off the hold's halls (the hold is founded through its Hold Gate). */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_KEEP = ITEMS.registerItem("plan_keep",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_throne_room"));   // 0.13.0: the Keep is the King's Throne Room, dug
 
     /** The Ancestors' Plans of the dug halls: used on a wall of the hold's open space, the Miners dig the hall out behind it. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_GREAT_HALL = ITEMS.registerItem("plan_great_hall",
-            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_great_hall"));
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_grand_hall"));   // 0.13.0: the grand one
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_BARRACKS = ITEMS.registerItem("plan_barracks",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_barracks"));
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_MINE = ITEMS.registerItem("plan_mine",

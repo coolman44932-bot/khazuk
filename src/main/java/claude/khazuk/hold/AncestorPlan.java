@@ -64,8 +64,9 @@ public class AncestorPlan extends Item {
         }
         Rooms.Room room = room();
         ShrineBlockEntity hold = ShrineBlockEntity.ownedAt(p, ctx.getClickedPos());
-        if (hold == null && claude.settlementcore.settlement.Founding.isFoundingHall(room)) {
-            // no hold of theirs here: the Hold Gate's plan founds one (in a hold, it is set out for the Miners, as any building)
+        if (claude.settlementcore.settlement.Founding.isFoundingHall(room) && (hold == null || !hold.inSettlement(ctx.getClickedPos()))) {
+            // not in a hold of theirs (ownedAt is their nearest Shrine, however far: the review of 31991f2): the Hold Gate's plan founds a new
+            // hold here. In a hold's land it is set out for the Miners, as any building.
             return found(level, p, room, ctx.getClickedPos(), p.getDirection(), p::sendSystemMessage) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
         }
         if (room == null || hold == null) {

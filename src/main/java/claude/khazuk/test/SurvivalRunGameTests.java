@@ -128,7 +128,7 @@ public class SurvivalRunGameTests {
                 hand(h, god, SHRINE, new ItemStack(Items.BREAD, bread));
                 hand(h, god, SHRINE, new ItemStack(Items.GOLD_INGOT, gold));
                 goldBefore[0] = hd.currency();
-                order(h, hd, "dawi_great_hall", HALL_DOOR, Direction.EAST, told);
+                order(h, hd, "dawi_grand_hall", HALL_DOOR, Direction.EAST, told);
                 order(h, hd, "dawi_barracks", BARRACKS_DOOR, Direction.EAST, told);
                 order(h, hd, "dawi_mine", MINE_DOOR, Direction.NORTH, told);
                 int paid = goldBefore[0] - hd.currency();

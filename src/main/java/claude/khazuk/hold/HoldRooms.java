@@ -50,7 +50,11 @@ public final class HoldRooms {
                             new Rooms.Station(claude.settlementcore.settlement.Founding.HEART, 14, 1, 12, Direction.WEST))));
 
     public static final List<Rooms.Room> DUG = List.of(
-            new Rooms.Room("dawi_great_hall", "Great Hall", 30, GREAT_HALL,     // 0.13.0: rebuilt grand (the user: "doesnt look that great")
+            new Rooms.Room("dawi_great_hall", "Great Hall", 30, GREAT_HALL,     // the first Great Hall (before 0.13.0): known for the halls dug
+                    "The hold's heart under the mountain: pillars banded in gold, a long hearth between the tables, the god's seat on the dais.",
+                    27, 13, 21, 0, 1, 10, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_grand_hall", "Great Hall", 30, GREAT_HALL,     // 0.13.0: the Great Hall rebuilt grand, under its own id so the
+                    // halls dug before keep their own box and template (the review of 31991f2); the Great Hall's plan digs this one
                     "The hold's heart under the mountain: ancestor kings carved on gold-banded pillars, a stepped vault, a long hearth between "
                             + "the feasting tables, and the high seat on the dais under the Ancestors' face.",
                     33, 17, 25, 0, 1, 12, List.of(), List.of(), List.of()),
