@@ -66,6 +66,16 @@ public class Warrior extends Dawi {
         return true;
     }
 
+    /** What a blow from the front does through his shield (an Ironbreaker's gromril one turns more). */
+    protected float shieldMelee() {
+        return SHIELD_MELEE;
+    }
+
+    /** How often his shield stops a shot from the front dead. */
+    protected float shieldShot() {
+        return SHIELD_SHOT;
+    }
+
     /** A Warrior who has felled {@value #VETERAN_KILLS} foes grows into a Longbeard, once a second's look. */
     @Override
     public void aiStep() {
@@ -81,14 +91,14 @@ public class Warrior extends Dawi {
         Vec3 from = source.getSourcePosition();
         if (from != null && hasShield() && !isBurrowing() && !source.is(DamageTypeTags.BYPASSES_SHIELD) && shieldFaces(from)) {
             if (source.is(DamageTypeTags.IS_PROJECTILE)) {
-                if (getRandom().nextFloat() < SHIELD_SHOT) {
+                if (getRandom().nextFloat() < shieldShot()) {
                     shotsStoppedForTests++;
                     level.playSound(null, getX(), getY(), getZ(), SoundEvents.SHIELD_BLOCK, getSoundSource(), 1f, 0.9f + getRandom().nextFloat() * 0.2f);
                     return false;                                // the shot glances off
                 }
             } else {
                 blowsTurnedForTests++;
-                amount *= SHIELD_MELEE;
+                amount *= shieldMelee();
             }
         }
         return super.hurtServer(level, source, amount);

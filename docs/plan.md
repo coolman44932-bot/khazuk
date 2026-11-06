@@ -141,7 +141,11 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   (handoffs/grungnis_hammer_2026-11-03.md); it ships on a stand-in.
 - **0.11.0, the Longbeards: DONE** (jar 439463f1). Shield or great axe; Old Grumblers steady the hold's Dawi within 8; they bear every
   grudge written; a Great Hall raises two of each, and a Warrior with 8 kills grows into one (handed back through Shrine#absorb).
-- **Then** the roster in TWW1's order, a step at a time: Ironbreakers and Hammerers next.
+- **0.14.0, the Ironbreakers and the Hammerers: DONE.** Ironbreakers: gromril (armour 22, toughness 8, unmoved), a gromril shield, Cinderblast
+  bombs at foes 3 to 10 blocks off (a burst of fire that spares the hold's own); the Mine raises four, posted on guard in it. Hammerers: the
+  great hammer (20, thrown back, the blow rings out on the foes beside), always stubborn; the King's Throne Room raises four, the god's
+  guard: at his side in the hold, they answer whatever strikes him or he strikes, and he takes a quarter less with one beside him.
+- **Then** the roster in TWW1's order, a step at a time: the Slayers next (Troll Slayers, then Giant and Dragon Slayers).
 
 ## 10. For the user to change (each is my pick until then)
 

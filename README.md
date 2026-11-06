@@ -23,7 +23,9 @@ its gold, brew its ale, keep the Book of Grudges and fight for it.
 - **The Book of Grudges (Dammaz Kron):** what kills a Dwarf, breaks the hold or steals its gold is written down. Settle a grudge for
   gold, ale and runes, and the hold hits that foe harder from then on.
 - **The units:** Miners, Dwarf Warriors, Quarrellers, Thunderers, Longbeards (with great weapons too), the Runesmith and the Runelord
-  with the Anvil of Doom. Warriors with enough kills become Longbeards. Every unit rolls its own look: beards, helms and colours, as
+  with the Anvil of Doom. Warriors with enough kills become Longbeards. The Mine raises Ironbreakers, gromril-armoured guards of the
+  deeps who throw Cinderblast bombs. The King's Throne Room raises Hammerers, your bodyguard: they keep at your side in the hold,
+  strike whatever strikes you, and take a quarter off every blow you take. Every unit rolls its own look: beards, helms and colours, as
   in Total War: WARHAMMER III.
 - **The god's powers,** paid from the hold's devotion (prayer at the Shrine, ale, Runesmiths and settled grudges): Grungni's Hammer,
   Valaya's Ward and Grimnir's Fury. Ride Thorgrim's **Throne of Power** for cheaper powers.

@@ -29,7 +29,10 @@ public final class Looks {
     public static final Kind LONGBEARD = new Kind("longbeard", List.of(List.of("v_axe", "v_hammer"), List.of("v_horns", "v_wings"), List.of("v_braids", "")));
     public static final Kind LONGBEARD_GREAT = new Kind("longbeard_great", List.of(List.of("v_gaxe", "v_ghammer"), List.of("v_horns", "v_wings"),
             List.of("v_braids", "")));
-    public static final List<Kind> ALL = List.of(MINER, WARRIOR, QUARRELLER, THUNDERER, LONGBEARD, LONGBEARD_GREAT);
+    /** 0.14: an Ironbreaker's axe or hammer, a crest or a masked helm's wings; a Hammerer's crest or wings, his beard braided or forked. */
+    public static final Kind IRONBREAKER = new Kind("ironbreaker", List.of(List.of("v_axe", "v_hammer"), List.of("v_crest", "v_wings"), List.of("v_braids", "")));
+    public static final Kind HAMMERER = new Kind("hammerer", List.of(List.of("v_crest", "v_wings"), List.of("v_braids", "v_fork")));
+    public static final List<Kind> ALL = List.of(MINER, WARRIOR, QUARRELLER, THUNDERER, LONGBEARD, LONGBEARD_GREAT, IRONBREAKER, HAMMERER);
 
     /** A Dwarf's look: his palette, and which part of each group he shows. Packed in an int ({@link #pack}) for the render state. */
     public record Look(int palette, int[] picks) {

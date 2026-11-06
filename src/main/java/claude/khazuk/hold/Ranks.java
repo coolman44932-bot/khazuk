@@ -1,6 +1,8 @@
 package claude.khazuk.hold;
 
 import claude.khazuk.Dawi;
+import claude.khazuk.Hammerer;
+import claude.khazuk.Ironbreaker;
 import claude.khazuk.KRegistry;
 import claude.khazuk.Longbeard;
 import claude.khazuk.Warrior;
@@ -8,7 +10,10 @@ import claude.khazuk.Marksman;
 import claude.khazuk.Quarreller;
 import claude.khazuk.ShrineBlockEntity;
 import claude.khazuk.Thunderer;
+import claude.settlementcore.room.Rooms;
+import claude.settlementcore.settlement.Building;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -25,6 +30,11 @@ public final class Ranks {
     public static final int RAISE_SECONDS = 30, EACH = 4, COST = 8;
     /** 0.11: with a Great Hall, a Longbeard every {@value #LONGBEARD_SECONDS} s for {@value #LONGBEARD_COST} food, {@value #LONGBEARD_EACH} of each loadout. */
     public static final int LONGBEARD_SECONDS = 60, LONGBEARD_EACH = 2, LONGBEARD_COST = 12;
+    /**
+     * 0.14: with a Mine, an Ironbreaker every {@value #ELITE_SECONDS} s for {@value #ELITE_COST} food until it keeps {@value #IRONBREAKER_EACH}, posted
+     * on guard in the Mine; with a King's Throne Room, a Hammerer the same way until it keeps {@value #HAMMERER_EACH}, the god's guard.
+     */
+    public static final int ELITE_SECONDS = 60, ELITE_COST = 15, IRONBREAKER_EACH = 4, HAMMERER_EACH = 4;
 
     private int clock;
 
@@ -35,7 +45,7 @@ public final class Ranks {
     }
 
     /** How many of {@code kind} the hold keeps up round its Shrine now. */
-    public static int count(ServerLevel level, ShrineBlockEntity hold, Class<? extends Marksman> kind) {
+    public static int count(ServerLevel level, ShrineBlockEntity hold, Class<? extends Dawi> kind) {
         return level.getEntitiesOfClass(kind, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
                 m -> m.isAlive() && m.settlement() == hold).size();
     }
@@ -49,6 +59,75 @@ public final class Ranks {
         if (clock % LONGBEARD_SECONDS == 0 && hold.has(HoldRooms.GREAT_HALL)) {
             raiseLongbeard(level, hold);
         }
+        if (clock % ELITE_SECONDS == 20 && hold.has(Rooms.Function.OREMINE)) {
+            raiseIronbreaker(level, hold);
+        }
+        if (clock % ELITE_SECONDS == 40 && hold.has(HoldRooms.KEEP)) {
+            raiseHammerer(level, hold);
+        }
+    }
+
+    /** The first room of the hold's with {@code f}, or null. */
+    public static Building roomOf(ShrineBlockEntity hold, Rooms.Function f) {
+        for (Building b : hold.buildings()) {
+            Rooms.Room r = Rooms.get(b.room());
+            if (r != null && r.function() == f) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    /** Where one stands in the middle of {@code b}: its centre, at its floor. */
+    public static BlockPos middleOf(Building b) {
+        var c = b.box().getCenter();
+        return new BlockPos(c.getX(), b.standingY(), c.getZ());
+    }
+
+    /** One more Ironbreaker now, posted in the Mine (the clock's minute, and the tests), while the hold keeps fewer than its share. Whether one came up. */
+    public boolean raiseIronbreaker(ServerLevel level, ShrineBlockEntity hold) {
+        Building mine = roomOf(hold, Rooms.Function.OREMINE);
+        int n = count(level, hold, Ironbreaker.class);
+        if (mine == null || n >= IRONBREAKER_EACH || hold.food() < ELITE_COST) {
+            return false;
+        }
+        Ironbreaker d = KRegistry.IRONBREAKER.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        if (d == null) {
+            return false;
+        }
+        hold.ration().spendFood(ELITE_COST, "Ironbreakers raised");
+        d.bindTo(hold);
+        d.guardAt(middleOf(mine));
+        d.emergeAt(hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5);
+        level.addFreshEntity(d);
+        if (n == 0) {
+            hold.tellOwner(hold.settlementName() + ": the first Ironbreaker comes up in gromril head to toe, bombs at his belt, and goes down to "
+                    + "stand guard in the Mine. What climbs out of the deeps meets him first.", ChatFormatting.GOLD);
+        }
+        return true;
+    }
+
+    /** One more Hammerer now, at the Throne Room's post (the clock's minute, and the tests), while the hold keeps fewer than its share. Whether one came up. */
+    public boolean raiseHammerer(ServerLevel level, ShrineBlockEntity hold) {
+        Building throne = roomOf(hold, HoldRooms.KEEP);
+        int n = count(level, hold, Hammerer.class);
+        if (throne == null || n >= HAMMERER_EACH || hold.food() < ELITE_COST) {
+            return false;
+        }
+        Hammerer d = KRegistry.HAMMERER.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        if (d == null) {
+            return false;
+        }
+        hold.ration().spendFood(ELITE_COST, "Hammerers raised");
+        d.bindTo(hold);
+        d.setPost(middleOf(throne));
+        d.emergeAt(hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5);
+        level.addFreshEntity(d);
+        if (n == 0) {
+            hold.tellOwner(hold.settlementName() + ": the first Hammerer swears his oath at the throne, great hammer on his shoulder. While you walk "
+                    + "in the hold the King's Guard keeps at your side, and what strikes you answers to them.", ChatFormatting.GOLD);
+        }
+        return true;
     }
 
     /** One more Longbeard of the fewer loadout now (the clock's minute, and the tests), while the hold keeps fewer than its share. Whether one came up. */

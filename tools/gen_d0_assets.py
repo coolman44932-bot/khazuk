@@ -12,6 +12,21 @@ STONE, STONE_D, STONE_L = (92, 88, 84), (62, 59, 56), (120, 115, 108)
 GOLD, GOLD_D, GOLD_L = (214, 168, 52), (150, 108, 30), (250, 214, 110)
 
 
+def elite_eggs():
+    """0.14: the Ironbreaker's egg (the Miner's, recoloured gromril blue-steel) and the Hammerer's (gold over steel). Their item files."""
+    src = Image.open(os.path.join(RES, "assets", "khazuk", "textures", "item", "miner_spawn_egg.png")).convert("RGBA")
+    for kind, tint in (("ironbreaker", (0.8, 0.92, 1.18)), ("hammerer", (1.22, 0.98, 0.62))):
+        eg = Image.new("RGBA", src.size)
+        for y in range(src.size[1]):
+            for x in range(src.size[0]):
+                r_, g_, b_, a_ = src.getpixel((x, y))
+                lum = (r_ + g_ + b_) / 3
+                eg.putpixel((x, y), (0, 0, 0, 0) if a_ == 0 else tuple(min(255, int(lum * f + 15)) for f in tint) + (a_,))
+        eg.save(os.path.join(RES, "assets", "khazuk", "textures", "item", kind + "_spawn_egg.png"))
+        out(f"assets/khazuk/items/{kind}_spawn_egg.json", {"model": {"type": "minecraft:model", "model": f"khazuk:item/{kind}_spawn_egg"}})
+        out(f"assets/khazuk/models/item/{kind}_spawn_egg.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"khazuk:item/{kind}_spawn_egg"}})
+
+
 def main():
     r = random.Random(7)
     im = Image.new("RGBA", (16, 16))
@@ -39,6 +54,7 @@ def main():
     runesmith_egg()
     anvil_items()
     god_items()
+    elite_eggs()
     print("ok")
 
 

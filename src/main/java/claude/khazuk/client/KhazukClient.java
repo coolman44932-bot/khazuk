@@ -72,6 +72,9 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.THUNDERER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.THUNDERER));
         e.registerEntityRenderer(KRegistry.LONGBEARD.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.LONGBEARD));
         e.registerEntityRenderer(KRegistry.LONGBEARD_GREAT.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.LONGBEARD_GREAT));
+        e.registerEntityRenderer(KRegistry.IRONBREAKER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.IRONBREAKER, 0.45f));
+        e.registerEntityRenderer(KRegistry.HAMMERER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.HAMMERER, 0.45f));
+        e.registerEntityRenderer(KRegistry.CINDERBLAST.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
         e.registerEntityRenderer(KRegistry.GRUNGNIS_HAMMER_STRIKE.get(), HammerRenderer::new);
         e.registerBlockEntityRenderer(KRegistry.SHRINE_ENTITY.get(), ShrineRenderer::new);   // the statue of the three Ancestors

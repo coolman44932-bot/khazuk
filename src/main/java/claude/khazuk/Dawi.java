@@ -149,6 +149,12 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         return guardPos;
     }
 
+    /** Posted on guard at {@code post} (0.14: the Mine's Ironbreakers stand at its mouth), not where he stands. */
+    public void guardAt(BlockPos post) {
+        entityData.set(DATA_MODE, Mode.GUARD.ordinal());
+        guardPos = post.immutable();
+    }
+
     /** {@code from}'s orders carried over (a Warrior grown into a Longbeard): his mode, and his post if he guards one. */
     public void takeOrders(Dawi from) {
         entityData.set(DATA_MODE, from.getMode().ordinal());

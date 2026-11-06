@@ -35,5 +35,10 @@
   "entity.khazuk.longbeard": "Longbeard",
   "item.khazuk.longbeard_spawn_egg": "Longbeard Spawn Egg",
   "entity.khazuk.longbeard_great": "Longbeard (Great Weapon)",
-  "item.khazuk.longbeard_great_spawn_egg": "Longbeard (Great Weapon) Spawn Egg"
+  "item.khazuk.longbeard_great_spawn_egg": "Longbeard (Great Weapon) Spawn Egg",
+  "entity.khazuk.ironbreaker": "Ironbreaker",
+  "item.khazuk.ironbreaker_spawn_egg": "Ironbreaker Spawn Egg",
+  "entity.khazuk.hammerer": "Hammerer",
+  "item.khazuk.hammerer_spawn_egg": "Hammerer Spawn Egg",
+  "entity.khazuk.cinderblast": "Cinderblast Bomb"
 }

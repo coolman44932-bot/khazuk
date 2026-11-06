@@ -150,6 +150,8 @@ public class SurvivalRunGameTests {
                     "the first Quarreller or Thunderer up");
             step(h, hd, at, "first_longbeard", Ranks.count(h.getLevel(), hd, KRegistry.LONGBEARD.get()) + Ranks.count(h.getLevel(), hd, KRegistry.LONGBEARD_GREAT.get()) > 0,
                     "the first Longbeard up");
+            step(h, hd, at, "first_ironbreaker", Ranks.count(h.getLevel(), hd, claude.khazuk.Ironbreaker.class) > 0,
+                    "the first Ironbreaker up, posted in the Mine");
             step(h, hd, at, "two_each_ranks", Ranks.count(h.getLevel(), hd, Quarreller.class) >= 2 && Ranks.count(h.getLevel(), hd, Thunderer.class) >= 2,
                     "two Quarrellers and two Thunderers up");
             boolean struck = false;                                  // a vein dug out (its block gone), not just any gold coming in (the review of aa98ebb)
@@ -171,7 +173,12 @@ public class SurvivalRunGameTests {
                 h.assertTrue(at.containsKey("first_longbeard") || now < at.get("great_hall") + RANKS_BUDGET, "no Longbeard " + RANKS_BUDGET
                         + " ticks after the Great Hall: food " + hd.food());
             }
-            if (halls && at.containsKey("first_marksman") && at.containsKey("first_longbeard") && at.containsKey("ore_gold")) {
+            if (at.containsKey("mine") && hd.has(claude.settlementcore.room.Rooms.Function.OREMINE)) {
+                at.putIfAbsent("mine_done", now);                    // 0.14: the Mine raises Ironbreakers once it is dug out
+                h.assertTrue(at.containsKey("first_ironbreaker") || now < at.get("mine_done") + RANKS_BUDGET, "no Ironbreaker " + RANKS_BUDGET
+                        + " ticks after the Mine: food " + hd.food());
+            }
+            if (halls && at.containsKey("first_marksman") && at.containsKey("first_longbeard") && at.containsKey("first_ironbreaker") && at.containsKey("ore_gold")) {
                 line(h, hd, "the run's end: " + at);
                 h.getLevel().getServer().tickRateManager().stopSprinting();
                 h.succeed();

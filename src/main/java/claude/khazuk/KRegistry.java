@@ -60,6 +60,18 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Longbeard::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("longbeard_great")));
 
+    /** 0.14: the Ironbreakers (the deeps' guard, gromril and Cinderblast bombs) and the Hammerers (the King's Guard, great hammers). */
+    public static final DeferredHolder<EntityType<?>, EntityType<Ironbreaker>> IRONBREAKER = ENTITIES.register("ironbreaker",
+            () -> EntityType.Builder.of(Ironbreaker::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("ironbreaker")));
+    public static final DeferredHolder<EntityType<?>, EntityType<Hammerer>> HAMMERER = ENTITIES.register("hammerer",
+            () -> EntityType.Builder.of(Hammerer::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("hammerer")));
+    /** An Ironbreaker's Cinderblast bomb in flight. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Cinderblast>> CINDERBLAST = ENTITIES.register("cinderblast",
+            () -> EntityType.Builder.<Cinderblast>of(Cinderblast::new, MobCategory.MISC).sized(0.3f, 0.3f).clientTrackingRange(6).updateInterval(5)
+                    .noSave().build(key("cinderblast")));
+
     /** D6: the hold's missile troops, raised by its Barracks: the Quarreller (crossbow) and the Thunderer (handgun). */
     public static final DeferredHolder<EntityType<?>, EntityType<Quarreller>> QUARRELLER = ENTITIES.register("quarreller",
             () -> EntityType.Builder.of(Quarreller::new, MobCategory.CREATURE).sized(0.8f, 1.45f).eyeHeight(1.2f).clientTrackingRange(10)
@@ -123,6 +135,10 @@ public final class KRegistry {
             p -> new SpawnEggItem(p.spawnEgg(LONGBEARD.get())));
     public static final DeferredItem<SpawnEggItem> LONGBEARD_GREAT_EGG = ITEMS.registerItem("longbeard_great_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(LONGBEARD_GREAT.get())));
+    public static final DeferredItem<SpawnEggItem> IRONBREAKER_EGG = ITEMS.registerItem("ironbreaker_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(IRONBREAKER.get())));
+    public static final DeferredItem<SpawnEggItem> HAMMERER_EGG = ITEMS.registerItem("hammerer_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(HAMMERER.get())));
     /** D5b: the Anvil of Doom, carried: set it down on the ground, facing the way you face. */
     public static final DeferredItem<claude.khazuk.hold.AnvilOfDoomItem> ANVIL_OF_DOOM_ITEM = ITEMS.registerItem("anvil_of_doom",
             p -> new claude.khazuk.hold.AnvilOfDoomItem(p.stacksTo(1).fireResistant()));
@@ -164,6 +180,8 @@ public final class KRegistry {
                 out.accept(THUNDERER_EGG.get());
                 out.accept(LONGBEARD_EGG.get());
                 out.accept(LONGBEARD_GREAT_EGG.get());
+                out.accept(IRONBREAKER_EGG.get());
+                out.accept(HAMMERER_EGG.get());
                 out.accept(ANVIL_OF_DOOM_ITEM.get());
                 out.accept(GRUNGNIS_HAMMER.get());
                 out.accept(VALAYAS_WARD.get());
@@ -200,6 +218,8 @@ public final class KRegistry {
         e.put(THUNDERER.get(), Thunderer.createAttributes().build());
         e.put(LONGBEARD.get(), Longbeard.createAttributes(false).build());
         e.put(LONGBEARD_GREAT.get(), Longbeard.createAttributes(true).build());
+        e.put(IRONBREAKER.get(), Ironbreaker.createAttributes().build());
+        e.put(HAMMERER.get(), Hammerer.createAttributes().build());
         e.put(ANVIL_OF_DOOM.get(), claude.khazuk.hold.AnvilOfDoom.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }
