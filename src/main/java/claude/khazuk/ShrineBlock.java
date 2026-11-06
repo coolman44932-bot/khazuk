@@ -93,7 +93,19 @@ public class ShrineBlock extends BaseEntityBlock {
                     + "(deepslate, below y " + claude.khazuk.god.Waking.DEEP_Y + ").").withStyle(ChatFormatting.RED));
             return null;
         }
-        if (p != null && !p.isCreative() && ctx.getLevel() instanceof net.minecraft.server.level.ServerLevel sl
+        Carried home = carried(ctx.getItemInHand());
+        if (home != null && p != null && !p.isCreative() && !ctx.getLevel().isClientSide()) {
+            // a hold's own Shrine, lifted by its god: it goes back on its own dais, where its hold and its Dawi know it (the bug hunt of 2d0b04c)
+            if (!home.owner().equals(p.getUUID())) {
+                p.sendSystemMessage(Component.literal("This is " + home.name() + "'s Shrine: only its own god may set it down.").withStyle(ChatFormatting.RED));
+                return null;
+            }
+            if (!home.pos().equals(ctx.getClickedPos())) {
+                p.sendSystemMessage(Component.literal(home.name() + "'s Shrine stands on its own dais, at " + home.pos().getX() + " " + home.pos().getY() + " "
+                        + home.pos().getZ() + ": set it down there and the hold stands again.").withStyle(ChatFormatting.RED));
+                return null;
+            }
+        } else if (p != null && !p.isCreative() && ctx.getLevel() instanceof net.minecraft.server.level.ServerLevel sl
                 && !claude.settlementcore.settlement.Founding.of(sl).spot(ctx.getClickedPos(), p.getUUID())) {
             p.sendSystemMessage(Component.literal("A Shrine stands only on the dais inside its Hold Gate. Found the hold first: set the Ancestors' "
                     + "Plan of the Hold Gate down where the hold should be, and when Grungni has raised it, walk its passage and set the Shrine on "
@@ -114,9 +126,68 @@ public class ShrineBlock extends BaseEntityBlock {
      * the Dawi who woke, once: {@value claude.khazuk.god.Waking#FIRST_MINERS} Miners and {@value claude.khazuk.god.Waking#FIRST_WARRIORS}
      * Warrior in its deeps from the start.
      */
+    // ------------------------------------------------------------------ lifted and set back: the hold goes with its Shrine
+
+    /** What a lifted Shrine carries besides the hold itself: where its dais is, whose it is, the hold's name. */
+    public record Carried(BlockPos pos, java.util.UUID owner, String name) {
+    }
+
+    static final String CARRIED = "khazuk_hold";
+
+    /** The hold a Shrine item carries, or null for a new Shrine. */
+    public static @Nullable Carried carried(ItemStack stack) {
+        var cd = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        if (cd == null || !cd.contains(CARRIED) || !stack.has(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA)) {
+            return null;
+        }
+        var t = cd.copyTag().getCompoundOrEmpty(CARRIED);
+        var owner = t.read("owner", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
+        var pos = t.read("pos", BlockPos.CODEC).orElse(null);
+        return owner == null || pos == null ? null : new Carried(pos, owner, t.getStringOr("name", "The Hold"));
+    }
+
+    /** {@code heart}'s hold lifted into a Shrine item: all of it (its gold, food, people in the deeps, rooms, grudges, runes), to set back on its dais. */
+    public static ItemStack lift(ShrineBlockEntity heart, net.minecraft.core.HolderLookup.Provider registries) {
+        ItemStack stack = new ItemStack(KRegistry.SHRINE_ITEM.get());
+        stack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA,
+                net.minecraft.world.item.component.TypedEntityData.of(KRegistry.SHRINE_ENTITY.get(), heart.saveCustomOnly(registries)));
+        var t = new net.minecraft.nbt.CompoundTag();
+        t.store("owner", net.minecraft.core.UUIDUtil.CODEC, heart.owner());
+        t.store("pos", BlockPos.CODEC, heart.getBlockPos());
+        t.putString("name", heart.settlementName());
+        var root = new net.minecraft.nbt.CompoundTag();
+        root.put(CARRIED, t);
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(root));
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Shrine of " + heart.settlementName())
+                .withStyle(st -> st.withItalic(false).withColor(ChatFormatting.GOLD)));
+        BlockPos at = heart.getBlockPos();
+        stack.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(java.util.List.of(
+                Component.literal("The hold goes with it: set it back on its dais").withStyle(ChatFormatting.GRAY),
+                Component.literal("at " + at.getX() + " " + at.getY() + " " + at.getZ() + ".").withStyle(ChatFormatting.GRAY))));
+        return stack;
+    }
+
+    /** Lifted by its god (not in creative), the Shrine carries its whole hold: set back on its dais, the hold stands again as it was. */
+    @Override
+    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity be, ItemStack tool) {
+        if (!level.isClientSide() && be instanceof ShrineBlockEntity heart && heart.owner() != null && player.getUUID().equals(heart.owner())) {
+            player.awardStat(net.minecraft.stats.Stats.BLOCK_MINED.get(this));
+            player.causeFoodExhaustion(0.005f);
+            popResource(level, pos, lift(heart, level.registryAccess()));
+            heart.tellOwner(heart.settlementName() + ": you lift the Shrine, and the hold with it. Set it back on its dais at " + pos.getX() + " "
+                    + pos.getY() + " " + pos.getZ() + " and the hold stands again; its Dawi wait for it.", ChatFormatting.GOLD);
+            return;
+        }
+        super.playerDestroy(level, player, pos, state, be, tool);
+    }
+
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity by, ItemStack stack) {
         super.setPlacedBy(level, pos, state, by, stack);
+        if (carried(stack) != null && level.getBlockEntity(pos) instanceof ShrineBlockEntity back) {
+            back.tellOwner(back.settlementName() + ": the Shrine is back on its dais, and the hold stands again.", ChatFormatting.GOLD);
+            return;                                              // the hold as it was: its name, its god, its people (no first Dawi again)
+        }
         if (by instanceof ServerPlayer p && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart) {
             var god = claude.khazuk.god.Waking.god(p);
             heart.claim(p, claude.khazuk.god.Waking.nameFor(p, pos));
@@ -145,7 +216,10 @@ public class ShrineBlock extends BaseEntityBlock {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (level.isClientSide()) {
-            return InteractionResult.SUCCESS;
+            // only what the Shrine takes is used on it; anything else goes on as it would (a block set against it, a token's use: the bug hunt)
+            boolean takes = stack.is(heart.currencyItem()) || stack.is(net.minecraft.world.item.Items.WHEAT) || stack.is(net.minecraft.world.item.Items.HAY_BLOCK)
+                    || Fare.nutrition(stack) > 0;
+            return takes ? InteractionResult.SUCCESS : InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (stack.is(heart.currencyItem())) {
             heart.addCurrency(stack.getCount(), "the Shrine's owner");
@@ -172,6 +246,9 @@ public class ShrineBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!player.getMainHandItem().isEmpty() && !player.isSecondaryUseActive()) {
+            return InteractionResult.PASS;                       // an item the Shrine doesn't take: used as it would be anywhere (the bug hunt)
+        }
         if (!level.isClientSide() && player.isSecondaryUseActive() && player instanceof ServerPlayer sp
                 && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart && sp.getUUID().equals(heart.owner())) {
             claude.khazuk.god.Waking.askRename(sp, heart);      // sneak-used by its god: name the hold anew

@@ -142,6 +142,7 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (owner != null && !owner.equals(player.getUUID())) {
+            player.sendSystemMessage(Component.literal("The Throne of Power bears only its own god.").withStyle(ChatFormatting.GRAY));
             return InteractionResult.PASS;                       // only its god sits in it
         }
         if (isVehicle()) {
@@ -151,9 +152,12 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
             return InteractionResult.SUCCESS;
         }
         if (player.isSecondaryUseActive()) {
-            ItemStack item = new ItemStack(KRegistry.THRONE_ITEM.get());
+            ItemStack item = folded();
             if (!player.getInventory().add(item)) {
-                spawnAtLocation((ServerLevel) level(), item);
+                net.minecraft.world.entity.item.ItemEntity e = spawnAtLocation((ServerLevel) level(), item);
+                if (e != null) {
+                    e.setUnlimitedLifetime();
+                }
             }
             discard();
             return InteractionResult.SUCCESS;
@@ -367,17 +371,48 @@ public class ThroneOfPower extends PathfinderMob implements GeoEntity {
      * Broken, it goes back to its god: into his pack if he's on the server, else dropped where it fell (or at his feet, if it fell out of the
      * world). Here, not in die(): this runs once, only for a death that happened (no mod cancelled it), whatever the loot gamerule.
      */
+    static final String CARRIED = "khazuk_throne";
+
+    /** It as an item, the Book's open grudge carried with it (folded, the grudge is kept: the bug hunt of 2d0b04c). */
+    public ItemStack folded() {
+        ItemStack item = new ItemStack(KRegistry.THRONE_ITEM.get());
+        if (grudge != null) {
+            net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag();
+            t.store("grudge", UUIDUtil.CODEC, grudge);
+            t.putString("grudge_name", grudgeName == null ? "" : grudgeName);
+            net.minecraft.nbt.CompoundTag root = new net.minecraft.nbt.CompoundTag();
+            root.put(CARRIED, t);
+            item.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(root));
+        }
+        return item;
+    }
+
+    /** Set down from {@code item}: the grudge it carried, still written. */
+    public void unfold(ItemStack item) {
+        var cd = item.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        if (cd == null || !cd.contains(CARRIED)) {
+            return;
+        }
+        net.minecraft.nbt.CompoundTag t = cd.copyTag().getCompoundOrEmpty(CARRIED);
+        grudge = t.read("grudge", UUIDUtil.CODEC).orElse(null);
+        String n = t.getStringOr("grudge_name", "");
+        grudgeName = grudge == null || n.isEmpty() ? null : n;
+    }
+
     @Override
     protected void dropAllDeathLoot(ServerLevel level, DamageSource source) {
         super.dropAllDeathLoot(level, source);
-        ItemStack item = new ItemStack(KRegistry.THRONE_ITEM.get());
+        ItemStack item = folded();
         ServerPlayer god = owner == null ? null : level.getServer().getPlayerList().getPlayer(owner);
         if (god != null && god.getInventory().add(item)) {
             god.sendSystemMessage(Component.literal("Your Throne of Power is broken; its bearers bring it back to you.").withStyle(ChatFormatting.GOLD));
             return;
         }
         if (getY() > level.getMinY()) {
-            spawnAtLocation(level, item);
+            net.minecraft.world.entity.item.ItemEntity e = spawnAtLocation(level, item);
+            if (e != null) {
+                e.setUnlimitedLifetime();                        // waits for its god, however long he's away (the bug hunt of 2d0b04c)
+            }
         } else if (god != null) {
             god.drop(item, false);
         }

@@ -848,6 +848,9 @@ def validate(h):
     return bad
 
 
+GILDING = {"minecraft:gold_block": "khazuk:gilded_stone", "minecraft:raw_gold_block": "khazuk:hoard_gold"}
+
+
 def write(h, path):
     """The hall's template straight to an .nbt file: every cell of its box, as structure_save writes it (gen_keep.py's way)."""
     sys.path.insert(0, os.path.join(HERE, "..", "..", "tools", "structgen"))
@@ -861,7 +864,7 @@ def write(h, path):
             if "[" in st:
                 name, rest = st.split("[", 1)
                 props = dict(kv.split("=") for kv in rest.rstrip("]").split(","))
-            entry = {"Name": nbtio.String(name)}
+            entry = {"Name": nbtio.String(GILDING.get(name, name))}   # the halls' gold is Khazuk!'s gilding, not money (the bug hunt of 2d0b04c)
             if props:
                 entry["Properties"] = nbtio.Compound({k: nbtio.String(v) for k, v in props.items()})
             palette.append(nbtio.Compound(entry))

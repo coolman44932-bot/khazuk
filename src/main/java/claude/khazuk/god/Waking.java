@@ -185,10 +185,12 @@ public final class Waking {
 
     /** The rock opens and the first Dawi step out: they hand their god the Shrine and the kit, and ask for their hold's name. */
     public static void woken(ServerLevel level, ServerPlayer p, BlockPos at) {
-        RENAMING.remove(p.getUUID());                            // the name asked next is the hold's own, not an old Shrine's
-        if (!p.isCreative()) {
-            spendGold(p);
+        if (!p.isCreative() && !spendGold(p)) {                  // the gold it was struck with, or no waking (the bug hunt of 2d0b04c)
+            p.sendSystemMessage(Component.literal("The stone falls quiet: it wants the gold it was struck with. Strike it again with an ingot "
+                    + "in your pack.").withStyle(ChatFormatting.GRAY));
+            return;
         }
+        RENAMING.remove(p.getUUID());                            // the name asked next is the hold's own, not an old Shrine's
         boolean wet = false;
         for (BlockPos c : new BlockPos[]{at, at.above()}) {
             for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
@@ -221,19 +223,20 @@ public final class Waking {
                 + "you set the Shrine. Then they come up to it, and the mountain rises round their gate.").withStyle(ChatFormatting.YELLOW));
         level.playSound(null, at, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 1f, 0.6f);
         if (p.connection != null && p.connection.hasChannel(AskName.TYPE)) {
-            PacketDistributor.sendToPlayer(p, new AskName(name));
+            PacketDistributor.sendToPlayer(p, new AskName(name, false));
         }
     }
 
-    /** The ingot the god struck the rock with, spent now the Dawi have woken. */
-    private static void spendGold(ServerPlayer p) {
+    /** The ingot the god struck the rock with, spent now the Dawi wake. Whether he still had one. */
+    private static boolean spendGold(ServerPlayer p) {
         var inv = p.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             if (inv.getItem(i).is(Items.GOLD_INGOT)) {
                 inv.getItem(i).shrink(1);
-                return;
+                return true;
             }
         }
+        return false;
     }
 
     private static void give(ServerPlayer p, ItemStack s) {
@@ -262,16 +265,18 @@ public final class Waking {
     public static void askRename(ServerPlayer p, claude.khazuk.ShrineBlockEntity hold) {
         RENAMING.put(p.getUUID(), hold.getBlockPos());
         if (p.connection != null && p.connection.hasChannel(AskName.TYPE)) {
-            PacketDistributor.sendToPlayer(p, new AskName(hold.settlementName()));
+            PacketDistributor.sendToPlayer(p, new AskName(hold.settlementName(), true));
         }
     }
 
     // ------------------------------------------------------------------ the hold's name: asked of the client, sent back
 
     /** Server to client: open the naming screen, with the name the Dawi have for it until then. */
-    public record AskName(String suggested) implements CustomPacketPayload {
+    /** {@code rename}: the god names a standing hold anew (its own line on the screen), not the first Dawi's question. */
+    public record AskName(String suggested, boolean rename) implements CustomPacketPayload {
         public static final Type<AskName> TYPE = new Type<>(Identifier.fromNamespaceAndPath(Khazuk.MODID, "ask_hold_name"));
-        public static final StreamCodec<RegistryFriendlyByteBuf, AskName> CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, AskName::suggested, AskName::new);
+        public static final StreamCodec<RegistryFriendlyByteBuf, AskName> CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, AskName::suggested,
+                ByteBufCodecs.BOOL, AskName::rename, AskName::new);
 
         @Override
         public Type<AskName> type() {
@@ -294,7 +299,7 @@ public final class Waking {
 
     private static void payloads(RegisterPayloadHandlersEvent e) {
         var r = e.registrar("1");
-        r.playToClient(AskName.TYPE, AskName.CODEC, (msg, ctx) -> ctx.enqueueWork(() -> ClientHooks.askName(msg.suggested())));
+        r.playToClient(AskName.TYPE, AskName.CODEC, (msg, ctx) -> ctx.enqueueWork(() -> ClientHooks.askName(msg.suggested(), msg.rename())));
         r.playToServer(NameHold.TYPE, NameHold.CODEC, (msg, ctx) -> ctx.enqueueWork(() -> {
             if (ctx.player() instanceof ServerPlayer p) {
                 named(p, msg.name());
@@ -336,8 +341,8 @@ public final class Waking {
         private ClientHooks() {
         }
 
-        static void askName(String suggested) {
-            claude.khazuk.client.NameHoldScreen.open(suggested);
+        static void askName(String suggested, boolean rename) {
+            claude.khazuk.client.NameHoldScreen.open(suggested, rename);
         }
     }
 }

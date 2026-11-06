@@ -56,6 +56,12 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> DATA_DIGGING = SynchedEntityData.defineId(Dawi.class, EntityDataSerializers.BOOLEAN);
     /** >0 rising (ticks left), <0 sinking, 0 neither. */
     private static final EntityDataAccessor<Integer> DATA_SINK = SynchedEntityData.defineId(Dawi.class, EntityDataSerializers.INT);
+    /**
+     * Its god (the hold's owner), kept on the unit itself (saved, and synced so its god's client knows an order is his to give): far from
+     * the hold, its Shrine's chunk unloaded, it still follows him, takes his orders and never turns on him (the bug hunt of 2d0b04c).
+     */
+    private static final EntityDataAccessor<java.util.Optional<net.minecraft.world.entity.EntityReference<LivingEntity>>> DATA_GOD =
+            SynchedEntityData.defineId(Dawi.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
 
     public static final int SINK_TICKS = 16;
     /** Ticks a unit sent home has to walk to its Shrine before it sinks where it stands. */
@@ -72,6 +78,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     @Nullable private BlockPos heartPos;
+    private net.minecraft.resources.@Nullable ResourceKey<Level> heartDim;
     @Nullable private BlockPos crewRoom;
     @Nullable private BlockPos guardPos;
     @Nullable private Vec3 riseAt;
@@ -97,6 +104,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         b.define(DATA_MODE, Mode.WORK.ordinal());
         b.define(DATA_DIGGING, false);
         b.define(DATA_SINK, 0);
+        b.define(DATA_GOD, java.util.Optional.empty());
     }
 
     @Override
@@ -119,13 +127,54 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
 
     @Override
     public @Nullable ShrineBlockEntity settlement() {
-        return heartPos != null && level() instanceof ServerLevel sl && sl.isLoaded(heartPos)
+        return heartPos != null && level() instanceof ServerLevel sl && inHeartsLevel() && sl.isLoaded(heartPos)
                 && sl.getBlockEntity(heartPos) instanceof ShrineBlockEntity h ? h : null;
+    }
+
+    /** Whether it is in the dimension its Shrine stands in (a unit taken through a portal is not: its Shrine isn't at that place there). */
+    private boolean inHeartsLevel() {
+        return heartDim == null || level().dimension().equals(heartDim);
+    }
+
+    /** Its Shrine, its chunk loaded for the asking if need be (a death far from the hold must still be told: the bug hunt of 2d0b04c). */
+    public @Nullable ShrineBlockEntity settlementLoading() {
+        ShrineBlockEntity h = settlement();
+        if (h == null && heartPos != null && level() instanceof ServerLevel sl && inHeartsLevel()) {
+            sl.getChunk(heartPos);
+            h = sl.getBlockEntity(heartPos) instanceof ShrineBlockEntity s ? s : null;
+        }
+        return h;
     }
 
     @Override
     public void bindTo(Settlement settlement) {
         heartPos = settlement.getBlockPos();
+        if (settlement instanceof net.minecraft.world.level.block.entity.BlockEntity be && be.getLevel() != null) {
+            heartDim = be.getLevel().dimension();
+        }
+        setGod(settlement.owner());
+    }
+
+    /** Its god's id, or null (a hold no one owns yet). */
+    public java.util.@Nullable UUID godId() {
+        return entityData.get(DATA_GOD).map(net.minecraft.world.entity.EntityReference::getUUID).orElse(null);
+    }
+
+    private void setGod(java.util.@Nullable UUID id) {
+        if (!java.util.Objects.equals(id, godId())) {
+            entityData.set(DATA_GOD, id == null ? java.util.Optional.empty() : java.util.Optional.of(net.minecraft.world.entity.EntityReference.of(id)));
+        }
+    }
+
+    /** Its god, if he is on the server now (wherever the hold's chunk is). */
+    public net.minecraft.server.level.@Nullable ServerPlayer god() {
+        java.util.UUID id = godId();
+        return id != null && level() instanceof ServerLevel sl ? sl.getServer().getPlayerList().getPlayer(id) : null;
+    }
+
+    /** Whether {@code e} is its god. */
+    public boolean isGod(net.minecraft.world.entity.@Nullable Entity e) {
+        return e instanceof Player && e.getUUID().equals(godId());
     }
 
     public @Nullable BlockPos heartPos() {
@@ -163,8 +212,8 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-        ShrineBlockEntity h = settlement();
-        if (hand != InteractionHand.MAIN_HAND || h == null || !player.getUUID().equals(h.owner()) || isCrew()) {
+        // its god's own: the order is his on both sides, so the item in his hand isn't used as well (a pearl thrown, food eaten: the bug hunt)
+        if (hand != InteractionHand.MAIN_HAND || !isGod(player) || isCrew()) {
             return super.mobInteract(player, hand);
         }
         if (!level().isClientSide()) {
@@ -321,6 +370,12 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         }
         super.aiStep();
         if (!level().isClientSide()) {
+            if (tickCount % 40 == 17) {
+                ShrineBlockEntity h = settlement();
+                if (h != null) {
+                    setGod(h.owner());                           // the hold claimed (or given) since it was bound
+                }
+            }
             mend();
             if (furyUp && !claude.khazuk.god.AncestorPowers.furious(this)) {
                 feelFury();                                      // the Fury spent on the tick it ends (the review of dd26ec4: not up to 10 ticks late)
@@ -419,6 +474,11 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     static final net.minecraft.resources.Identifier ALE = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "ale");
     static final net.minecraft.resources.Identifier GRUDGE = net.minecraft.resources.Identifier.fromNamespaceAndPath(Khazuk.MODID, "grudgebearer");
     private boolean aleUp;
+
+    /** How many Runes of Cleaving the hold has struck, as he wears them. */
+    public int cleaveRunes() {
+        return cleaveRunes;
+    }
 
     /** Whether he has ale in him now (refreshed every 2 s from his Shrine's barrels). */
     public boolean aleUp() {
@@ -538,7 +598,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     @Override
     public void setTarget(@org.jspecify.annotations.Nullable LivingEntity target) {
         ShrineBlockEntity h = target instanceof Player ? settlement() : null;
-        if (h != null && target.getUUID().equals(h.owner())) {
+        if (isGod(target) || h != null && target.getUUID().equals(h.owner())) {
             return;
         }
         super.setTarget(target);
@@ -618,8 +678,9 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
 
     @Override
     public void die(DamageSource source) {
-        ShrineBlockEntity h = settlement();
+        ShrineBlockEntity h = settlementLoading();            // far from the hold too: off its roll, out of its crews
         if (h != null) {
+            h.ranks().forget(getUUID());                         // off the roll of the ranks its rooms raised, if he was of them
             h.removePerson(getUUID());
             h.works().forget(getUUID());
             net.minecraft.world.entity.Entity killer = source.getEntity();
@@ -637,6 +698,10 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     protected void addAdditionalSaveData(ValueOutput out) {
         super.addAdditionalSaveData(out);
         out.storeNullable("heart", BlockPos.CODEC, heartPos);
+        out.storeNullable("heart_dim", Level.RESOURCE_KEY_CODEC, heartDim);
+        out.storeNullable("god", net.minecraft.core.UUIDUtil.CODEC, godId());
+        out.putBoolean("homeward", homeward);
+        out.putLong("home_by", homeBy);
         out.storeNullable("guard_pos", BlockPos.CODEC, guardPos);
         out.putInt("mode", getMode().ordinal());
         out.putInt("kills", kills);
@@ -646,6 +711,10 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
     protected void readAdditionalSaveData(ValueInput in) {
         super.readAdditionalSaveData(in);
         heartPos = in.read("heart", BlockPos.CODEC).orElse(null);
+        heartDim = in.read("heart_dim", Level.RESOURCE_KEY_CODEC).orElse(null);
+        setGod(in.read("god", net.minecraft.core.UUIDUtil.CODEC).orElse(null));
+        homeward = in.getBooleanOr("homeward", false);           // sent home and unloaded on the way: home it still goes (the bug hunt)
+        homeBy = in.getLongOr("home_by", 0L);
         entityData.set(DATA_MODE, in.getIntOr("mode", Mode.WORK.ordinal()));
         guardPos = in.read("guard_pos", BlockPos.CODEC).orElse(null);
         kills = in.getIntOr("kills", 0);

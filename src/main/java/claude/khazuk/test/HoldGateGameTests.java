@@ -51,7 +51,7 @@ public class HoldGateGameTests {
         int gold = 0;
         boolean doorOpen = false;
         for (RoomTemplates.Entry e : cells) {
-            if (e.state().is(Blocks.GOLD_BLOCK)) {
+            if (e.state().is(KRegistry.GILDED_STONE.get())) {
                 gold++;
             }
             if (e.local().equals(new BlockPos(room.doorX(), room.doorY(), room.doorZ())) && e.state().isAir()) {
@@ -85,7 +85,7 @@ public class HoldGateGameTests {
         int gold = 0, bronze = 0;
         for (BlockPos p : BlockPos.betweenClosed(h.absolutePos(new BlockPos(4, 2, 10)), h.absolutePos(new BlockPos(35, 55, 62)))) {
             var s = h.getLevel().getBlockState(p);
-            if (s.is(Blocks.GOLD_BLOCK)) {
+            if (s.is(KRegistry.GILDED_STONE.get())) {
                 gold++;
             } else if (s.is(Blocks.WAXED_EXPOSED_COPPER)) {
                 bronze++;

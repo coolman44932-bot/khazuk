@@ -35,6 +35,7 @@ public class ThroneItem extends Item {
         if (ctx.getPlayer() != null) {
             t.setOwner(ctx.getPlayer().getUUID());
         }
+        t.unfold(ctx.getItemInHand());                           // the Book's grudge, carried folded
         level.addFreshEntity(t);
         if (ctx.getPlayer() == null || !ctx.getPlayer().isCreative()) {
             ctx.getItemInHand().shrink(1);

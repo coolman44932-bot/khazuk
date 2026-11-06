@@ -35,6 +35,7 @@ public class AnvilOfDoomItem extends Item {
         if (ctx.getPlayer() != null) {
             a.setOwner(ctx.getPlayer().getUUID());
         }
+        a.unfold(level, ctx.getItemInHand());                    // its runes cool on while it's folded, not afresh (the bug hunt of 2d0b04c)
         level.addFreshEntity(a);
         if (ctx.getPlayer() == null || !ctx.getPlayer().isCreative()) {
             ctx.getItemInHand().shrink(1);

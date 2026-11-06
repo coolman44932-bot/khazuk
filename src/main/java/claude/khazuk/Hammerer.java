@@ -37,7 +37,7 @@ import java.util.EnumSet;
  * <li><b>Oathsworn:</b> always stubborn (immune to fear): a Hammerer never gives ground.</li>
  * <li><b>The King's Guard:</b> raised by the hold's King's Throne Room ({@value claude.khazuk.hold.Ranks#HAMMERER_EACH} of them, hold/Ranks).
  * While their god walks in the hold they keep at his side; they strike whatever strikes him and any foe of the hold he strikes; and with a Hammerer
- * * within {@value #GUARD_REACH} blocks the god takes {@value #GUARD_TAKEN} of every blow. When he is away they stand guard in the Throne
+ * within {@value #GUARD_REACH} blocks the god takes {@value #GUARD_TAKEN} of every blow. When he is away they stand guard in the Throne
  * Room. Their god can order them as any Dwarf (follow, hold) and they do as told.</li>
  * </ul>
  * His stats are the stronger of the army book's and TWW3's (the user's rule): the best of the hold's foot with a great weapon.
@@ -123,7 +123,8 @@ public class Hammerer extends Warrior {
         int n = 0;
         for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(struck.blockPosition()).inflate(RING_REACH + 1),
                 m -> m != struck && m.isAlive() && !(m instanceof Dawi) && Muster.foe(m) && m.distanceToSqr(struck) <= RING_REACH * RING_REACH)) {
-            if (m.hurtServer(level, level.damageSources().mobAttack(this), share)) {
+            float each = bearsGrudgeAgainst(m) ? share * (1 + claude.khazuk.hold.Grudges.BEARER_PERCENT / 100f) : share;   // a grudge borne rings too
+            if (m.hurtServer(level, level.damageSources().mobAttack(this), each)) {
                 Vec3 away = m.position().subtract(position()).multiply(1, 0, 1);
                 if (away.lengthSqr() > 1e-4) {
                     away = away.normalize();
@@ -211,7 +212,10 @@ public class Hammerer extends Warrior {
 
         @Override
         public boolean canUse() {
-            ServerPlayer king = u.kingInHold();
+            ServerPlayer king = u.god();                          // in the hold or out of it with him (the bug hunt of 2d0b04c)
+            if (king != null && (king.level() != u.level() || u.distanceToSqr(king) > 24 * 24)) {
+                king = null;
+            }
             mark = king == null ? null : markOf(u, king);
             return mark != null && canAttack(mark, TargetingConditions.DEFAULT);
         }
@@ -264,7 +268,7 @@ public class Hammerer extends Warrior {
         /** Whether a Hammerer of a hold {@code p} is god of stands within {@value #GUARD_REACH} blocks of him. */
         public static boolean guarded(ServerPlayer p) {
             return !p.level().getEntitiesOfClass(Hammerer.class, p.getBoundingBox().inflate(GUARD_REACH), h -> h.isAlive() && !h.isBurrowing()
-                    && h.distanceToSqr(p) <= GUARD_REACH * GUARD_REACH && h.settlement() != null && p.getUUID().equals(h.settlement().owner())).isEmpty();
+                    && h.distanceToSqr(p) <= GUARD_REACH * GUARD_REACH && h.isGod(p)).isEmpty();
         }
     }
 }

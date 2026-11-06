@@ -13,15 +13,18 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 public final class NameHoldScreen extends Screen {
 
     private final String suggested;
+    /** A standing hold named anew (the Shrine sneak-used), not the waking's first question (the bug hunt of 2d0b04c). */
+    private final boolean rename;
     private EditBox name;
 
-    private NameHoldScreen(String suggested) {
-        super(Component.literal("Name the hold"));
+    private NameHoldScreen(String suggested, boolean rename) {
+        super(Component.literal(rename ? "Name the hold anew" : "Name the hold"));
         this.suggested = suggested;
+        this.rename = rename;
     }
 
-    public static void open(String suggested) {
-        Minecraft.getInstance().setScreen(new NameHoldScreen(suggested));
+    public static void open(String suggested, boolean rename) {
+        Minecraft.getInstance().setScreen(new NameHoldScreen(suggested, rename));
     }
 
     @Override
@@ -43,7 +46,8 @@ public final class NameHoldScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
-        g.centeredText(font, Component.literal("The first Dawi kneel before you. What is their hold called?"), width / 2, height / 2 - 34, 0xFFE0C060);
+        g.centeredText(font, Component.literal(rename ? "The Dawi will carve the hold's new name over its gate. What is it called now?"
+                : "The first Dawi kneel before you. What is their hold called?"), width / 2, height / 2 - 34, 0xFFE0C060);
     }
 
     @Override

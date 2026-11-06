@@ -1,4 +1,8 @@
 {
   "replace": false,
-  "values": ["khazuk:ancestor_shrine"]
+  "values": [
+    "khazuk:ancestor_shrine",
+    "khazuk:gilded_stone",
+    "khazuk:hoard_gold"
+  ]
 }

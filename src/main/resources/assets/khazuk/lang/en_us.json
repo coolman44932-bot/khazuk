@@ -40,5 +40,7 @@
   "item.khazuk.ironbreaker_spawn_egg": "Ironbreaker Spawn Egg",
   "entity.khazuk.hammerer": "Hammerer",
   "item.khazuk.hammerer_spawn_egg": "Hammerer Spawn Egg",
-  "entity.khazuk.cinderblast": "Cinderblast Bomb"
+  "entity.khazuk.cinderblast": "Cinderblast Bomb",
+  "block.khazuk.gilded_stone": "Gilded Stone",
+  "block.khazuk.hoard_gold": "Hoard Gold"
 }

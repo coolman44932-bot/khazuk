@@ -29,8 +29,22 @@ public final class KRegistry {
 
     public static final DeferredBlock<ShrineBlock> SHRINE = BLOCKS.registerBlock("ancestor_shrine", ShrineBlock::new,
             // noOcclusion: the statue (a GeckoLib block entity, drawn past the block) is lit by the light in its own cell, and an occluding block
-            // holds none there, which draws it black (handoffs/ancestor_shrine_2026-11-04_done.md); its 1x1 collision stays
-            p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN).strength(3f, 6f).sound(SoundType.AMETHYST).lightLevel(s -> 9).noOcclusion());
+            // holds none there, which draws it black (handoffs/ancestor_shrine_2026-11-04_done.md); its 1x1 collision stays. Blast-proof (1200):
+            // a blast would drop it bare and lose the hold with it (the bug hunt of 2d0b04c); its god lifts it whole (ShrineBlock#playerDestroy)
+            p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN).strength(3f, 1200f).sound(SoundType.AMETHYST).lightLevel(s -> 9).noOcclusion());
+    /**
+     * The halls' gilding (the bug hunt of 2d0b04c): the hold's templates were built of real gold blocks, and a Great Hall dug for 30 gold
+     * held 249 of them. Gilded Stone looks like a gold block and Hoard Gold like raw gold, and each drops itself: the hold's look, not its money.
+     */
+    public static final DeferredBlock<net.minecraft.world.level.block.Block> GILDED_STONE = BLOCKS.registerBlock("gilded_stone",
+            net.minecraft.world.level.block.Block::new, p -> p.mapColor(MapColor.GOLD).strength(3f, 6f).sound(SoundType.METAL));
+    public static final DeferredBlock<net.minecraft.world.level.block.Block> HOARD_GOLD = BLOCKS.registerBlock("hoard_gold",
+            net.minecraft.world.level.block.Block::new, p -> p.mapColor(MapColor.RAW_IRON).strength(3f, 6f).sound(SoundType.METAL));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> GILDED_STONE_ITEM = ITEMS.registerItem("gilded_stone",
+            p -> new net.minecraft.world.item.BlockItem(GILDED_STONE.get(), p.useBlockDescriptionPrefix()));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> HOARD_GOLD_ITEM = ITEMS.registerItem("hoard_gold",
+            p -> new net.minecraft.world.item.BlockItem(HOARD_GOLD.get(), p.useBlockDescriptionPrefix()));
+
     /** The Shrine's item: the statue itself in hand and in the inventory (GeckoLib's item render, client/ShrineRenderer). */
     public static final DeferredItem<ShrineItem> SHRINE_ITEM = ITEMS.registerItem("ancestor_shrine",
             p -> new ShrineItem(SHRINE.get(), p.useBlockDescriptionPrefix()));
@@ -188,6 +202,8 @@ public final class KRegistry {
                 out.accept(GRIMNIRS_FURY.get());
                 out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
+                out.accept(GILDED_STONE_ITEM.get());
+                out.accept(HOARD_GOLD_ITEM.get());
                 out.accept(MINER_EGG.get());
                 out.accept(WARRIOR_EGG.get());
             })

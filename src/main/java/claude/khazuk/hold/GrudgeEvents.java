@@ -103,6 +103,17 @@ public final class GrudgeEvents {
         }
     }
 
+    /** Only its god lifts a hold's Shrine (the bug hunt of 2d0b04c: anyone could break it, and the hold was lost). Creative players may. */
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGH)
+    static void shrineGuard(BreakBlockEvent e) {
+        if (e.getLevel() instanceof ServerLevel level && e.getPlayer() instanceof ServerPlayer p && !p.isCreative()
+                && level.getBlockEntity(e.getPos()) instanceof ShrineBlockEntity heart && heart.owner() != null && !p.getUUID().equals(heart.owner())) {
+            e.setCanceled(true);
+            p.sendSystemMessage(net.minecraft.network.chat.Component.literal(heart.settlementName() + "'s Shrine is its god's to lift, not yours.")
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+        }
+    }
+
     @SubscribeEvent
     static void broke(BreakBlockEvent e) {
         if (!(e.getLevel() instanceof ServerLevel level) || !(e.getPlayer() instanceof ServerPlayer p) || p.isCreative()) {
@@ -113,7 +124,8 @@ public final class GrudgeEvents {
             return;
         }
         BlockState s = e.getState();
-        boolean gold = s.is(Blocks.GOLD_BLOCK) || s.is(Blocks.RAW_GOLD_BLOCK) || s.is(BlockTags.GOLD_ORES);
+        boolean gold = s.is(Blocks.GOLD_BLOCK) || s.is(Blocks.RAW_GOLD_BLOCK) || s.is(BlockTags.GOLD_ORES)
+                || s.is(claude.khazuk.KRegistry.GILDED_STONE.get()) || s.is(claude.khazuk.KRegistry.HOARD_GOLD.get());
         h.hold().grudges().wronged(level, h.hold(), p, gold ? "stole the hold's gold from " + roomName(h.building())
                 : "broke the stone of " + roomName(h.building()));
     }

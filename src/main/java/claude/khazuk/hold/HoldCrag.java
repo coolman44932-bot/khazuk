@@ -223,6 +223,19 @@ public final class HoldCrag {
         }
         BlockPos shrine = hold.getBlockPos();
         keepOut.add(new BoundingBox(shrine.getX() - 2, shrine.getY() - 1, shrine.getZ() - 2, shrine.getX() + 2, shrine.getY() + 3, shrine.getZ() + 2));
+        // every other settlement near, of any race and any god (another of this god's holds too): its rooms and its heart keep their air
+        // (the bug hunt of 2d0b04c: the mountain filled a neighbour's halls with stone)
+        for (claude.settlementcore.settlement.Settlement other : claude.settlementcore.settlement.SettlementSpawns.loaded(level)) {
+            if (other == hold || other.getBlockPos().distManhattan(shrine) > 256) {
+                continue;
+            }
+            for (Building b : other.buildings()) {
+                keepOut.add(b.box().inflatedBy(1));
+            }
+            BlockPos o = other.getBlockPos();
+            keepOut.add(new BoundingBox(o.getX() - 3, o.getY() - 1, o.getZ() - 3, o.getX() + 3, o.getY() + 4, o.getZ() + 3));
+        }
+        own = pl.box();
         int end = Math.min(c.size(), i + budget);
         BlockPos last = null;
         it.unimi.dsi.fastutil.ints.IntArrayList held = waiting.get(key);
@@ -304,14 +317,45 @@ public final class HoldCrag {
         return !s.hasBlockEntity() && (s.isAir() || s.canBeReplaced());
     }
 
-    /** One cell of the mountain: not in {@code keepOut}, only where it {@link #takes}, and never on anyone it can't lift. */
+    /** The rising gate's own box: under its own stone the mountain may fill (it wraps the towers); elsewhere a built roof keeps its air. */
+    private static BoundingBox own;
+
+    /** How far up the mountain looks for a roof over an air cell. */
+    static final int ROOF_LOOK = 12;
+
+    /**
+     * Whether the air at {@code p} is under something someone built (planks, glass, brick: anything not the land, its plants, its trees or
+     * water) within {@value #ROOF_LOOK} blocks: a house's room, a hall. The mountain fills a cave, never a room (the bug hunt of 2d0b04c).
+     */
+    public static boolean roofed(ServerLevel level, BlockPos p) {
+        BlockPos.MutableBlockPos q = p.mutable();
+        for (int d = 1; d <= ROOF_LOOK; d++) {
+            q.move(0, 1, 0);
+            if (!level.isLoaded(q)) {
+                return false;
+            }
+            BlockState above = level.getBlockState(q);
+            if (above.isAir()) {
+                continue;
+            }
+            return !(claude.settlementcore.room.Siting.mayReplace(above) || above.is(net.minecraft.tags.BlockTags.LEAVES)
+                    || above.is(net.minecraft.tags.BlockTags.LOGS) || !above.getFluidState().isEmpty());
+        }
+        return false;
+    }
+
+    /** One cell of the mountain: not in {@code keepOut}, only where it {@link #takes}, never in a built room, and never on anyone it can't lift. */
     private static int place(ServerLevel level, BlockPos p, BlockState s, List<LivingEntity> near, List<BoundingBox> keepOut) {
         for (BoundingBox b : keepOut) {
             if (b.isInside(p)) {
                 return REFUSED;
             }
         }
-        if (!takes(level.getBlockState(p))) {
+        BlockState was = level.getBlockState(p);
+        if (!takes(was)) {
+            return REFUSED;
+        }
+        if (was.isAir() && (own == null || !own.isInside(p)) && roofed(level, p)) {
             return REFUSED;
         }
         AABB cell = new AABB(p);
@@ -338,6 +382,14 @@ public final class HoldCrag {
         }
         tag.putLongArray("crag_doors", doors);
         tag.putIntArray("crag_done", counts);
+        net.minecraft.nbt.ListTag wait = new net.minecraft.nbt.ListTag();   // cells someone stood in: still to fill after a reload (the bug hunt)
+        for (var e : waiting.long2ObjectEntrySet()) {
+            CompoundTag w = new CompoundTag();
+            w.putLong("door", e.getLongKey());
+            w.putIntArray("cells", e.getValue().toIntArray());
+            wait.add(w);
+        }
+        tag.put("crag_waiting", wait);
     }
 
     public void load(CompoundTag tag) {
@@ -346,6 +398,15 @@ public final class HoldCrag {
         int[] counts = tag.getIntArray("crag_done").orElse(new int[0]);
         for (int k = 0; k < Math.min(doors.length, counts.length); k++) {
             done.put(doors[k], counts[k]);
+        }
+        waiting.clear();
+        for (net.minecraft.nbt.Tag t : tag.getListOrEmpty("crag_waiting")) {
+            if (t instanceof CompoundTag w) {
+                int[] cells = w.getIntArray("cells").orElse(new int[0]);
+                if (cells.length > 0) {
+                    waiting.put(w.getLongOr("door", 0L), new it.unimi.dsi.fastutil.ints.IntArrayList(cells));
+                }
+            }
         }
     }
 }

@@ -84,6 +84,8 @@ public final class Runes {
     private Kind chosen = Kind.IRON;
     /** The rune being struck now, the kit it goes into (empty for the hold's), the seconds of hammering left. */
     private @Nullable Kind job;
+    /** What the job in hand was paid (saved): given back if the forge is gone before it's struck (the bug hunt of 2d0b04c). */
+    private int paid;
     private ItemStack kit = ItemStack.EMPTY;
     private int left;
     private int respawnIn;
@@ -272,6 +274,7 @@ public final class Runes {
             return Component.literal("The hold's gold fell short of " + price + ".").withStyle(ChatFormatting.YELLOW);
         }
         job = k;
+        paid = price;
         left = STRIKE_SECONDS;
         if (k.onKit()) {
             kit = held.split(1);
@@ -279,6 +282,20 @@ public final class Runes {
         dirty = true;
         return Component.literal("The Runesmith takes up his hammer: a " + k.title + " " + "I".repeat(has + 1) + " for " + price + " gold. "
                 + capital(k.what) + ".").withStyle(ChatFormatting.GOLD);
+    }
+
+    /**
+     * The god's own kit laid down for him at {@code x, y, z}: it waits however long he is away, and only he picks it up (the bug hunt of
+     * 2d0b04c: it lay there five minutes and was gone, or anyone took it).
+     */
+    private static void keep(ServerLevel level, ShrineBlockEntity hold, double x, double y, double z, ItemStack stack) {
+        net.minecraft.world.entity.item.ItemEntity e = new net.minecraft.world.entity.item.ItemEntity(level, x, y, z, stack, 0, 0.1, 0);
+        e.setUnlimitedLifetime();
+        if (hold.owner() != null) {
+            e.setTarget(hold.owner());
+        }
+        e.setDefaultPickUpDelay();
+        level.addFreshEntity(e);
     }
 
     private static String capital(String s) {
@@ -353,10 +370,18 @@ public final class Runes {
     public void second(ServerLevel level, ShrineBlockEntity hold) {
         BlockPos anvil = hold.has(HoldRooms.RUNIC_FORGE) ? anvil(hold) : null;
         if (anvil == null) {
-            if (!kit.isEmpty()) {                                 // the forge is gone: the kit back at the Shrine
-                Containers.dropItemStack(level, hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5, kit);
-                kit = ItemStack.EMPTY;
+            if (job != null) {                                    // the forge is gone: the kit back at the Shrine, the gold back in the hoard
+                if (!kit.isEmpty()) {
+                    keep(level, hold, hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5, kit);
+                    kit = ItemStack.EMPTY;
+                }
+                if (paid > 0) {
+                    hold.addCurrency(paid, "A rune not struck");
+                    hold.tellOwner(hold.settlementName() + ": the Runic Forge is gone before the " + job.title + " was struck: "
+                            + paid + " gold back to the hoard.", ChatFormatting.GOLD);
+                }
                 job = null;
+                paid = 0;
                 dirty = true;
             }
             return;
@@ -477,8 +502,9 @@ public final class Runes {
             }
             runeKit(kit, k);
             String name = kit.getHoverName().getString();
-            Containers.dropItemStack(level, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, kit);
+            keep(level, hold, anvil.getX() + 0.5, anvil.getY() + 1.1, anvil.getZ() + 0.5, kit);
             kit = ItemStack.EMPTY;
+            paid = 0;
             countStruck();
             hold.tellOwner(hold.settlementName() + ": the " + k.title + " is struck into your " + name + ". It lies on the anvil.", ChatFormatting.GOLD);
         } else {
@@ -519,6 +545,7 @@ public final class Runes {
         tag.putInt("rune_warding", warding);
         tag.putString("rune_chosen", chosen.name());
         tag.putString("rune_job", job == null ? "" : job.name());
+        tag.putInt("rune_paid", paid);
         tag.putInt("rune_left", left);
         tag.putInt("rune_respawn", respawnIn);
         tag.putInt("rune_struck", struck);
@@ -533,6 +560,7 @@ public final class Runes {
         chosen = kind(tag.getStringOr("rune_chosen", "IRON"), Kind.IRON);
         String j = tag.getStringOr("rune_job", "");
         job = j.isEmpty() ? null : kind(j, null);
+        paid = Math.max(0, tag.getIntOr("rune_paid", 0));
         left = Math.max(0, tag.getIntOr("rune_left", 0));
         respawnIn = Math.max(0, tag.getIntOr("rune_respawn", 0));
         struck = Math.max(0, tag.getIntOr("rune_struck", 0));

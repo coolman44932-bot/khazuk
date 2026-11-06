@@ -36,7 +36,7 @@ final class DawiGoals {
                 u.sinkHome();
                 return;
             }
-            if (u.getNavigation().isDone()) {
+            if (u.getNavigation().isDone() && u.tickCount % 20 == 0) {   // a fresh path a second, not a tick (the bug hunt of 2d0b04c)
                 u.getNavigation().moveTo(h.getX() + 0.5, h.getY() + 1, h.getZ() + 0.5, 1.1);
             }
         }
@@ -57,14 +57,14 @@ final class DawiGoals {
             if (u.getMode() != SettlerMob.Mode.FOLLOW || u.getTarget() != null) {
                 return false;
             }
-            ShrineBlockEntity h = u.settlement();
-            owner = h == null ? null : h.ownerPlayer();
+            owner = u.god();                                    // the unit's own word: far from the hold too (the bug hunt of 2d0b04c)
             return owner != null && owner.level() == u.level() && u.distanceToSqr(owner) > 9;
         }
 
         @Override
         public boolean canContinueToUse() {
-            return u.getMode() == SettlerMob.Mode.FOLLOW && owner != null && owner.isAlive() && u.distanceToSqr(owner) > 4 && u.getTarget() == null;
+            return u.getMode() == SettlerMob.Mode.FOLLOW && owner != null && owner.isAlive() && owner.level() == u.level()   // not after him through a portal
+                    && u.distanceToSqr(owner) > 4 && u.getTarget() == null;
         }
 
         @Override
@@ -90,16 +90,20 @@ final class DawiGoals {
             setFlags(EnumSet.of(Flag.MOVE));
         }
 
+        private long nextTry;
+
         @Override
         public boolean canUse() {
             BlockPos g = u.guardPos();
-            return u.getMode() == SettlerMob.Mode.GUARD && g != null && u.getTarget() == null && u.distanceToSqr(Vec3.atBottomCenterOf(g)) > 2.25;
+            return u.getMode() == SettlerMob.Mode.GUARD && g != null && u.getTarget() == null && u.level().getGameTime() >= nextTry
+                    && u.distanceToSqr(Vec3.atBottomCenterOf(g)) > 2.25;
         }
 
         @Override
         public void start() {
             BlockPos g = u.guardPos();
             u.getNavigation().moveTo(g.getX() + 0.5, g.getY(), g.getZ() + 0.5, 1.0);
+            nextTry = u.level().getGameTime() + 20;              // a post it can't reach is tried again in a second, not ten times a second (the bug hunt)
         }
 
         @Override

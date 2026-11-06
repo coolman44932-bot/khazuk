@@ -44,6 +44,19 @@ public abstract class Marksman extends Dawi {
         return shotDamage();
     }
 
+    /**
+     * What a shot at {@code mark} does now: his shot, with the hold's ale and its Runes of Cleaving in it as in any Dwarf's blow, Grimnir's
+     * Fury, and the grudge it bears (the bug hunt of 2d0b04c: shots had only the Fury).
+     */
+    public float shotOn(LivingEntity mark) {
+        float shot = (float) (shotDamageOn(mark) + (aleUp() ? ALE_DAMAGE : 0) + cleaveRunes() * claude.khazuk.hold.Runes.CLEAVE_DAMAGE);
+        shot *= furyUp() ? claude.khazuk.god.AncestorPowers.FURY_SHOT : 1f;   // D7: Grimnir's Fury
+        if (bearsGrudgeAgainst(mark)) {
+            shot *= 1 + claude.khazuk.hold.Grudges.BEARER_PERCENT / 100f;
+        }
+        return shot;
+    }
+
     /** The trail along a shot, and the sound of it. */
     protected abstract ParticleOptions trail();
 
@@ -96,7 +109,7 @@ public abstract class Marksman extends Dawi {
         level.playSound(null, getX(), getY(), getZ(), report(), getSoundSource(), 1.0f, 0.9f + getRandom().nextFloat() * 0.2f);
         triggerAnim("attack", "attack");
         foeShotAt();                                             // the engine's word for a ranged blow: he is getting at his foe
-        float shot = shotDamageOn(mark) * (furyUp() ? claude.khazuk.god.AncestorPowers.FURY_SHOT : 1f);   // D7: Grimnir's Fury
+        float shot = shotOn(mark);
         if (mark.hurtServer(level, level.damageSources().mobProjectile(this, this), shot)) {
             shotsForTests++;
             setLastHurtMob(mark);

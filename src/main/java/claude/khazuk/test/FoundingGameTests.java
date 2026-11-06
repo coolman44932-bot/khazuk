@@ -49,7 +49,7 @@ public class FoundingGameTests {
             if (l.getX() == HEART.getX() && l.getZ() == HEART.getZ() && l.getY() > HEART.getY() && l.getY() <= HEART.getY() + 4) {
                 headroom &= e.state().isAir();                  // room over the Shrine for its statue
             }
-            rune |= l.getX() == HEART.getX() + 3 && e.state().is(Blocks.GOLD_BLOCK);   // in the back wall, flush
+            rune |= l.getX() == HEART.getX() + 3 && e.state().is(KRegistry.GILDED_STONE.get());   // in the back wall, flush
         }
         h.assertTrue(spotOpen && dais && headroom && rune, "the Shrine's hall: spot open " + spotOpen + ", on the dais " + dais
                 + ", room over it " + headroom + ", Grungni's rune behind it " + rune);

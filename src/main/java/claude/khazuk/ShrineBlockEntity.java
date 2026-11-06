@@ -281,6 +281,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         grudges.save(tag);
         runes.save(tag);
         devotion.save(tag);
+        ranks.save(tag);
         out.store("khazuk", CompoundTag.CODEC, tag);
         out.storeNullable("rune_kit", net.minecraft.world.item.ItemStack.CODEC, runes.kit().isEmpty() ? null : runes.kit());
     }
@@ -294,6 +295,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         grudges.load(tag);
         runes.load(tag);
         devotion.load(tag);
+        ranks.load(tag);
         runes.kit(in.read("rune_kit", net.minecraft.world.item.ItemStack.CODEC).orElse(net.minecraft.world.item.ItemStack.EMPTY));
     }
 

@@ -442,6 +442,9 @@ def _split(s):
     return name, dict(kv.split("=") for kv in rest.rstrip("]").split(","))
 
 
+GILDING = {"minecraft:gold_block": "khazuk:gilded_stone", "minecraft:raw_gold_block": "khazuk:hoard_gold"}
+
+
 def write_template(cells, size):
     """The gatehouse's template straight to its .nbt (no game needed), every cell of its box. A cell whose block the shipped template
     already has, its properties the game's full set of what this script names, keeps the shipped state (the game's own wall and stair
@@ -481,7 +484,7 @@ def write_template(cells, size):
         key = _state(name, props)
         if key not in index:
             index[key] = len(palette)
-            entry = {"Name": nbtio.String(name)}
+            entry = {"Name": nbtio.String(GILDING.get(name, name))}   # the gate's gold is Khazuk!'s gilding, not money (the bug hunt of 2d0b04c)
             if props:
                 entry["Properties"] = nbtio.Compound({k: nbtio.String(v) for k, v in sorted(props.items())})
             palette.append(nbtio.Compound(entry))

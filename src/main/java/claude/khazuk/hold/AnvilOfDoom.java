@@ -114,6 +114,11 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
     }
 
     /** Ticks left before {@code p} can be struck again. */
+    /** Tests: {@code p} set cooling for {@code ticks}. */
+    public void coolForTests(Power p, int ticks) {
+        cooling[p.ordinal()] = ticks;
+    }
+
     public int cooling(Power p) {
         return cooling[p.ordinal()];
     }
@@ -285,15 +290,83 @@ public class AnvilOfDoom extends PathfinderMob implements GeoEntity {
         if (source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             return super.hurtServer(level, source, amount);
         }
-        if (source.getEntity() instanceof Player p && p.isSecondaryUseActive() && p.getUUID().equals(owner) && !isVehicle()) {
-            ItemStack item = new ItemStack(KRegistry.ANVIL_OF_DOOM_ITEM.get());
-            if (!p.getInventory().add(item)) {
-                spawnAtLocation(level, item);
+        return false;                                            // nothing harms it; its god folds it with his own blow (skipAttackInteraction)
+    }
+
+    /**
+     * Its god's own blow, crouched: folded into his pack, its runes' cooling and its chosen rune carried with it. Only the blow at it: a
+     * sweep or a shot that happens to reach it leaves it be (the bug hunt of 2d0b04c: it folded mid-fight).
+     */
+    @Override
+    public boolean skipAttackInteraction(net.minecraft.world.entity.Entity attacker) {
+        if (attacker instanceof Player p && p.isSecondaryUseActive() && p.getUUID().equals(owner) && !isVehicle()) {
+            if (level() instanceof ServerLevel level) {
+                ItemStack item = folded(level);
+                if (!p.getInventory().add(item)) {
+                    net.minecraft.world.entity.item.ItemEntity e = spawnAtLocation(level, item);
+                    if (e != null) {
+                        e.setUnlimitedLifetime();
+                    }
+                }
+                discard();
             }
-            discard();
-            return false;
+            return true;
         }
-        return false;
+        return super.skipAttackInteraction(attacker);
+    }
+
+    static final String CARRIED = "khazuk_anvil";
+
+    /** It as an item, its state carried: the chosen rune, each rune's cooling left, and when it was folded (the cooling runs on folded). */
+    public ItemStack folded(ServerLevel level) {
+        ItemStack item = new ItemStack(KRegistry.ANVIL_OF_DOOM_ITEM.get());
+        net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag();
+        t.putString("chosen", chosen.name());
+        t.putIntArray("cooling", cooling.clone());
+        t.putLong("at", level.getGameTime());
+        net.minecraft.nbt.CompoundTag root = new net.minecraft.nbt.CompoundTag();
+        root.put(CARRIED, t);
+        item.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(root));
+        return item;
+    }
+
+    /** Set down from {@code item}: the state it carried, its cooling less the time it spent folded. */
+    public void unfold(ServerLevel level, ItemStack item) {
+        var cd = item.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        if (cd == null || !cd.contains(CARRIED)) {
+            return;
+        }
+        net.minecraft.nbt.CompoundTag t = cd.copyTag().getCompoundOrEmpty(CARRIED);
+        try {
+            chosen = Power.valueOf(t.getStringOr("chosen", "WRATH"));
+        } catch (IllegalArgumentException e) {
+            chosen = Power.WRATH;
+        }
+        int[] c = t.getIntArray("cooling").orElse(new int[0]);
+        long away = Math.max(0, level.getGameTime() - t.getLongOr("at", level.getGameTime()));
+        for (int i = 0; i < Math.min(c.length, cooling.length); i++) {
+            cooling[i] = (int) Math.max(0, c[i] - away);
+        }
+    }
+
+    /** Broken past its guard (/kill, the void): back to its god, its state carried, never lost (the Throne's way; the bug hunt of 2d0b04c). */
+    @Override
+    protected void dropAllDeathLoot(ServerLevel level, DamageSource source) {
+        super.dropAllDeathLoot(level, source);
+        ItemStack item = folded(level);
+        ServerPlayer god = owner == null ? null : level.getServer().getPlayerList().getPlayer(owner);
+        if (god != null && god.getInventory().add(item)) {
+            god.sendSystemMessage(Component.literal("The Anvil of Doom is gone from where it stood; its Anvil Guard bring it back to you.").withStyle(ChatFormatting.GOLD));
+            return;
+        }
+        if (getY() > level.getMinY()) {
+            net.minecraft.world.entity.item.ItemEntity e = spawnAtLocation(level, item);
+            if (e != null) {
+                e.setUnlimitedLifetime();
+            }
+        } else if (god != null) {
+            god.drop(item, false);
+        }
     }
 
     @Override

@@ -10,7 +10,8 @@ import net.minecraft.server.level.ServerLevel;
  * <ul>
  * <li><b>Malt:</b> wheat its god brings to the Shrine ({@value #MALT_PER_WHEAT} a sheaf, {@value #MALT_PER_HAY} a hay bale).</li>
  * <li><b>Ale:</b> with a Brewery dug, every {@value #BREW_SECONDS} s a malt is brewed into {@value #ALE_PER_MALT} ale, up to
- * {@value #ALE_CAP} in the barrels. The hold drinks one ale every {@value #DRINK_SECONDS} s for every {@value #DRINKERS} Dwarfs up.
+ * {@value #ALE_CAP} in the barrels. The hold drinks one ale every {@value #DRINK_SECONDS} s for every {@value #DRINKERS} Dwarfs on its roll (the ranks its rooms raise, and its Runesmith,
+ * drink with them free).
  * While there is ale, the hold's Dwarfs hit harder, walk faster and work faster (Dawi#aleUp). Buffs only: a dry hold is just a hold.</li>
  * <li><b>The hoard:</b> with a Treasury dug, every gold ore its digs cut pays one more, and every {@value #INTEREST_SECONDS} s the hoard
  * grows by one for every {@value #INTEREST_PER} it holds (at most {@value #INTEREST_MAX}): gold draws gold.</li>

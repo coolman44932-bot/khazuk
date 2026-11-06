@@ -38,20 +38,106 @@ public final class Ranks {
 
     private int clock;
 
-    /** How many Longbeards of {@code type} the hold keeps up round its Shrine now. */
-    public static int count(ServerLevel level, ShrineBlockEntity hold, EntityType<? extends Longbeard> type) {
-        return level.getEntitiesOfClass(Longbeard.class, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
-                m -> m.isAlive() && m.settlement() == hold && m.getType() == type && !m.veteran()).size();   // the Great Hall's own
+    /**
+     * Who the hold's rooms have raised, by kind (saved): the hold keeps its share by this roll, not by who is in sight of its Shrine, so a
+     * unit led away on follow, or out of the loaded chunks, still counts (the bug hunt of 2d0b04c: they were raised again and again).
+     * Struck off when he dies (Dawi#die). A hold saved before the roll seeds it once from those round its Shrine.
+     */
+    private final java.util.Map<String, java.util.Set<java.util.UUID>> roll = new java.util.HashMap<>();
+    private boolean seeded;
+
+    static String key(EntityType<?> type) {
+        return net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(type).getPath();
     }
 
-    /** How many of {@code kind} the hold keeps up round its Shrine now. */
+    private static EntityType<? extends Dawi> typeOf(Class<? extends Dawi> kind) {
+        if (kind == Quarreller.class) {
+            return KRegistry.QUARRELLER.get();
+        }
+        if (kind == Thunderer.class) {
+            return KRegistry.THUNDERER.get();
+        }
+        if (kind == Ironbreaker.class) {
+            return KRegistry.IRONBREAKER.get();
+        }
+        if (kind == Hammerer.class) {
+            return KRegistry.HAMMERER.get();
+        }
+        throw new IllegalArgumentException("no rank " + kind.getSimpleName());
+    }
+
+    /** {@code d} on the hold's roll of the ranks its rooms raised. */
+    public void enlist(Dawi d) {
+        roll.computeIfAbsent(key(d.getType()), k -> new java.util.HashSet<>()).add(d.getUUID());
+    }
+
+    /** {@code id} off the roll (he died). */
+    public void forget(java.util.UUID id) {
+        roll.values().forEach(s -> s.remove(id));
+    }
+
+    /** How many of {@code type} the hold's rooms have raised and still has. */
+    public int rolled(EntityType<?> type) {
+        java.util.Set<java.util.UUID> s = roll.get(key(type));
+        return s == null ? 0 : s.size();
+    }
+
+    /** How many Longbeards of {@code type} the Great Hall has raised (a Warrior grown into one isn't of them). */
+    public static int count(ServerLevel level, ShrineBlockEntity hold, EntityType<? extends Longbeard> type) {
+        return hold.ranks().rolled(type);
+    }
+
+    /** How many of {@code kind} the hold's rooms have raised. */
     public static int count(ServerLevel level, ShrineBlockEntity hold, Class<? extends Dawi> kind) {
-        return level.getEntitiesOfClass(kind, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
-                m -> m.isAlive() && m.settlement() == hold).size();
+        return hold.ranks().rolled(typeOf(kind));
+    }
+
+    /** A hold saved before the roll: those of the ranks round its Shrine now go on it, once. */
+    private void seed(ServerLevel level, ShrineBlockEntity hold) {
+        seeded = true;
+        for (Dawi d : level.getEntitiesOfClass(Dawi.class, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
+                m -> m.isAlive() && m.settlement() == hold && (m instanceof Marksman || m instanceof Ironbreaker || m instanceof Hammerer
+                        || m instanceof Longbeard l && !l.veteran()))) {
+            enlist(d);
+        }
+    }
+
+    public void save(net.minecraft.nbt.CompoundTag tag) {
+        net.minecraft.nbt.CompoundTag r = new net.minecraft.nbt.CompoundTag();
+        roll.forEach((k, ids) -> {
+            net.minecraft.nbt.ListTag l = new net.minecraft.nbt.ListTag();
+            for (java.util.UUID id : ids) {
+                l.add(net.minecraft.nbt.StringTag.valueOf(id.toString()));
+            }
+            r.put(k, l);
+        });
+        tag.put("ranks_roll", r);
+        tag.putBoolean("ranks_seeded", seeded);
+    }
+
+    public void load(net.minecraft.nbt.CompoundTag tag) {
+        roll.clear();
+        net.minecraft.nbt.CompoundTag r = tag.getCompoundOrEmpty("ranks_roll");
+        for (String k : r.keySet()) {
+            java.util.Set<java.util.UUID> ids = new java.util.HashSet<>();
+            for (net.minecraft.nbt.Tag t : r.getListOrEmpty(k)) {
+                t.asString().ifPresent(v -> {
+                    try {
+                        ids.add(java.util.UUID.fromString(v));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                });
+            }
+            roll.put(k, ids);
+        }
+        seeded = tag.getBooleanOr("ranks_seeded", false);
     }
 
     /** The Shrine's second: one more of the fewer kind, every {@value #RAISE_SECONDS} s, while the Barracks stands and the food lasts. */
     public void second(ServerLevel level, ShrineBlockEntity hold) {
+        if (!seeded) {
+            seed(level, hold);
+        }
         ++clock;
         if (clock % RAISE_SECONDS == 0 && hold.has(HoldRooms.BARRACKS)) {
             raise(level, hold);
@@ -97,6 +183,7 @@ public final class Ranks {
         }
         hold.ration().spendFood(ELITE_COST, "Ironbreakers raised");
         d.bindTo(hold);
+        hold.ranks().enlist(d);
         d.guardAt(middleOf(mine));
         d.emergeAt(hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5);
         level.addFreshEntity(d);
@@ -120,6 +207,7 @@ public final class Ranks {
         }
         hold.ration().spendFood(ELITE_COST, "Hammerers raised");
         d.bindTo(hold);
+        hold.ranks().enlist(d);
         d.setPost(middleOf(throne));
         d.emergeAt(hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5);
         level.addFreshEntity(d);
@@ -143,6 +231,7 @@ public final class Ranks {
         }
         hold.ration().spendFood(LONGBEARD_COST, "Longbeards raised");
         d.bindTo(hold);
+        hold.ranks().enlist(d);
         d.emergeAt(hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5);
         level.addFreshEntity(d);
         if (shield + great == 0) {
@@ -195,6 +284,7 @@ public final class Ranks {
         }
         hold.ration().spendFood(COST, (q <= t ? "Quarrellers" : "Thunderers") + " raised");
         d.bindTo(hold);
+        hold.ranks().enlist(d);
         d.emergeAt(hold.getBlockPos().getX() + 0.5, hold.getBlockPos().getY() + 1, hold.getBlockPos().getZ() + 0.5);
         level.addFreshEntity(d);
         if (q + t == 0) {

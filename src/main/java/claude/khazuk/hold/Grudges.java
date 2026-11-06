@@ -222,16 +222,35 @@ public final class Grudges {
         }
     }
 
+    /** A player's grudge pays its blood-price at most once in this many ticks (a day): one wrong after another isn't a gold mine. */
+    public static final long PLAYER_PRICE_TICKS = 24000;
+    /** When each player's grudge last paid (saved): the once-a-day blood-price (the bug hunt of 2d0b04c: a friend's broken block, his death, again). */
+    private final java.util.Map<String, Long> pricePaid = new java.util.HashMap<>();
+
     private void settle(ServerLevel level, ShrineBlockEntity hold, Grudge g) {
         g.settled = true;
         boolean newly = bears.add(g.type);
+        long now = level.getGameTime();
+        Long last = g.key.startsWith("player:") ? pricePaid.get(g.key) : null;
+        if (last != null && now - last < PLAYER_PRICE_TICKS) {
+            hold.tellOwner(hold.settlementName() + ": the grudge against " + g.name + " is settled and struck out; the Ancestors took "
+                    + "their price for him this day already.", ChatFormatting.GOLD);
+            book(level, hold, "grudge_settled");
+            return;
+        }
+        if (g.key.startsWith("player:")) {
+            pricePaid.put(g.key, now);
+        }
         int gold = GOLD_BASE + GOLD_PER * g.need;
         hold.addCurrency(gold, "A grudge settled");
+        int ale0 = hold.brew().ale();
         hold.brew().addAle(ALE_REWARD);
+        int ale = hold.brew().ale() - ale0;
+        float dev0 = hold.devotion().devotion();
         hold.devotion().add(claude.khazuk.god.Devotion.GRUDGE_SETTLED);  // D7: the Ancestors are pleased, and the hold's devotion rises
+        int dev = Math.round(hold.devotion().devotion() - dev0);
         hold.tellOwner(hold.settlementName() + ": the grudge against " + g.name + " is settled and struck out. The Ancestors are pleased: "
-                + gold + " gold to the hoard, " + ALE_REWARD + " ale to the barrels and " + claude.khazuk.god.Devotion.GRUDGE_SETTLED
-                + " devotion"
+                + gold + " gold to the hoard" + (ale > 0 ? ", " + ale + " ale to the barrels" : "") + (dev > 0 ? ", " + dev + " devotion" : "")   // what was added, near the caps too
                 + (newly ? ", and the Dawi bear it: they strike " + nameOf(g) + " " + BEARER_PERCENT + "% harder from now on." : "."),
                 ChatFormatting.GOLD);
         book(level, hold, "grudge_settled");
@@ -330,6 +349,9 @@ public final class Grudges {
             b.add(StringTag.valueOf(t));
         }
         tag.put("grudge_bears", b);
+        CompoundTag paid = new CompoundTag();
+        pricePaid.forEach(paid::putLong);
+        tag.put("grudge_price_paid", paid);
     }
 
     public void load(CompoundTag tag) {
@@ -346,6 +368,11 @@ public final class Grudges {
         }
         for (Tag t : tag.getListOrEmpty("grudge_bears")) {
             t.asString().ifPresent(bears::add);
+        }
+        pricePaid.clear();
+        CompoundTag paid = tag.getCompoundOrEmpty("grudge_price_paid");
+        for (String k : paid.keySet()) {
+            pricePaid.put(k, paid.getLongOr(k, 0L));
         }
     }
 

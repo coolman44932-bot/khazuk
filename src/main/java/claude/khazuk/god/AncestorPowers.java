@@ -172,7 +172,7 @@ public final class AncestorPowers {
         if (god.equals(e.getUUID())) {
             return true;
         }
-        if (e instanceof Dawi d && d.settlement() != null && god.equals(d.settlement().owner())) {
+        if (e instanceof Dawi d && god.equals(d.godId())) {
             return true;
         }
         if (e instanceof claude.khazuk.throne.ThroneOfPower t && god.equals(t.owner())
@@ -195,6 +195,9 @@ public final class AncestorPowers {
     /** Grungni's Hammer on {@code at} for {@code hold}: refused (why) if the hold can't pay. */
     public static @Nullable String hammer(ShrineBlockEntity hold, ServerPlayer god, ServerLevel level, Vec3 at) {
         int cost = cost(Power.HAMMER, god);
+        if (!level.isPositionEntityTicking(net.minecraft.core.BlockPos.containing(at))) {
+            return "Grungni's Hammer can't fall where the world isn't awake: closer in.";   // it would take the devotion and never strike (the bug hunt)
+        }
         if (!hold.devotion().spend(cost)) {
             return tooLittle(hold, Power.HAMMER, cost);
         }
