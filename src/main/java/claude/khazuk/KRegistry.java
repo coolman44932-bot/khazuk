@@ -89,8 +89,8 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Slayer::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("giant_slayer")));
     /** The Dragon Slayer, the hold's Slayer hero (a showpiece commissioned: handoffs/dragon_slayer_2026-11-06.md; a fast stand-in till then). */
-    public static final DeferredHolder<EntityType<?>, EntityType<Slayer>> DRAGON_SLAYER = ENTITIES.register("dragon_slayer",
-            () -> EntityType.Builder.of(Slayer::new, MobCategory.CREATURE).sized(0.8f, 1.55f).eyeHeight(1.25f).clientTrackingRange(10)
+    public static final DeferredHolder<EntityType<?>, EntityType<DragonSlayer>> DRAGON_SLAYER = ENTITIES.register("dragon_slayer",
+            () -> EntityType.Builder.of(DragonSlayer::new, MobCategory.CREATURE).sized(0.8f, 1.55f).eyeHeight(1.25f).clientTrackingRange(10)
                     .build(key("dragon_slayer")));
 
     /** 0.14.2: the Engineers' Guild's: Engineer Slayers (handguns that sometimes blow up) and the Slayer mech (about 3 blocks, the user's size). */

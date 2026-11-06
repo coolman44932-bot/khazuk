@@ -179,7 +179,7 @@ public class Slayer extends Warrior {
         if (t == Tier.DRAGON && hold.ranks().rolled(KRegistry.DRAGON_SLAYER.get()) > 0) {
             return null;                                         // the hold has its Dragon Slayer: he stays a Giant Slayer, no less
         }
-        EntityType<Slayer> to = t == Tier.DRAGON ? KRegistry.DRAGON_SLAYER.get() : KRegistry.GIANT_SLAYER.get();
+        EntityType<? extends Slayer> to = t == Tier.DRAGON ? KRegistry.DRAGON_SLAYER.get() : KRegistry.GIANT_SLAYER.get();
         Slayer s = to.create(level, EntitySpawnReason.MOB_SUMMONED);
         if (s == null) {
             return null;

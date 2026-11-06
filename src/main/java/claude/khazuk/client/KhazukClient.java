@@ -104,16 +104,17 @@ public final class KhazukClient {
         }
     }
 
-    /** The Dragon Slayer: the hold's Slayer hero, one look (a showpiece; on a fast stand-in until the detail session's is in). */
-    static final class DragonSlayerModel extends HordeGeoModel<claude.khazuk.Slayer> {
+    /** The Dragon Slayer: the hold's Slayer hero, one look: the detail session's showpiece (handoffs/dragon_slayer_2026-11-06_done.md). */
+    static final class DragonSlayerModel extends HordeGeoModel<claude.khazuk.DragonSlayer> {
         DragonSlayerModel() {
             super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "dragon_slayer"), true);
         }
     }
 
-    static final class DragonSlayerRenderer extends HordeRenderer<claude.khazuk.Slayer, LivingEntityRenderState> {
+    static final class DragonSlayerRenderer extends HordeRenderer<claude.khazuk.DragonSlayer, LivingEntityRenderState> {
         DragonSlayerRenderer(EntityRendererProvider.Context ctx) {
             super(ctx, new DragonSlayerModel());
+            withRenderLayer(com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer::new);   // his axe's runes and its sparks (the detail session's glowmask)
             this.shadowRadius = 0.5f;
         }
     }

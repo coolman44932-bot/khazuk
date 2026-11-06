@@ -55,7 +55,7 @@ public class SlayerGameTests {
         heart.addBuilding(new Building("dawi_slayer_shrine", new BoundingBox(at.getX(), at.getY(), at.getZ(), at.getX() + 4, at.getY() + 3, at.getZ() + 4)), false);
     }
 
-    private static Slayer slayer(GameTestHelper h, EntityType<Slayer> type, ShrineBlockEntity heart, BlockPos at) {
+    private static Slayer slayer(GameTestHelper h, EntityType<? extends Slayer> type, ShrineBlockEntity heart, BlockPos at) {
         Slayer s = h.spawn(type, at);
         s.bindTo(heart);
         heart.ranks().enlist(s);
@@ -174,6 +174,25 @@ public class SlayerGameTests {
                 .thenSucceed();
     }
 
+    /** The Dragon Slayer's deathblow: on a large foe it lands as his axe does, {@value DragonSlayer#DEATHBLOW_LANDS} ticks on, and harder. */
+    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazuk")
+    public static void theDragonSlayersDeathblowLandsWithHisAxe(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        claude.khazuk.DragonSlayer d = (claude.khazuk.DragonSlayer) slayer(h, KRegistry.DRAGON_SLAYER.get(), heart, new BlockPos(5, 1, 5));
+        d.setNoAi(true);
+        var golem = h.spawn(EntityType.IRON_GOLEM, new BlockPos(7, 1, 5));
+        golem.setNoAi(true);
+        float hp = golem.getHealth();
+        h.assertTrue(d.doHurtTarget(h.getLevel(), golem) && d.deathblowComing() && golem.getHealth() == hp, "the deathblow struck at once: "
+                + golem.getHealth() + "/" + hp);
+        h.runAfterDelay(claude.khazuk.DragonSlayer.DEATHBLOW_LANDS + 4, () -> {
+            float lost = hp - golem.getHealth();
+            h.assertTrue(d.deathblowsForTests == 1 && lost > Slayer.DRAGON_DAMAGE * (1 + Slayer.DRAGON_LARGE) * 0.9,
+                    "the deathblow landed " + d.deathblowsForTests + " times, the golem lost " + lost);
+            h.succeed();
+        });
+    }
+
     @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
     public static void aMonsterIsWhatMakesADragonSlayer(GameTestHelper h) {
         var golem = h.spawn(EntityType.IRON_GOLEM, new BlockPos(4, 1, 4));   // 100 health: a monster by its might
@@ -204,7 +223,7 @@ public class SlayerGameTests {
         });
     }
 
-    private static void beats(GameTestHelper h, EntityType<Slayer> type, int zombies) {
+    private static void beats(GameTestHelper h, EntityType<? extends Slayer> type, int zombies) {
         ShrineBlockEntity heart = hold(h);
         Slayer me = slayer(h, type, heart, HEART.offset(-3, 0, 0));
         Vindicator v = h.spawn(EntityType.VINDICATOR, HEART.offset(4, 0, 0));

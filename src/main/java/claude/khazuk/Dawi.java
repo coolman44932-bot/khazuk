@@ -741,7 +741,13 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         // A blow, on a controller of its own after main: stopped until the server triggers it, it plays the clip once over the loops (the
         // later controller wins the bones it keys: the right arm, the body), then finishes and stops drawing, and main shows through.
         // On main itself a trigger silences the predicate for good (GeckoLib 5.5.2 never clears it when the clip ends: the review of a4fb33b).
-        controllers.add(new AnimationController<Dawi>("attack", 2, test -> PlayState.STOP).triggerableAnim("attack", ATTACK));
+        AnimationController<Dawi> attack = new AnimationController<Dawi>("attack", 2, test -> PlayState.STOP).triggerableAnim("attack", ATTACK);
+        moreTriggers(attack);
+        controllers.add(attack);
+    }
+
+    /** A unit's own triggered clips on the attack controller beside the blow (the Dragon Slayer's deathblow); each only in its own model. */
+    protected void moreTriggers(AnimationController<Dawi> attack) {
     }
 
     @Override
