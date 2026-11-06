@@ -47,7 +47,7 @@ public final class KRegistry {
 
     /** The Shrine's item: the statue itself in hand and in the inventory (GeckoLib's item render, client/ShrineRenderer). */
     public static final DeferredItem<ShrineItem> SHRINE_ITEM = ITEMS.registerItem("ancestor_shrine",
-            p -> new ShrineItem(SHRINE.get(), p.useBlockDescriptionPrefix()));
+            p -> new ShrineItem(SHRINE.get(), p.useBlockDescriptionPrefix().stacksTo(1).fireResistant()));   // a hold may ride in it: one a stack, unburnt
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ShrineBlockEntity>> SHRINE_ENTITY = BLOCK_ENTITIES.register("ancestor_shrine",
             () -> new BlockEntityType<>(ShrineBlockEntity::new, SHRINE.get()));

@@ -298,7 +298,7 @@ public final class Waking {
     public static final int NAME_MAX = 40;
 
     private static void payloads(RegisterPayloadHandlersEvent e) {
-        var r = e.registrar("1");
+        var r = e.registrar("2");                               // 2: AskName says whether it's a rename
         r.playToClient(AskName.TYPE, AskName.CODEC, (msg, ctx) -> ctx.enqueueWork(() -> ClientHooks.askName(msg.suggested(), msg.rename())));
         r.playToServer(NameHold.TYPE, NameHold.CODEC, (msg, ctx) -> ctx.enqueueWork(() -> {
             if (ctx.player() instanceof ServerPlayer p) {

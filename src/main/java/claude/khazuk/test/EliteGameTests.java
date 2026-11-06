@@ -224,7 +224,11 @@ public class EliteGameTests {
         });
     }
 
-    @GameTest(template = "arena", timeoutTicks = 300, batch = "khazuk")
+    /**
+     * In a batch of its own: in the shared peaceful batch a foe in a neighbouring test's arena (a zombie spawned there) could hold the
+     * Hammerer's eye, and with a target he doesn't guard (the laptop's run of cb5d663: once in eight, he never took a step).
+     */
+    @GameTest(template = "arena", timeoutTicks = 300, batch = "khazukguard")
     public static void theKingsGuardComesToTheGodsSideAndAnswersForHim(GameTestHelper h) {
         ShrineBlockEntity heart = hold(h);
         var god = h.makeMockServerPlayerInLevel();
@@ -235,7 +239,8 @@ public class EliteGameTests {
         strangers.setNoAi(true);
         h.assertTrue(!Hammerer.Guard.guarded(god), "a Hammerer of no hold guards the god");
         h.startSequence()
-                .thenWaitUntil(() -> h.assertTrue(hm.distanceToSqr(god) <= 9, "the Hammerer is " + Math.sqrt(hm.distanceToSqr(god)) + " from his god"))
+                .thenWaitUntil(() -> h.assertTrue(hm.distanceToSqr(god) <= 9, "the Hammerer is " + Math.sqrt(hm.distanceToSqr(god)) + " from his god; target "
+                        + hm.getTarget() + ", goals " + hm.runningGoals() + ", his god in the hold " + (hm.kingInHold() != null)))
                 .thenExecute(() -> {
                     h.assertTrue(Hammerer.Guard.guarded(god), "the god isn't guarded with his Hammerer beside him");
                     // a cow, no foe of the hold's (a zombie would be one, and gone in this peaceful batch): only the god's word makes it a mark

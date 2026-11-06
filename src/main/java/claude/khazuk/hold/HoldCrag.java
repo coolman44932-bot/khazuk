@@ -244,7 +244,7 @@ public final class HoldCrag {
             if (!level.isLoaded(p)) {
                 break;                                           // wait for its chunk
             }
-            int r = cell(level, c, i, p, near, keepOut);
+            int r = cell(level, c, i, p, near, keepOut, false);
             if (r == OCCUPIED) {
                 if (held == null) {
                     held = new it.unimi.dsi.fastutil.ints.IntArrayList();
@@ -267,7 +267,7 @@ public final class HoldCrag {
             for (int k = 0; k < held.size(); k++) {
                 int j = held.getInt(k);
                 BlockPos p = pl.world(new BlockPos(c.xs[j], c.ys[j], c.zs[j]));
-                if (level.isLoaded(p) && cell(level, c, j, p, near, keepOut) == OCCUPIED) {
+                if (level.isLoaded(p) && cell(level, c, j, p, near, keepOut, true) == OCCUPIED) {
                     still.add(j);
                 }
             }
@@ -291,20 +291,36 @@ public final class HoldCrag {
     static final int PLACED = 1, REFUSED = 0, OCCUPIED = -1;
 
     /** Cell {@code i} of the mountain at {@code p}, and its column's foot if it is the lowest: {@link #PLACED}, {@link #REFUSED} or {@link #OCCUPIED}. */
-    private static int cell(ServerLevel level, Cells c, int i, BlockPos p, List<LivingEntity> near, List<BoundingBox> keepOut) {
+    private static int cell(ServerLevel level, Cells c, int i, BlockPos p, List<LivingEntity> near, List<BoundingBox> keepOut, boolean retry) {
         BlockState s = c.states[i];
         if (s.getBlock() instanceof FallingBlock && level.getBlockState(p.below()).isAir()) {
             s = Blocks.COBBLESTONE.defaultBlockState();           // nothing loose over a hollow
         }
-        int r = place(level, p, s, near, keepOut);
+        // a retried cell may have the mountain's own stone over it by now: that isn't a roof (the review of cb5d663)
+        int r = place(level, p, s, near, keepOut, retry ? Roof.UNDER_OTHERS : Roof.LOOK);
         if (r == PLACED && c.foot[i]) {
             BlockState fill = s.is(Blocks.MOSS_CARPET) || s.getBlock() instanceof FallingBlock ? Blocks.STONE.defaultBlockState() : s;
             BlockPos q = p.below();
             for (int d = 0; d < FOOTING && level.isLoaded(q) && hollow(level.getBlockState(q)); d++, q = q.below()) {
-                place(level, q, fill, near, keepOut);
+                place(level, q, fill, near, keepOut, Roof.NONE);   // its foot, under the cell just set: no roof to look for (the review of cb5d663)
             }
         }
         return r;
+    }
+
+    /** How a cell looks for a built roof over it: not at all (a column's foot), at what stands there, or past the mountain's own stone. */
+    enum Roof { NONE, LOOK, UNDER_OTHERS }
+
+    /** The blocks the mountain is made of: over a retried cell they are its own, not a roof. */
+    private static java.util.Set<net.minecraft.world.level.block.Block> palette(ServerLevel level) {
+        Cells c = cells(level);
+        java.util.Set<net.minecraft.world.level.block.Block> out = new java.util.HashSet<>();
+        for (BlockState st : c.states()) {
+            out.add(st.getBlock());
+        }
+        out.add(Blocks.COBBLESTONE);
+        out.add(Blocks.STONE);
+        return out;
     }
 
     /** What the mountain may take: air, the land and its cover, water; never a block entity. */
@@ -328,6 +344,16 @@ public final class HoldCrag {
      * water) within {@value #ROOF_LOOK} blocks: a house's room, a hall. The mountain fills a cave, never a room (the bug hunt of 2d0b04c).
      */
     public static boolean roofed(ServerLevel level, BlockPos p) {
+        return roofed(level, p, java.util.Set.of());
+    }
+
+    /** Whether a retried cell at {@code p} is under a built roof, the mountain's own stone over it not counted. */
+    public static boolean roofedPastOwnStone(ServerLevel level, BlockPos p) {
+        return roofed(level, p, palette(level));
+    }
+
+    /** {@link #roofed}, passing over the blocks in {@code own} (the mountain's own stone). */
+    static boolean roofed(ServerLevel level, BlockPos p, java.util.Set<net.minecraft.world.level.block.Block> own) {
         BlockPos.MutableBlockPos q = p.mutable();
         for (int d = 1; d <= ROOF_LOOK; d++) {
             q.move(0, 1, 0);
@@ -335,7 +361,7 @@ public final class HoldCrag {
                 return false;
             }
             BlockState above = level.getBlockState(q);
-            if (above.isAir()) {
+            if (above.isAir() || own.contains(above.getBlock())) {
                 continue;
             }
             return !(claude.settlementcore.room.Siting.mayReplace(above) || above.is(net.minecraft.tags.BlockTags.LEAVES)
@@ -345,7 +371,7 @@ public final class HoldCrag {
     }
 
     /** One cell of the mountain: not in {@code keepOut}, only where it {@link #takes}, never in a built room, and never on anyone it can't lift. */
-    private static int place(ServerLevel level, BlockPos p, BlockState s, List<LivingEntity> near, List<BoundingBox> keepOut) {
+    private static int place(ServerLevel level, BlockPos p, BlockState s, List<LivingEntity> near, List<BoundingBox> keepOut, Roof roof) {
         for (BoundingBox b : keepOut) {
             if (b.isInside(p)) {
                 return REFUSED;
@@ -355,7 +381,8 @@ public final class HoldCrag {
         if (!takes(was)) {
             return REFUSED;
         }
-        if (was.isAir() && (own == null || !own.isInside(p)) && roofed(level, p)) {
+        if (roof != Roof.NONE && was.isAir() && (own == null || !own.isInside(p))
+                && roofed(level, p, roof == Roof.UNDER_OTHERS ? palette(level) : java.util.Set.of())) {
             return REFUSED;
         }
         AABB cell = new AABB(p);

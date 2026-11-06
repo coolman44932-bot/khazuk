@@ -72,11 +72,21 @@ public class BugHuntGameTests {
         heart.addCurrency(77, "the test");
         heart.addToReserve(3, 1);
         int gold = heart.currency(), miners = heart.reserveWorkers();
-        ItemStack stack = ShrineBlock.lift(heart, h.getLevel().registryAccess());
+        // its god lifts it: the block goes, and the Shrine, the hold in it, goes into his pack (a mock god is creative, so the lift is called as the game would)
+        BlockPos at = h.absolutePos(HEART);
+        var state = h.getLevel().getBlockState(at);
+        h.getLevel().removeBlock(at, false);
+        KRegistry.SHRINE.get().playerDestroy(h.getLevel(), god, at, state, heart, ItemStack.EMPTY);
+        ItemStack stack = ItemStack.EMPTY;
+        for (int i = 0; i < god.getInventory().getContainerSize(); i++) {
+            if (ShrineBlock.carried(god.getInventory().getItem(i)) != null) {
+                stack = god.getInventory().removeItemNoUpdate(i);
+                break;
+            }
+        }
         ShrineBlock.Carried c = ShrineBlock.carried(stack);
-        h.assertTrue(c != null && c.pos().equals(h.absolutePos(HEART)) && c.owner().equals(god.getUUID()) && c.name().equals("Karak Test"),
-                "the lifted Shrine carries " + c);
-        h.setBlock(HEART, Blocks.AIR.defaultBlockState());
+        h.assertTrue(c != null && c.pos().equals(at) && c.owner().equals(god.getUUID()) && c.name().equals("Karak Test")
+                && c.dim().equals(h.getLevel().dimension().identifier().toString()), "the lifted Shrine in its god's pack carries " + c);
         god.setItemInHand(InteractionHand.MAIN_HAND, stack);
         BlockPos floor = h.absolutePos(HEART).below();
         stack.useOn(new UseOnContext(god, InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(floor).add(0, 0.5, 0), Direction.UP, floor, false)));
@@ -230,6 +240,11 @@ public class BugHuntGameTests {
         h.assertTrue(HoldCrag.roofed(h.getLevel(), air), "air under planks isn't a room to the mountain");
         h.setBlock(new BlockPos(5, 6, 5), Blocks.STONE.defaultBlockState());
         h.assertTrue(!HoldCrag.roofed(h.getLevel(), air), "air under stone (a cave) is kept out of the mountain");
+        // the mountain's own cobble over a cell it retries is its own, not a roof (the review of cb5d663: footings and retries were left hollow)
+        h.setBlock(new BlockPos(5, 6, 5), Blocks.MOSSY_COBBLESTONE.defaultBlockState());
+        h.assertTrue(HoldCrag.roofed(h.getLevel(), air) && !HoldCrag.roofedPastOwnStone(h.getLevel(), air),
+                "under the mountain's own mossy cobble: a roof to a fresh cell " + HoldCrag.roofed(h.getLevel(), air) + ", to a retried one "
+                        + HoldCrag.roofedPastOwnStone(h.getLevel(), air));
         h.succeed();
     }
 }

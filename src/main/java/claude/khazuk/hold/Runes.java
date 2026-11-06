@@ -515,9 +515,10 @@ public final class Runes {
     }
 
     /** The Shrine is gone: the kit at the anvil is dropped where it stood, never lost (the review of a3aecff). */
-    public void dropKit(ServerLevel level, BlockPos at) {
+    public void dropKit(ServerLevel level, ShrineBlockEntity hold) {
         if (!kit.isEmpty()) {
-            Containers.dropItemStack(level, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, kit);
+            BlockPos at = hold.getBlockPos();
+            keep(level, hold, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, kit);   // kept for its god, never despawning (the review of cb5d663)
             kit = ItemStack.EMPTY;
             job = null;
             dirty = true;

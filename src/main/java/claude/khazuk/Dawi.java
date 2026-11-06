@@ -681,6 +681,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         ShrineBlockEntity h = settlementLoading();            // far from the hold too: off its roll, out of its crews
         if (h != null) {
             h.ranks().forget(getUUID());                         // off the roll of the ranks its rooms raised, if he was of them
+            h.setChanged();                                      // saved even if its chunk was loaded only for this death (the review of cb5d663)
             h.removePerson(getUUID());
             h.works().forget(getUUID());
             net.minecraft.world.entity.Entity killer = source.getEntity();

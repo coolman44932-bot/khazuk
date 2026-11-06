@@ -167,10 +167,17 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     /** Broken: the kit at the Runesmith's anvil drops where the Shrine stood, never lost (the review of a3aecff). */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        if (level instanceof ServerLevel sl) {
-            runes.dropKit(sl, pos);
+        if (level instanceof ServerLevel sl && !lifting) {
+            runes.dropKit(sl, this);                             // lifted by its god, the kit goes with the hold
         }
         super.preRemoveSideEffects(pos, state);
+    }
+
+    /** Its god is lifting it (ShrineBlock#playerWillDestroy): what it holds goes with it, nothing is dropped. */
+    private boolean lifting;
+
+    public void lifting() {
+        lifting = true;
     }
 
     /** The engine's second, then a second's rise of a gate's mountain. */

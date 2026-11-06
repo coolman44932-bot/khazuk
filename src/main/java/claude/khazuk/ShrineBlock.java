@@ -100,7 +100,8 @@ public class ShrineBlock extends BaseEntityBlock {
                 p.sendSystemMessage(Component.literal("This is " + home.name() + "'s Shrine: only its own god may set it down.").withStyle(ChatFormatting.RED));
                 return null;
             }
-            if (!home.pos().equals(ctx.getClickedPos())) {
+            if (!home.pos().equals(ctx.getClickedPos()) || !home.dim().isEmpty()
+                    && !home.dim().equals(ctx.getLevel().dimension().identifier().toString())) {   // its own dais, in its own world
                 p.sendSystemMessage(Component.literal(home.name() + "'s Shrine stands on its own dais, at " + home.pos().getX() + " " + home.pos().getY() + " "
                         + home.pos().getZ() + ": set it down there and the hold stands again.").withStyle(ChatFormatting.RED));
                 return null;
@@ -129,7 +130,7 @@ public class ShrineBlock extends BaseEntityBlock {
     // ------------------------------------------------------------------ lifted and set back: the hold goes with its Shrine
 
     /** What a lifted Shrine carries besides the hold itself: where its dais is, whose it is, the hold's name. */
-    public record Carried(BlockPos pos, java.util.UUID owner, String name) {
+    public record Carried(BlockPos pos, java.util.UUID owner, String name, String dim) {
     }
 
     static final String CARRIED = "khazuk_hold";
@@ -143,7 +144,7 @@ public class ShrineBlock extends BaseEntityBlock {
         var t = cd.copyTag().getCompoundOrEmpty(CARRIED);
         var owner = t.read("owner", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
         var pos = t.read("pos", BlockPos.CODEC).orElse(null);
-        return owner == null || pos == null ? null : new Carried(pos, owner, t.getStringOr("name", "The Hold"));
+        return owner == null || pos == null ? null : new Carried(pos, owner, t.getStringOr("name", "The Hold"), t.getStringOr("dim", ""));
     }
 
     /** {@code heart}'s hold lifted into a Shrine item: all of it (its gold, food, people in the deeps, rooms, grudges, runes), to set back on its dais. */
@@ -155,6 +156,7 @@ public class ShrineBlock extends BaseEntityBlock {
         t.store("owner", net.minecraft.core.UUIDUtil.CODEC, heart.owner());
         t.store("pos", BlockPos.CODEC, heart.getBlockPos());
         t.putString("name", heart.settlementName());
+        t.putString("dim", heart.getLevel() == null ? "" : heart.getLevel().dimension().identifier().toString());
         var root = new net.minecraft.nbt.CompoundTag();
         root.put(CARRIED, t);
         stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(root));
@@ -167,13 +169,32 @@ public class ShrineBlock extends BaseEntityBlock {
         return stack;
     }
 
+    /** Its god about to lift it: its rune kit stays in it, carried with the hold, not dropped at the dais (the review of cb5d663). */
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && !player.isCreative() && level.getBlockEntity(pos) instanceof ShrineBlockEntity heart && heart.owner() != null
+                && player.getUUID().equals(heart.owner())) {
+            heart.lifting();
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
     /** Lifted by its god (not in creative), the Shrine carries its whole hold: set back on its dais, the hold stands again as it was. */
     @Override
     public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity be, ItemStack tool) {
         if (!level.isClientSide() && be instanceof ShrineBlockEntity heart && heart.owner() != null && player.getUUID().equals(heart.owner())) {
             player.awardStat(net.minecraft.stats.Stats.BLOCK_MINED.get(this));
             player.causeFoodExhaustion(0.005f);
-            popResource(level, pos, lift(heart, level.registryAccess()));
+            ItemStack lifted = lift(heart, level.registryAccess());
+            if (!player.getInventory().add(lifted)) {             // into its god's pack; if that's full, at his feet for good, unburnt (the review of cb5d663)
+                net.minecraft.world.entity.item.ItemEntity e = new net.minecraft.world.entity.item.ItemEntity(level, player.getX(), player.getY() + 0.5,
+                        player.getZ(), lifted, 0, 0.1, 0);
+                e.setUnlimitedLifetime();
+                e.setInvulnerable(true);
+                e.setTarget(player.getUUID());
+                e.setNoPickUpDelay();
+                level.addFreshEntity(e);
+            }
             heart.tellOwner(heart.settlementName() + ": you lift the Shrine, and the hold with it. Set it back on its dais at " + pos.getX() + " "
                     + pos.getY() + " " + pos.getZ() + " and the hold stands again; its Dawi wait for it.", ChatFormatting.GOLD);
             return;
