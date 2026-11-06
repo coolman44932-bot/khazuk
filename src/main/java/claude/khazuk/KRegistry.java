@@ -93,6 +93,14 @@ public final class KRegistry {
             () -> EntityType.Builder.of(Slayer::new, MobCategory.CREATURE).sized(0.8f, 1.55f).eyeHeight(1.25f).clientTrackingRange(10)
                     .build(key("dragon_slayer")));
 
+    /** 0.14.2: the Engineers' Guild's: Engineer Slayers (handguns that sometimes blow up) and the Slayer mech (about 3 blocks, the user's size). */
+    public static final DeferredHolder<EntityType<?>, EntityType<EngineerSlayer>> ENGINEER_SLAYER = ENTITIES.register("engineer_slayer",
+            () -> EntityType.Builder.of(EngineerSlayer::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("engineer_slayer")));
+    public static final DeferredHolder<EntityType<?>, EntityType<SlayerMech>> SLAYER_MECH = ENTITIES.register("slayer_mech",
+            () -> EntityType.Builder.of(SlayerMech::new, MobCategory.CREATURE).sized(1.6f, 3.0f).eyeHeight(2.6f).clientTrackingRange(10)
+                    .build(key("slayer_mech")));
+
     /** An Ironbreaker's Cinderblast bomb in flight. */
     public static final DeferredHolder<EntityType<?>, EntityType<Cinderblast>> CINDERBLAST = ENTITIES.register("cinderblast",
             () -> EntityType.Builder.<Cinderblast>of(Cinderblast::new, MobCategory.MISC).sized(0.3f, 0.3f).clientTrackingRange(6).updateInterval(5)
@@ -171,6 +179,13 @@ public final class KRegistry {
             p -> new SpawnEggItem(p.spawnEgg(GIANT_SLAYER.get())));
     public static final DeferredItem<SpawnEggItem> DRAGON_SLAYER_EGG = ITEMS.registerItem("dragon_slayer_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(DRAGON_SLAYER.get())));
+    public static final DeferredItem<SpawnEggItem> ENGINEER_SLAYER_EGG = ITEMS.registerItem("engineer_slayer_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(ENGINEER_SLAYER.get())));
+    public static final DeferredItem<SpawnEggItem> SLAYER_MECH_EGG = ITEMS.registerItem("slayer_mech_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(SLAYER_MECH.get())));
+    /** 0.14.2: the Ancestors' Plan of the Engineers' Guild, where the Engineer Slayers work and the Slayer mech is built. */
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_ENGINEERS_GUILD = ITEMS.registerItem("plan_engineers_guild",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_engineers_guild"));
     /** 0.14.2: the Ancestors' Plan of the Shrine of Grimnir, where the Slayers take their oath. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_SLAYER_SHRINE = ITEMS.registerItem("plan_slayer_shrine",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_slayer_shrine"));
@@ -221,6 +236,9 @@ public final class KRegistry {
                 out.accept(TROLL_SLAYER_EGG.get());
                 out.accept(GIANT_SLAYER_EGG.get());
                 out.accept(DRAGON_SLAYER_EGG.get());
+                out.accept(PLAN_ENGINEERS_GUILD.get());
+                out.accept(ENGINEER_SLAYER_EGG.get());
+                out.accept(SLAYER_MECH_EGG.get());
                 out.accept(ANVIL_OF_DOOM_ITEM.get());
                 out.accept(GRUNGNIS_HAMMER.get());
                 out.accept(VALAYAS_WARD.get());
@@ -264,6 +282,8 @@ public final class KRegistry {
         e.put(TROLL_SLAYER.get(), Slayer.createAttributes(Slayer.Tier.TROLL).build());
         e.put(GIANT_SLAYER.get(), Slayer.createAttributes(Slayer.Tier.GIANT).build());
         e.put(DRAGON_SLAYER.get(), Slayer.createAttributes(Slayer.Tier.DRAGON).build());
+        e.put(ENGINEER_SLAYER.get(), EngineerSlayer.createAttributes().build());
+        e.put(SLAYER_MECH.get(), SlayerMech.createAttributes().build());
         e.put(ANVIL_OF_DOOM.get(), claude.khazuk.hold.AnvilOfDoom.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }

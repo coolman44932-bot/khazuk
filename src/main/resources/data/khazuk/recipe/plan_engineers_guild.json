@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:stone_bricks",
+    "minecraft:copper_ingot",
+    "minecraft:gold_ingot",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "khazuk:plan_engineers_guild",
+    "count": 1
+  }
+}

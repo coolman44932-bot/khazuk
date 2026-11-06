@@ -108,9 +108,14 @@ public class Slayer extends Warrior {
 
     /** What his blow at {@code target} gets on top: the Slayer's share on a large foe, and the death-wish. A multiplier. */
     public double slaying(Entity target) {
-        double m = 1 + DEATHWISH * (1 - getHealth() / getMaxHealth());
+        return slaying(this, target, largeShare());
+    }
+
+    /** A Slayer's multiplier (any Slayer's: the Engineer Slayers' too): the death-wish by {@code self}'s wounds, and {@code largeShare} on a large foe. */
+    public static double slaying(LivingEntity self, Entity target, double largeShare) {
+        double m = 1 + DEATHWISH * (1 - self.getHealth() / self.getMaxHealth());
         if (target instanceof LivingEntity l && large(l)) {
-            m *= 1 + largeShare();
+            m *= 1 + largeShare;
         }
         return m;
     }

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "khazuk:item/engineer_slayer_spawn_egg"
+  }
+}

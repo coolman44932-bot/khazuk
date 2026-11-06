@@ -16,7 +16,8 @@ def elite_eggs():
     """0.14: the Ironbreaker's egg (the Miner's, recoloured gromril blue-steel) and the Hammerer's (gold over steel). Their item files."""
     src = Image.open(os.path.join(RES, "assets", "khazuk", "textures", "item", "miner_spawn_egg.png")).convert("RGBA")
     for kind, tint in (("ironbreaker", (0.8, 0.92, 1.18)), ("hammerer", (1.22, 0.98, 0.62)),
-                       ("troll_slayer", (1.3, 0.75, 0.45)), ("giant_slayer", (1.35, 0.62, 0.38)), ("dragon_slayer", (1.4, 0.5, 0.3))):   # 0.14.2: crest orange
+                       ("troll_slayer", (1.3, 0.75, 0.45)), ("giant_slayer", (1.35, 0.62, 0.38)), ("dragon_slayer", (1.4, 0.5, 0.3)),
+                       ("engineer_slayer", (1.25, 0.85, 0.5)), ("slayer_mech", (1.15, 0.8, 0.55))):   # 0.14.2: crest orange, copper   # 0.14.2: crest orange
         eg = Image.new("RGBA", src.size)
         for y in range(src.size[1]):
             for x in range(src.size[0]):
@@ -89,6 +90,8 @@ PLANS = {
                          ["minecraft:stone_bricks", "minecraft:anvil"]),
     "plan_slayer_shrine": ("Shrine of Grimnir", ["g........g", ".g..gg..g.", "..g.gg.g..", "...gggg...", "..g.gg.g..", ".g..gg..g.", "g...gg...g"],
                            ["minecraft:stone_bricks", "minecraft:iron_axe", "minecraft:gold_ingot"]),
+    "plan_engineers_guild": ("Engineers' Guild", ["...gggg...", "..g....g..", ".g.gggg.g.", ".g.g..g.g.", ".g.gggg.g.", "..g....g..", "...gggg..."],
+                             ["minecraft:stone_bricks", "minecraft:copper_ingot", "minecraft:gold_ingot"]),
     "plan_treasury": ("Treasury", ["....gg....", "...gggg...", "..gggggg..", "....gg....", ".gg.gg.gg.", "gggggggggg", "gggggggggg"],
                       ["minecraft:stone_bricks", "minecraft:gold_ingot", "minecraft:iron_ingot"]),
 }

@@ -35,8 +35,10 @@ public final class Looks {
     /** 0.14.2: a Slayer's two axes or great axe, his crest tall or a pair of spikes, his beard braided or forked. */
     public static final Kind TROLL_SLAYER = new Kind("troll_slayer", List.of(List.of("v_twin+v_twinl", "v_gaxe"), List.of("v_braids", "v_fork")));
     public static final Kind GIANT_SLAYER = new Kind("giant_slayer", List.of(List.of("v_twin+v_twinl", "v_gaxe"), List.of("v_braids", "v_fork")));
+    /** 0.14.2: an Engineer Slayer's beard braided or forked. */
+    public static final Kind ENGINEER_SLAYER = new Kind("engineer_slayer", List.of(List.of("v_braids", "v_fork")));
     public static final List<Kind> ALL = List.of(MINER, WARRIOR, QUARRELLER, THUNDERER, LONGBEARD, LONGBEARD_GREAT, IRONBREAKER, HAMMERER,
-            TROLL_SLAYER, GIANT_SLAYER);
+            TROLL_SLAYER, GIANT_SLAYER, ENGINEER_SLAYER);
 
     /** A Dwarf's look: his palette, and which part of each group he shows. Packed in an int ({@link #pack}) for the render state. */
     public record Look(int palette, int[] picks) {

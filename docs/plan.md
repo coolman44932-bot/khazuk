@@ -149,7 +149,11 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   unarmoured, fleet, always stubborn, +60% on a large foe and up to +50% near death; a Troll Slayer who slays a large foe is a Giant
   Slayer (+100%), a Giant Slayer who slays a monster the hold's one Dragon Slayer (+150%, a hero: the detail session's showpiece is
   commissioned, handoffs/dragon_slayer_2026-11-06.md; a fast stand-in till then). Grimnir's Fury burns twice as long on Slayers.
-- **Then** the roster in TWW1's order: Irondrakes next; then the war machines (Grudge Thrower, Cannon, Organ Gun, Flame Cannon).
+- **0.14.2, the Engineers' Guild (the user's two Slayer specials): DONE.** Engineer Slayers (Malakai-style: a scatter-shot gun that
+  overloads one shot in eight, burning the foes at the mark and singeing him, never to death; a Slayer's traits) and the Slayer mech
+  (about 3 blocks, the user's size; a boiler that runs hot past 70 for a third more, scalds itself past 100; it bursts and its pilot leaps out
+  a Giant Slayer). The mech's showpiece is commissioned (handoffs/slayer_mech_2026-11-06.md). The Guild is the war machines' home to come.
+- **Then** the roster in TWW1's order: Irondrakes next; then the war machines (Grudge Thrower, Cannon, Organ Gun, Flame Cannon) from the Guild.
 
 ## 10. For the user to change (each is my pick until then)
 

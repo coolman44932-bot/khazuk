@@ -53,8 +53,11 @@ public class Thunderer extends Marksman {
         return SHOT;
     }
 
-    /** The shot's damage on {@code mark}: the more armour it wears, the harder the ball bites. */
-    public float shotOn(LivingEntity mark) {
+    /**
+     * The ball's damage on {@code mark}: the more armour it wears, the harder it bites. Named apart from Marksman#shotOn, which it shadowed
+     * (the hold's ale, runes and grudges never reached a Thunderer's shot: found adding the Engineer Slayers).
+     */
+    public float ballOn(LivingEntity mark) {
         return SHOT + Math.min(PIERCE_MAX, mark.getArmorValue() * PIERCE);
     }
 
@@ -68,7 +71,7 @@ public class Thunderer extends Marksman {
 
     @Override
     public float shotDamageOn(LivingEntity mark) {
-        return shotOn(mark);
+        return ballOn(mark);
     }
 
     @Override

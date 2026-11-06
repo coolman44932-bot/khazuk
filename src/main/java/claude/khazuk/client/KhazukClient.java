@@ -78,6 +78,8 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.TROLL_SLAYER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.TROLL_SLAYER, 0.45f));
         e.registerEntityRenderer(KRegistry.GIANT_SLAYER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.GIANT_SLAYER, 0.45f));
         e.registerEntityRenderer(KRegistry.DRAGON_SLAYER.get(), DragonSlayerRenderer::new);
+        e.registerEntityRenderer(KRegistry.ENGINEER_SLAYER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.ENGINEER_SLAYER, 0.45f));
+        e.registerEntityRenderer(KRegistry.SLAYER_MECH.get(), SlayerMechRenderer::new);
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
         e.registerEntityRenderer(KRegistry.GRUNGNIS_HAMMER_STRIKE.get(), HammerRenderer::new);
         e.registerBlockEntityRenderer(KRegistry.SHRINE_ENTITY.get(), ShrineRenderer::new);   // the statue of the three Ancestors
@@ -113,6 +115,20 @@ public final class KhazukClient {
         DragonSlayerRenderer(EntityRendererProvider.Context ctx) {
             super(ctx, new DragonSlayerModel());
             this.shadowRadius = 0.5f;
+        }
+    }
+
+    /** The Slayer mech (a showpiece commissioned; a fast stand-in till then). */
+    static final class SlayerMechModel extends HordeGeoModel<claude.khazuk.SlayerMech> {
+        SlayerMechModel() {
+            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "slayer_mech"), true);
+        }
+    }
+
+    static final class SlayerMechRenderer extends HordeRenderer<claude.khazuk.SlayerMech, LivingEntityRenderState> {
+        SlayerMechRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, new SlayerMechModel());
+            this.shadowRadius = 0.9f;
         }
     }
 

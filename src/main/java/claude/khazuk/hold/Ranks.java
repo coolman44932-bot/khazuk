@@ -37,6 +37,12 @@ public final class Ranks {
     public static final int ELITE_SECONDS = 60, ELITE_COST = 15, IRONBREAKER_EACH = 4, HAMMERER_EACH = 4;
     /** 0.14.2: with a Shrine of Grimnir, a Troll Slayer every {@value #ELITE_SECONDS} s for {@value #SLAYER_COST} food until it keeps {@value #SLAYER_EACH}. */
     public static final int SLAYER_COST = 12, SLAYER_EACH = 4;
+    /**
+     * 0.14.2: with an Engineers' Guild, an Engineer Slayer every {@value #ELITE_SECONDS} s for {@value #ENGINEER_COST} food until it keeps
+     * {@value #ENGINEER_EACH}; and the Slayer mech, one to a hold, built for {@value #MECH_FOOD} food and {@value #MECH_GOLD} gold whenever the
+     * hold has none (looked at every {@value #MECH_SECONDS} s).
+     */
+    public static final int ENGINEER_COST = 14, ENGINEER_EACH = 4, MECH_FOOD = 40, MECH_GOLD = 20, MECH_SECONDS = 120;
 
     private int clock;
 
@@ -64,6 +70,12 @@ public final class Ranks {
         }
         if (kind == Hammerer.class) {
             return KRegistry.HAMMERER.get();
+        }
+        if (kind == claude.khazuk.EngineerSlayer.class) {
+            return KRegistry.ENGINEER_SLAYER.get();
+        }
+        if (kind == claude.khazuk.SlayerMech.class) {
+            return KRegistry.SLAYER_MECH.get();
         }
         throw new IllegalArgumentException("no rank " + kind.getSimpleName());
     }
@@ -99,7 +111,7 @@ public final class Ranks {
         seeded = true;
         for (Dawi d : level.getEntitiesOfClass(Dawi.class, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
                 m -> m.isAlive() && m.settlement() == hold && (m instanceof Marksman || m instanceof Ironbreaker || m instanceof Hammerer
-                        || m instanceof claude.khazuk.Slayer
+                        || m instanceof claude.khazuk.Slayer || m instanceof claude.khazuk.SlayerMech
                         || m instanceof Longbeard l && !l.veteran()))) {
             enlist(d);
         }
@@ -157,6 +169,12 @@ public final class Ranks {
         if (clock % ELITE_SECONDS == 50 && hold.has(HoldRooms.SLAYER_SHRINE)) {
             raiseSlayer(level, hold);
         }
+        if (clock % ELITE_SECONDS == 10 && hold.has(HoldRooms.ENGINEERS_GUILD)) {
+            raiseEngineer(level, hold);
+        }
+        if (clock % MECH_SECONDS == 70 && hold.has(HoldRooms.ENGINEERS_GUILD)) {
+            buildMech(level, hold);
+        }
     }
 
     /** The first room of the hold's with {@code f}, or null. */
@@ -168,6 +186,12 @@ public final class Ranks {
             }
         }
         return null;
+    }
+
+    /** Where one stands at {@code b}'s template cell {@code x, y, z} (a station), or its middle if its placement isn't known. */
+    public static BlockPos at(Building b, int x, int y, int z) {
+        var pl = claude.settlementcore.settlement.BuildingBook.placementOf(b);
+        return pl == null ? middleOf(b) : pl.world(new BlockPos(x, y, z));
     }
 
     /** Where one stands in the middle of {@code b}: its centre, at its floor. */
@@ -222,6 +246,51 @@ public final class Ranks {
                     + "the first Troll Slayer. He seeks the biggest foe there is. Slay a giant of one and he is a Giant Slayer; slay a monster, "
                     + "and he is the hold's Dragon Slayer.", ChatFormatting.GOLD);
         }
+        return true;
+    }
+
+    /** One more Engineer Slayer now, up in the Engineers' Guild (the clock's minute, and the tests), while the hold keeps fewer than its share. */
+    public boolean raiseEngineer(ServerLevel level, ShrineBlockEntity hold) {
+        int n = rolled(KRegistry.ENGINEER_SLAYER.get());
+        Building guild = roomOf(hold, HoldRooms.ENGINEERS_GUILD);
+        if (guild == null || n >= ENGINEER_EACH || hold.food() < ENGINEER_COST) {
+            return false;
+        }
+        claude.khazuk.EngineerSlayer d = KRegistry.ENGINEER_SLAYER.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        if (d == null) {
+            return false;
+        }
+        hold.ration().spendFood(ENGINEER_COST, "Engineer Slayers sworn");
+        d.bindTo(hold);
+        enlist(d);
+        BlockPos at = at(guild, 13, 1, 2);                       // at the Guild's workbench
+        d.emergeAt(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+        level.addFreshEntity(d);
+        if (n == 0) {
+            hold.tellOwner(hold.settlementName() + ": the first Engineer Slayer comes up out of the Guild, goggles on his crest and a handgun of his "
+                    + "own make. It shoots wide, and now and then it blows up: he doesn't mind.", ChatFormatting.GOLD);
+        }
+        return true;
+    }
+
+    /** The Slayer mech built now, in the Engineers' Guild, if the hold has none and can pay. Whether it was. */
+    public boolean buildMech(ServerLevel level, ShrineBlockEntity hold) {
+        Building guild = roomOf(hold, HoldRooms.ENGINEERS_GUILD);
+        if (guild == null || rolled(KRegistry.SLAYER_MECH.get()) > 0 || hold.food() < MECH_FOOD || hold.currency() < MECH_GOLD) {
+            return false;
+        }
+        claude.khazuk.SlayerMech m = KRegistry.SLAYER_MECH.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        if (m == null || !hold.spendCurrency(MECH_GOLD, "The Slayer mech built")) {
+            return false;
+        }
+        hold.ration().spendFood(MECH_FOOD, "The Slayer mech's boiler fired");
+        m.bindTo(hold);
+        enlist(m);
+        BlockPos at = at(guild, 12, 1, 7);                       // in the Guild's assembly bay, under the gantry
+        m.emergeAt(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+        level.addFreshEntity(m);
+        hold.tellOwner(hold.settlementName() + ": the Engineers' Guild fires up the Slayer mech, a Slayer at its levers and his crest out of the "
+                + "cockpit. Its boiler runs hot, and hotter in a fight: it hits harder for it. If it bursts, he jumps out and fights on.", ChatFormatting.GOLD);
         return true;
     }
 

@@ -890,8 +890,157 @@ def slayer_shrine():
     return h
 
 
+def engineers_guild():
+    """The Engineers' Guild, 19 long, 10 high, 15 wide: the hold's workshop, where it raises its Engineer Slayers and builds the Slayer
+    mech (later its war machines too). A wide door (5 wide, 5 high) so a 3-block machine walks out; from it a striped lane runs up the
+    hall's middle to the assembly bay, a gold-and-black ring round a copper pad under a gantry: four blackstone legs with copper lamps,
+    two runways, a copper bridge across, a piston hoist and its hook hanging over the pad (clear 3 x 3 and 4 high under it). Down the
+    left wall two copper boilers over blast furnaces, gold-banded, a gauge-lit manifold between them and a feed tank, their pipes
+    (lightning rods) up to a steam main under the vault that feeds the gantry; past them the workbench: anvils, smithing tables, the
+    blueprint table, blue blueprint banners over it. The far wall is the forge (furnaces and blast furnaces under copper hoods and
+    chimneys) with a great copper gear between them behind the bay, grindstone teeth and piston rams, blueprints over it. Down the right
+    wall the test-firing range behind a low wall: a gold firing line, black-powder crates (TNT, never lit) behind it, targets on posts
+    and on hay at the far end. Its stations: the bay at (12, 1, 7) facing the door (west), where the mech stands; the bench at
+    (13, 1, 2) facing the blueprint table (north), where the Engineer Slayers come up."""
+    sx, sy, sz, C = 19, 10, 15, 7
+    h = Hall(sx, sy, sz, C, 5, 5, 41)
+    h.shell()
+
+    def top(x, z):
+        return 7 + min(min(z - 1, sz - 2 - z), 1)
+
+    vault(h, top, 1, sx - 2, 1, sz - 2, C)
+    for x in range(sx):                                                  # a gold band round the walls under the vault
+        h.put(x, 7, 0, GOLD)
+        h.put(x, 7, sz - 1, GOLD)
+    for z in range(sz):
+        h.put(0, 7, z, GOLD)
+        h.put(sx - 1, 7, z, GOLD)
+    CU_B = "minecraft:waxed_copper_block"
+    GRATE = "minecraft:waxed_copper_grate"
+    BULB = "minecraft:waxed_copper_bulb[lit=true,powered=false]"
+    ROD = "minecraft:waxed_lightning_rod[facing={},powered=false]"
+    # the lane from the door to the bay: polished, hazard-striped in gold and black at its edges
+    for x in range(1, 10):
+        for z in range(C - 1, C + 2):
+            h.put(x, 0, z, POL)
+        for z in (C - 2, C + 2):
+            h.put(x, 0, z, GOLD if x % 2 else DARK_B)
+    # the assembly bay: a striped ring round a copper pad, a chiselled copper boss at its centre, where the mech stands
+    for x in range(10, 15):
+        for z in range(C - 2, C + 3):
+            ring = x in (10, 14) or z in (C - 2, C + 2)
+            h.put(x, 0, z, (GOLD if (x + z) % 2 else DARK_B) if ring else CU)
+    h.put(12, 0, C, "minecraft:waxed_chiseled_copper")
+    h.stations.append(("bay", 12, 1, C, "west"))
+    # the gantry: four legs (copper lamps in them, gold capitals), two runways along the hall, a copper bridge across, knee braces
+    for x in (10, 14):
+        for z in (C - 3, C + 3):
+            for y in range(1, 7):
+                h.put(x, y, z, POL if y == 1 else (BULB if y == 5 else (GOLD if y == 6 else DARK_B)))
+    for z in (C - 3, C + 3):
+        for x in range(9, 16):
+            h.put(x, 7, z, BEAM_X)
+        h.put(11, 6, z, stair("polished_blackstone", "west", "top"))
+        h.put(13, 6, z, stair("polished_blackstone", "east", "top"))
+    for z in range(C - 3, C + 4):
+        h.put(12, 7, z, GOLD if z in (C - 3, C + 3) else CU)
+    h.put(12, 6, C, "minecraft:piston[facing=down,extended=false]")      # the hoist under the bridge, its hook over the pad
+    h.put(12, 5, C, ROD.format("down"))
+    # the boilers down the left wall: blast furnaces under copper drums banded in gold, a sight glass and a gauge, slab caps
+    for x0 in (2, 6):
+        for x in (x0, x0 + 1):
+            h.put(x, 1, 1, CU)
+            h.put(x, 1, 2, "minecraft:blast_furnace[facing=south,lit=true]")
+            for y in (2, 3):
+                h.put(x, y, 1, CU_B)
+            h.put(x, 2, 2, CU_B)
+            h.put(x, 4, 1, CU_B)
+            h.put(x, 4, 2, GOLD)
+            h.put(x, 5, 2, "minecraft:waxed_cut_copper_slab[type=bottom]")
+        h.put(x0, 3, 2, GRATE)
+        h.put(x0 + 1, 3, 2, BULB)
+        for y in (5, 6):                                                 # its pipe up to the main
+            h.put(x0, y, 1, ROD.format("up"))
+        h.put(x0 + 1, 5, 1, "minecraft:waxed_cut_copper_slab[type=bottom]")
+    for y in range(1, 5):                                                # the manifold between them, gauges lit
+        h.put(4, y, 1, GRATE)
+        h.put(5, y, 1, GRATE)
+    h.put(4, 1, 2, BULB)
+    h.put(5, 1, 2, "minecraft:waxed_copper_bulb[lit=false,powered=false]")
+    for x in (8, 9):                                                     # the feed tank, its pipe down from the main
+        h.put(x, 1, 1, CU)
+        h.put(x, 1, 2, "minecraft:water_cauldron[level=3]")
+    for y in range(2, 7):
+        h.put(8, y, 1, ROD.format("up"))
+    # the steam main under the vault along the left wall, grates at its joints; a branch across to the gantry's runway
+    for x in range(2, 16):
+        h.put(x, 7, 1, GRATE if x in (2, 6, 8, 10, 15) else ROD.format("east"))
+    for z in (2, 3):
+        h.put(10, 7, z, ROD.format("south"))
+    h.put(10, 7, C - 3, GOLD)
+    # the workbench past the boilers: anvils, smithing tables, the blueprint table; blueprints (blue banners) over it
+    for x, s in ((11, "minecraft:anvil[facing=east]"), (12, "minecraft:smithing_table"), (13, "minecraft:cartography_table"),
+                 (14, "minecraft:smithing_table"), (15, "minecraft:chipped_anvil[facing=east]")):
+        h.put(x, 1, 1, s)
+    for x in (12, 14):
+        h.put(x, 4, 1, "minecraft:blue_wall_banner[facing=south]")
+    h.put(13, 4, 1, GOLD)
+    h.stations.append(("bench", 13, 1, 2, "north"))
+    # the forge across the far wall either side of the bay: furnaces and blast furnaces under copper hoods, chimneys up the vault
+    for zs in ((1, 2, 3, 4), (10, 11)):
+        for i, z in enumerate(zs):
+            kind = "blast_furnace" if i % 2 else "furnace"
+            h.put(16, 1, z, f"minecraft:{kind}[facing=west,lit=true]")
+            h.put(16, 2, z, CHIS)
+            h.put(16, 3, z, CU)
+            h.put(15, 4, z, "minecraft:waxed_cut_copper_slab[type=top]")
+            h.put(16, 4, z, CU_B)
+        for z in zs[1:3] if len(zs) > 2 else zs:
+            for y in range(5, 9):
+                h.put(16, y, z, CU_B if y < 7 else "minecraft:waxed_exposed_copper")
+    # the great gear on the far wall behind the bay: a copper wheel, a chiselled boss, grindstone teeth, piston rams at its corners
+    G = 4
+    for y in range(G - 1, G + 2):
+        for z in range(C - 1, C + 2):
+            h.put(16, y, z, CU_B if (y + z) % 2 else CU)
+    h.put(16, G, C, "minecraft:waxed_chiseled_copper")
+    for y, z in ((G + 2, C), (G - 2, C), (G, C - 2), (G, C + 2)):
+        h.put(16, y, z, "minecraft:grindstone[face=wall,facing=west]")
+    for y in (G - 2, G + 2):
+        for z in (C - 2, C + 2):
+            h.put(16, y, z, "minecraft:piston[facing=west,extended=false]")
+    for z in (C - 1, C + 1):                                             # the guild's blueprints over it, gold between
+        h.put(16, 8, z, "minecraft:blue_wall_banner[facing=west]")
+    h.put(16, 8, C, GOLD)
+    # the test-firing range down the right wall behind a low wall: a gold firing line, powder crates behind it, targets down the strip
+    for x in range(3, 16):
+        h.put(x, 1, 11, DARK_B)
+        if x % 3 == 0:
+            h.put(x, 2, 11, POST)
+    for z in (12, 13):
+        h.put(3, 0, z, GOLD)
+    for (x, y, z) in ((1, 1, 13), (2, 1, 13), (1, 2, 13)):              # black powder (TNT, nothing near it lit)
+        h.put(x, y, z, "minecraft:tnt")
+    h.put(1, 1, 12, "minecraft:barrel[facing=up,open=false]")
+    h.put(2, 2, 13, "minecraft:barrel[facing=east,open=false]")
+    for x in (8, 12):                                                    # targets on posts along the strip
+        h.put(x, 1, 13, POST)
+        h.put(x, 2, 13, "minecraft:target")
+    h.put(16, 1, 12, "minecraft:target")                                 # and at its end, on hay
+    h.put(16, 2, 12, "minecraft:target")
+    h.put(16, 1, 13, "minecraft:hay_block[axis=y]")
+    h.put(16, 2, 13, "minecraft:hay_block[axis=y]")
+    h.put(16, 3, 12, "minecraft:target")
+    # lanterns over the lane, the boilers, the bench and the range
+    for x, z in ((5, C), (5, 3), (12, 2), (7, 12), (13, 12)):
+        hang(h, x, z, top(x, z), 2)
+    return h
+
+
 HALLS = {"dawi_great_hall": great_hall_v1, "dawi_grand_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury,
-         "dawi_runic_forge": runic_forge, "dawi_throne_room": throne_room, "dawi_slayer_shrine": slayer_shrine}
+         "dawi_runic_forge": runic_forge, "dawi_throne_room": throne_room, "dawi_slayer_shrine": slayer_shrine,
+         "dawi_engineers_guild": engineers_guild}
 DATA_VERSION = 4790                                                      # 26.1.2's, as the bridge's structure_save writes it
 
 # 26.1.2's own blockstate files (block bench/mc-source-26.1.2): every block a hall uses must have one, and every state it sets must be one

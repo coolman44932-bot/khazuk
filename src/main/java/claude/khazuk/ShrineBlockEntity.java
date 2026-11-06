@@ -350,7 +350,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     public int peopleCap() {
         return UP_AT_ONCE + (has(claude.khazuk.hold.HoldRooms.KEEP) ? KEEP_ROOM : 0) + (has(claude.khazuk.hold.HoldRooms.GREAT_HALL) ? GREAT_HALL_ROOM : 0)
                 + (has(claude.khazuk.hold.HoldRooms.BARRACKS) ? BARRACKS_ROOM : 0) + (has(claude.settlementcore.room.Rooms.Function.OREMINE) ? SMALL_ROOM : 0)
-                + (has(claude.khazuk.hold.HoldRooms.BREWERY) ? SMALL_ROOM : 0) + (has(claude.khazuk.hold.HoldRooms.SLAYER_SHRINE) ? SMALL_ROOM : 0);
+                + (has(claude.khazuk.hold.HoldRooms.BREWERY) ? SMALL_ROOM : 0) + (has(claude.khazuk.hold.HoldRooms.SLAYER_SHRINE) ? SMALL_ROOM : 0)
+                + (has(claude.khazuk.hold.HoldRooms.ENGINEERS_GUILD) ? SMALL_ROOM : 0);
     }
 
     @Override

@@ -27,7 +27,9 @@ its gold, brew its ale, keep the Book of Grudges and fight for it.
   deeps who throw Cinderblast bombs. The King's Throne Room raises Hammerers, your bodyguard: they keep at your side in the hold,
   strike whatever strikes you, and take a quarter off every blow you take. The Shrine of Grimnir raises Troll Slayers: no armour,
   huge blows on large foes, harder the nearer they are to death. One who slays a giant of a foe becomes a Giant Slayer, and a Giant
-  Slayer who slays a monster becomes the hold's Dragon Slayer. Every unit rolls its own look: beards, helms and colours, as
+  Slayer who slays a monster becomes the hold's Dragon Slayer. The Engineers' Guild raises Engineer Slayers, whose home-made guns
+  scatter and sometimes blow up, and builds the Slayer mech: its boiler runs hotter and harder the longer it fights, and when it
+  bursts its pilot jumps out and fights on. Every unit rolls its own look: beards, helms and colours, as
   in Total War: WARHAMMER III.
 - **The god's powers,** paid from the hold's devotion (prayer at the Shrine, ale, Runesmiths and settled grudges): Grungni's Hammer,
   Valaya's Ward and Grimnir's Fury. Ride Thorgrim's **Throne of Power** for cheaper powers.
