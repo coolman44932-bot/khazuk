@@ -174,6 +174,7 @@ public class GuildGameTests {
         float hp = m.getHealth();
         m.heatForTests(SlayerMech.RED_LINE + 10);
         m.boil(h.getLevel());
+        h.assertTrue(m.overheated(), "past the red line it doesn't show overheated");
         h.assertTrue(m.getHealth() < hp, "past the red line the boiler didn't scald it: " + m.getHealth() + "/" + hp);
         m.heatForTests(0);
         m.boil(h.getLevel());
@@ -189,16 +190,20 @@ public class GuildGameTests {
         guild(h, heart);
         h.assertTrue(heart.ranks().buildMech(h.getLevel(), heart), "no mech built");
         SlayerMech m = h.getLevel().getEntitiesOfClass(SlayerMech.class, new net.minecraft.world.phys.AABB(h.absolutePos(HEART)).inflate(24)).get(0);
-        h.runAfterDelay(20, () -> {                              // up out of the ground first
-            m.kill(h.getLevel());
+        h.startSequence()
+                .thenIdle(20)                                    // up out of the ground first
+                .thenExecute(() -> m.kill(h.getLevel()))
+                .thenWaitUntil(() -> h.assertTrue(m.pilotIsOut(), "the pilot hasn't leapt out of the wreck"))
+                .thenExecute(() -> {
+            h.assertTrue(m.deathTime >= SlayerMech.PILOT_OUT_AT, "the pilot leapt out at death tick " + m.deathTime + ", before the clip shows him gone");
             Slayer pilot = m.pilotForTests;
             h.assertTrue(pilot != null && pilot.isAlive() && pilot.tier() == Slayer.Tier.GIANT && pilot.settlement() == heart, "the pilot: " + pilot);
             h.assertTrue(Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get()) == 0 && Ranks.count(h.getLevel(), heart, KRegistry.GIANT_SLAYER.get()) == 1,
                     "the roll: mechs " + Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get()) + ", Giant Slayers "
                             + Ranks.count(h.getLevel(), heart, KRegistry.GIANT_SLAYER.get()));
             h.assertTrue(heart.ranks().buildMech(h.getLevel(), heart), "the Guild didn't build the hold a new mech once the old one burst");
-            h.succeed();
-        });
+                })
+                .thenSucceed();
     }
 
     @GameTest(template = "arena", timeoutTicks = 1600, batch = "khazukhostile")

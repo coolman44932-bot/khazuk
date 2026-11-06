@@ -119,7 +119,7 @@ public final class KhazukClient {
         }
     }
 
-    /** The Slayer mech (a showpiece commissioned; a fast stand-in till then). */
+    /** The Slayer mech: the detail session's showpiece (handoffs/slayer_mech_2026-11-06_done.md). */
     static final class SlayerMechModel extends HordeGeoModel<claude.khazuk.SlayerMech> {
         SlayerMechModel() {
             super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "slayer_mech"), true);
@@ -129,7 +129,14 @@ public final class KhazukClient {
     static final class SlayerMechRenderer extends HordeRenderer<claude.khazuk.SlayerMech, LivingEntityRenderState> {
         SlayerMechRenderer(EntityRendererProvider.Context ctx) {
             super(ctx, new SlayerMechModel());
+            withRenderLayer(com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer::new);   // its hot seams and plates, its axe's runes
             this.shadowRadius = 0.9f;
+        }
+
+        /** The wreck sags where it stands as its burst plays: vanilla's death tip-over would roll it onto its side. */
+        @Override
+        protected float getDeathMaxRotation(com.geckolib.renderer.base.GeoRenderState state) {
+            return 0f;
         }
     }
 

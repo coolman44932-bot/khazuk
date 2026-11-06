@@ -42,8 +42,16 @@ public class SlayerMech extends Dawi {
     public static final double HOT_DAMAGE = 0.33, HOT_SPEED = 0.2;
     static final Identifier HOT_RUN = Identifier.fromNamespaceAndPath(Khazuk.MODID, "boiler_hot");
 
+    /** Past the red line (synced: its model shudders and vents, the overheat clip). */
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> DATA_OVERHEATED =
+            net.minecraft.network.syncher.SynchedEntityData.defineId(SlayerMech.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+    static final com.geckolib.animation.RawAnimation OVERHEAT = com.geckolib.animation.RawAnimation.begin().thenLoop("animation.khazuk.overheat");
+    static final com.geckolib.animation.RawAnimation BURST_CLIP = com.geckolib.animation.RawAnimation.begin().thenPlay("animation.khazuk.burst");
+    /** The burst clip's beats (its 20 ticks are vanilla's death): the boiler blows at 0.35 s, the pilot is out at 0.6 s. */
+    public static final int BLOWS_AT = 7, PILOT_OUT_AT = 12;
+
     private float heat;
-    private boolean hot, burst;
+    private boolean hot, burst, pilotOut;
     /** The pilot who leapt out, for the tests. */
     public Slayer pilotForTests;
 
@@ -67,6 +75,34 @@ public class SlayerMech extends Dawi {
     @Override
     public boolean isStubborn() {
         return true;                                             // an engine doesn't flinch
+    }
+
+    @Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder b) {
+        super.defineSynchedData(b);
+        b.define(DATA_OVERHEATED, false);
+    }
+
+    public boolean overheated() {
+        return entityData.get(DATA_OVERHEATED);
+    }
+
+    /**
+     * Its clips (the detail session's showpiece, handoffs/slayer_mech_2026-11-06_done.md): past the red line, standing, it shudders and vents
+     * (overheat, a loop that keys its legs standing); walking, it walks; else idle. The blow and the burst are triggered on the attack
+     * controller, after main.
+     */
+    @Override
+    public void registerControllers(com.geckolib.animatable.manager.AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new com.geckolib.animation.AnimationController<SlayerMech>("main", 4, test -> {
+            SlayerMech m = test.animatable();
+            if (test.isMoving()) {
+                return test.setAndContinue(WALK);
+            }
+            return test.setAndContinue(m.overheated() ? OVERHEAT : IDLE);
+        }));
+        controllers.add(new com.geckolib.animation.AnimationController<SlayerMech>("attack", 2, test -> com.geckolib.animation.object.PlayState.STOP)
+                .triggerableAnim("attack", ATTACK).triggerableAnim("burst", BURST_CLIP));
     }
 
     public float heat() {
@@ -117,6 +153,9 @@ public class SlayerMech extends Dawi {
         if (hot) {
             level.sendParticles(ParticleTypes.SMOKE, getX(), getY() + 2.6, getZ(), 3, 0.2, 0.1, 0.2, 0.01);
         }
+        if (overheated() != heat >= RED_LINE) {
+            entityData.set(DATA_OVERHEATED, heat >= RED_LINE);
+        }
         if (heat >= RED_LINE) {
             level.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 2.2, getZ(), 8, 0.5, 0.2, 0.5, 0.05);   // venting
             level.playSound(null, getX(), getY(), getZ(), SoundEvents.FIRE_EXTINGUISH, getSoundSource(), 0.6f, 0.7f);
@@ -138,17 +177,36 @@ public class SlayerMech extends Dawi {
         return hit;
     }
 
-    /** It breaks: the boiler bursts, and its pilot leaps out a Giant Slayer and fights on. */
+    /** It breaks: the burst clip plays out over vanilla's 20 ticks of death; the boiler blows at {@value #BLOWS_AT}, the pilot leaps out at {@value #PILOT_OUT_AT}. */
     @Override
     public void die(DamageSource source) {
-        if (!burst && level() instanceof ServerLevel sl) {
+        if (!burst && level() instanceof ServerLevel) {
             burst = true;
-            burst(sl);
+            triggerAnim("attack", "burst");
         }
         super.die(source);
     }
 
-    private void burst(ServerLevel level) {
+    @Override
+    protected void tickDeath() {
+        super.tickDeath();
+        if (level() instanceof ServerLevel sl && burst) {
+            if (deathTime == BLOWS_AT) {
+                blow(sl);
+            }
+            if (deathTime >= PILOT_OUT_AT && !pilotOut) {
+                pilotOut = true;
+                pilotOut(sl);
+            }
+        }
+    }
+
+    /** Whether its pilot has leapt out (the tests). */
+    public boolean pilotIsOut() {
+        return pilotOut;
+    }
+
+    private void blow(ServerLevel level) {
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, getX(), getY() + 1.5, getZ(), 1, 0, 0, 0, 0);
         level.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 2, getZ(), 30, 1.0, 0.6, 1.0, 0.1);
         level.sendParticles(ParticleTypes.FLAME, getX(), getY() + 1, getZ(), 40, 1.2, 0.6, 1.2, 0.06);
@@ -159,6 +217,9 @@ public class SlayerMech extends Dawi {
             m.hurtServer(level, src, BURST);
             m.igniteForSeconds(4);
         }
+    }
+
+    private void pilotOut(ServerLevel level) {
         ShrineBlockEntity h = settlementLoading();
         Slayer pilot = KRegistry.GIANT_SLAYER.get().create(level, EntitySpawnReason.MOB_SUMMONED);
         if (pilot == null) {
