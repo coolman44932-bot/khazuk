@@ -1,0 +1,1 @@
+REVIEW FAIL cb5d663c340e63190e441356f12b41e0d690c3ae: fix-reviewer (Sonnet) 2026-11-06: the lifted Shrine was a plain item (despawn, fire) and HoldCrag.roofed read the crag's own cobble as a roof (hollow footings); both fixed in the next commit
