@@ -1,0 +1,1 @@
+REVIEW PASS 8a7fa5210ad2ff256c433bca4c4a1f0ae7b546c4: fix-reviewer (Sonnet) 2026-11-06, no blocking bug; minor: earned is cleared before the hold-loaded check (a far promotion lost), the Fury isn't carried to the risen body, generous large/monster thresholds
