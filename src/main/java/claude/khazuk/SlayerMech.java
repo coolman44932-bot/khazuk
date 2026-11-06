@@ -46,6 +46,8 @@ public class SlayerMech extends Dawi {
     private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> DATA_OVERHEATED =
             net.minecraft.network.syncher.SynchedEntityData.defineId(SlayerMech.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
     static final com.geckolib.animation.RawAnimation OVERHEAT = com.geckolib.animation.RawAnimation.begin().thenLoop("animation.khazuk.overheat");
+    /** The user's ask: it strides on past the red line, shuddering and venting, its pilot beating on the boiler (a 0.9 s loop at its hot pace). */
+    static final com.geckolib.animation.RawAnimation OVERHEAT_WALK = com.geckolib.animation.RawAnimation.begin().thenLoop("animation.khazuk.overheat_walk");
     static final com.geckolib.animation.RawAnimation BURST_CLIP = com.geckolib.animation.RawAnimation.begin().thenPlay("animation.khazuk.burst");
     /** The burst clip's beats (its 20 ticks are vanilla's death): the boiler blows at 0.35 s, the pilot is out at 0.6 s. */
     public static final int BLOWS_AT = 7, PILOT_OUT_AT = 12;
@@ -88,8 +90,8 @@ public class SlayerMech extends Dawi {
     }
 
     /**
-     * Its clips (the detail session's showpiece, handoffs/slayer_mech_2026-11-06_done.md): past the red line, standing, it shudders and vents
-     * (overheat, a loop that keys its legs standing); walking, it walks; else idle. The blow and the burst are triggered on the attack
+     * Its clips (the detail session's showpiece, handoffs/slayer_mech_2026-11-06_done.md): past the red line it shudders and vents, striding
+     * (overheat_walk) or standing (overheat); else it walks or idles. The blow and the burst are triggered on the attack
      * controller, after main.
      */
     @Override
@@ -97,7 +99,7 @@ public class SlayerMech extends Dawi {
         controllers.add(new com.geckolib.animation.AnimationController<SlayerMech>("main", 4, test -> {
             SlayerMech m = test.animatable();
             if (test.isMoving()) {
-                return test.setAndContinue(WALK);
+                return test.setAndContinue(m.overheated() ? OVERHEAT_WALK : WALK);
             }
             return test.setAndContinue(m.overheated() ? OVERHEAT : IDLE);
         }));
