@@ -1,0 +1,1 @@
+REVIEW PASS a20044fd37ab8e8482e39909040f2f0d89eeee41: fix-reviewer (Sonnet) 2026-11-06, the death timeline, overheat and controllers are correct; minor: burst/pilotOut unsaved (a save inside the 20-tick death loses the blast and the pilot), the burst flag set before super.die
