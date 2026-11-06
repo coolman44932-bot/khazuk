@@ -1,0 +1,1 @@
+REVIEW PASS 3550c2cfff6ce663f09ecee93fe1f98146f73669: fix-reviewer (Sonnet) 2026-11-06, the deathblow logic, the type change and the test hold; follow-ups: Dawi's plain attack trigger clips the deathblow clip at tick 12; a deathblow on a foe gone out of reach burns its cooldown
