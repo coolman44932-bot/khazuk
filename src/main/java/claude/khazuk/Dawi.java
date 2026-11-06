@@ -409,6 +409,7 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         } else if (homeward) {
             ShrineBlockEntity h = settlement();
             if (h != null) {
+                h.ranks().forget(getUUID());                     // sent home, off the roll of the ranks its rooms raised (the review of b04b727)
                 h.absorb(this);
             }
             discard();

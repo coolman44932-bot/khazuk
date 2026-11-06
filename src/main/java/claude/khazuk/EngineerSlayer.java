@@ -122,6 +122,7 @@ public class EngineerSlayer extends Marksman {
         int n = 0;
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(mark.blockPosition()).inflate(BURST_REACH + 1),
                 e -> e.isAlive() && e.distanceToSqr(c) <= BURST_REACH * BURST_REACH && (e == mark || e instanceof Mob m && !(m instanceof Dawi) && Muster.foe(m)))) {
+            e.invulnerableTime = 0;                              // the burst is its own blow, not lost to the shot's hurt cooldown (the review of b04b727)
             if (e.hurtServer(level, src, BURST)) {
                 n++;
             }

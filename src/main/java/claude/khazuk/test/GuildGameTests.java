@@ -109,6 +109,57 @@ public class GuildGameTests {
         });
     }
 
+    /** The overload lands whole on the mark, after the shot (the review of b04b727: it was lost to the shot's hurt cooldown). */
+    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazukhostile")
+    public static void theOverloadLandsWholeAfterTheShot(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        EngineerSlayer e = h.spawn(KRegistry.ENGINEER_SLAYER.get(), new BlockPos(3, 1, 4));
+        e.bindTo(heart);
+        e.setNoAi(true);
+        var golem = h.spawn(EntityType.IRON_GOLEM, new BlockPos(12, 1, 4));   // a big mark that lives through both
+        golem.setNoAi(true);
+        h.runAfterDelay(2, () -> {
+            float before = golem.getHealth(), shot = e.shotOn(golem);
+            e.forceOverload = 1;
+            e.shoot(h.getLevel(), golem);
+            float lost = before - golem.getHealth();
+            h.assertTrue(lost >= shot + EngineerSlayer.BURST * 0.9f, "the golem lost " + lost + ": the shot is " + shot + ", the burst " + EngineerSlayer.BURST);
+            h.succeed();
+        });
+    }
+
+    /** A unit sent home goes off the ranks' roll: a mech sunk home is built again (the review of b04b727). */
+    @GameTest(template = "arena", timeoutTicks = 400, batch = "khazuk")
+    public static void aMechSentHomeIsBuiltAgain(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        heart.addFood(500, Fare.COOKED, "the test");
+        heart.addCurrency(100, "the test");
+        guild(h, heart);
+        h.assertTrue(heart.ranks().buildMech(h.getLevel(), heart), "no mech built");
+        SlayerMech m = h.getLevel().getEntitiesOfClass(SlayerMech.class, new net.minecraft.world.phys.AABB(h.absolutePos(HEART)).inflate(24)).get(0);
+        h.startSequence()
+                .thenIdle(20)
+                .thenExecute(m::goHome)
+                .thenWaitUntil(() -> h.assertTrue(m.isRemoved(), "the mech hasn't gone home"))
+                .thenExecute(() -> h.assertTrue(Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get()) == 0
+                        && heart.ranks().buildMech(h.getLevel(), heart), "the mech sent home is still on the roll: "
+                        + Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get())))
+                .thenSucceed();
+    }
+
+    /** Where the Guild's own come up: its stations in the world, the room placed and turned (Ranks#at). */
+    @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
+    public static void theGuildsStationsAreInTheRoomAsPlaced(GameTestHelper h) {
+        var room = claude.khazuk.hold.HoldRooms.room("dawi_engineers_guild");
+        for (var facing : new net.minecraft.core.Direction[]{net.minecraft.core.Direction.EAST, net.minecraft.core.Direction.NORTH}) {
+            var pl = claude.settlementcore.room.PlanPlacement.compute(room, h.absolutePos(new BlockPos(2, 1, 12)), facing);
+            Building b = new Building("dawi_engineers_guild", pl.box(), h.absolutePos(new BlockPos(2, 1, 12)), facing);
+            BlockPos bay = Ranks.at(b, 12, 1, 7);
+            h.assertTrue(pl.box().isInside(bay) && bay.equals(pl.world(new BlockPos(12, 1, 7))), facing + ": the bay at " + bay + ", the room " + pl.box());
+        }
+        h.succeed();
+    }
+
     @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
     public static void theMechRunsHotAndScaldsItselfPastTheRedLine(GameTestHelper h) {
         ShrineBlockEntity heart = hold(h);
