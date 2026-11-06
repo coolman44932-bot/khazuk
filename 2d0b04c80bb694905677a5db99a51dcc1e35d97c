@@ -1,2 +1,1 @@
-REVIEW PASS 2d0b04c80bb694905677a5db99a51dcc1e35d97c
-fix-reviewer (Sonnet), 2026-11-06: markOf right (Muster.foe keeps every Enemy/Raider/angry neutral; whatever strikes the god still answered); the villager tail fails on the old code; the clock test expects the right counts. Low: a stray ' * *' in Hammerer's javadoc (cosmetic); no positive test of the god-struck-a-foe branch (a zombie is hard in the peaceful batch).
+REVIEW PASS 2d0b04c80bb694905677a5db99a51dcc1e35d97c: fix-reviewer (Sonnet) 2026-11-06, markOf right (whatever strikes the god still answered, of what he strikes only Muster.foe), the villager tail fails on the old code, the clock test's counts right; low: a stray '* *' in Hammerer's javadoc
