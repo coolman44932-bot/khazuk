@@ -1,2 +1,1 @@
-REVIEW PASS 2298b06be3c0f572e08d5bea499370c492fc358a
-fix-reviewer (Sonnet), 2026-11-06: no blocking bug. Medium: the King's Guard attacked anything the god struck (fixed in 2d0b04c). Low: the rank cap counts within RADIUS+16 only; another Ironbreaker's bomb isn't halved (harmless, bombs spare Dawi); the raising tests call raise* directly (a clock test added in 2d0b04c).
+REVIEW PASS 2298b06be3c0f572e08d5bea499370c492fc358a: fix-reviewer (Sonnet) 2026-11-06, no blocking bug; medium: the King's Guard attacked anything the god struck (fixed in 2d0b04c); low: the rank cap counts within RADIUS+16 only, the raising tests called raise* directly (clock test added in 2d0b04c)
