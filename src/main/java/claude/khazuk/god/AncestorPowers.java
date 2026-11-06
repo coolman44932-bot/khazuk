@@ -248,7 +248,7 @@ public final class AncestorPowers {
         int n = 0;
         for (Dawi d : level.getEntitiesOfClass(Dawi.class, god.getBoundingBox().inflate(r, 6, r),
                 d -> d.isAlive() && godsOwn(d, god.getUUID(), god) && d.distanceToSqr(god) <= r * r)) {
-            rage(d, until);
+            rage(d, d instanceof claude.khazuk.Slayer ? until + ticks : until);   // 0.14.2: Grimnir's own burns twice as long in a Slayer
             n++;
         }
         FURIOUS.put(god, until);

@@ -75,6 +75,9 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.IRONBREAKER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.IRONBREAKER, 0.45f));
         e.registerEntityRenderer(KRegistry.HAMMERER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.HAMMERER, 0.45f));
         e.registerEntityRenderer(KRegistry.CINDERBLAST.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        e.registerEntityRenderer(KRegistry.TROLL_SLAYER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.TROLL_SLAYER, 0.45f));
+        e.registerEntityRenderer(KRegistry.GIANT_SLAYER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.GIANT_SLAYER, 0.45f));
+        e.registerEntityRenderer(KRegistry.DRAGON_SLAYER.get(), DragonSlayerRenderer::new);
         e.registerEntityRenderer(KRegistry.ANVIL_OF_DOOM.get(), AnvilRenderer::new);
         e.registerEntityRenderer(KRegistry.GRUNGNIS_HAMMER_STRIKE.get(), HammerRenderer::new);
         e.registerBlockEntityRenderer(KRegistry.SHRINE_ENTITY.get(), ShrineRenderer::new);   // the statue of the three Ancestors
@@ -96,6 +99,20 @@ public final class KhazukClient {
             super(ctx, new RunesmithModel());
             withRenderLayer(com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer::new);   // his runes, the detail session's glowmask
             this.shadowRadius = 0.45f;
+        }
+    }
+
+    /** The Dragon Slayer: the hold's Slayer hero, one look (a showpiece; on a fast stand-in until the detail session's is in). */
+    static final class DragonSlayerModel extends HordeGeoModel<claude.khazuk.Slayer> {
+        DragonSlayerModel() {
+            super(Identifier.fromNamespaceAndPath(Khazuk.MODID, "dragon_slayer"), true);
+        }
+    }
+
+    static final class DragonSlayerRenderer extends HordeRenderer<claude.khazuk.Slayer, LivingEntityRenderState> {
+        DragonSlayerRenderer(EntityRendererProvider.Context ctx) {
+            super(ctx, new DragonSlayerModel());
+            this.shadowRadius = 0.5f;
         }
     }
 

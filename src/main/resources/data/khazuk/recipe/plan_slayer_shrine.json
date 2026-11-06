@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:stone_bricks",
+    "minecraft:iron_axe",
+    "minecraft:gold_ingot",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "khazuk:plan_slayer_shrine",
+    "count": 1
+  }
+}

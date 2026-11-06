@@ -57,7 +57,7 @@ public class KhazukAssetGameTests {
     /** Both units' geo files are where GeckoLib looks, read with a known format version, bake, and carry every bone the race's code and the renderer name. */
     @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
     public static void theUnitsModelsBakeInGeckoLib(GameTestHelper h) throws Exception {
-        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord", "quarreller", "thunderer", "longbeard", "longbeard_great", "ironbreaker", "hammerer")) {
+        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord", "quarreller", "thunderer", "longbeard", "longbeard_great", "ironbreaker", "hammerer", "troll_slayer", "giant_slayer", "dragon_slayer")) {
             String path = path(h, GeckoLibResources.MODELS_PATH, unit(kind), ".geo.json");
             Geometry geo;
             try (InputStreamReader r = open(h, path)) {
@@ -75,7 +75,7 @@ public class KhazukAssetGameTests {
     /** Both units' animation files are where GeckoLib looks, bake, with every clip the units' animation controller plays. */
     @GameTest(template = "digsite", timeoutTicks = 20, batch = "khazuk")
     public static void theUnitsClipsBakeInGeckoLib(GameTestHelper h) throws Exception {
-        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord", "quarreller", "thunderer", "longbeard", "longbeard_great", "ironbreaker", "hammerer")) {
+        for (String kind : List.of("miner", "dwarf_warrior", "runesmith", "runelord", "quarreller", "thunderer", "longbeard", "longbeard_great", "ironbreaker", "hammerer", "troll_slayer", "giant_slayer", "dragon_slayer")) {
             String path = path(h, GeckoLibResources.ANIMATIONS_PATH, unit(kind), ".animation.json");
             BakedAnimations baked;
             try (InputStreamReader r = open(h, path)) {
@@ -148,8 +148,10 @@ public class KhazukAssetGameTests {
             }
             BakedGeoModel baked = geo.bake(unit(kind.id()));
             for (List<String> group : kind.groups()) {
-                for (String bone : group) {
-                    h.assertTrue(bone.isEmpty() || baked.getBone(bone).isPresent(), kind.id() + "'s model has no variant bone " + bone);
+                for (String part : group) {
+                    for (String bone : claude.khazuk.Looks.bones(part)) {
+                        h.assertTrue(baked.getBone(bone).isPresent(), kind.id() + "'s model has no variant bone " + bone);
+                    }
                 }
             }
             for (int p = 0; p < claude.khazuk.Looks.PALETTES; p++) {
@@ -184,8 +186,9 @@ public class KhazukAssetGameTests {
                     parts[g][a.picks()[g]] = true;
                     List<String> group = kind.groups().get(g);
                     for (int k = 0; k < group.size(); k++) {
-                        boolean hides = hidden.contains(group.get(k));
-                        h.assertTrue(group.get(k).isEmpty() || hides == (k != a.picks()[g]), kind.id() + ": the look " + packed + " hides " + hidden);
+                        for (String bone : claude.khazuk.Looks.bones(group.get(k))) {
+                            h.assertTrue(hidden.contains(bone) == (k != a.picks()[g]), kind.id() + ": the look " + packed + " hides " + hidden);
+                        }
                     }
                 }
             }

@@ -35,6 +35,8 @@ public final class HoldRooms {
     public static final Rooms.Function BREWERY = Rooms.Function.of("DAWI_BREWERY");
     /** D3: the hold's hoard: more gold from every ore, and the hoard grows (hold/Brewhouse). */
     public static final Rooms.Function TREASURY = Rooms.Function.of("DAWI_TREASURY");
+    /** 0.14.2: the Shrine of Grimnir, where the Slayers take their oath (hold/Ranks raises Troll Slayers). */
+    public static final Rooms.Function SLAYER_SHRINE = Rooms.Function.of("DAWI_SLAYER_SHRINE");
     /** D5: the Runesmith's hall, where the hold's runes are struck (hold/Runes). */
     public static final Rooms.Function RUNIC_FORGE = Rooms.Function.of("DAWI_RUNIC_FORGE");
 
@@ -76,6 +78,10 @@ public final class HoldRooms {
             new Rooms.Room("dawi_treasury", "Treasury", 25, TREASURY,
                     "The hoard behind a strong door: heaps of gold under an ancestor's eye. Every ore pays more, and gold draws gold.",
                     13, 8, 11, 0, 1, 5, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_slayer_shrine", "Shrine of Grimnir", 25, SLAYER_SHRINE,   // 0.14.2: where the Slayers take their oath
+                    "Grimnir in blackstone with an axe in each fist and a crest of fire, an oath altar between braziers, fire under iron in the floor, "
+                            + "skulls and orange banners: the hold's Troll Slayers swear their oath here.",
+                    17, 10, 15, 0, 1, 7, List.of(), List.of(), List.of(new Rooms.Station("oath", 9, 1, 7, Direction.EAST))),
             new Rooms.Room("dawi_runic_forge", "Runic Forge", 30, RUNIC_FORGE,
                     "The Runesmith's hall: the rune anvil in a ring of soul fire, the forge's lava behind bars, runes cut into the walls.",
                     15, 9, 13, 0, 1, 6, List.of(), List.of(), List.of(new Rooms.Station("anvil", 9, 1, 6, Direction.WEST))));

@@ -145,7 +145,11 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
   bombs at foes 3 to 10 blocks off (a burst of fire that spares the hold's own); the Mine raises four, posted on guard in it. Hammerers: the
   great hammer (20, thrown back, the blow rings out on the foes beside), always stubborn; the King's Throne Room raises four, the god's
   guard: at his side in the hold, they answer whatever strikes him or he strikes, and he takes a quarter less with one beside him.
-- **Then** the roster in TWW1's order, a step at a time: the Slayers next (Troll Slayers, then Giant and Dragon Slayers).
+- **0.14.2, the Slayers: DONE** (with the bug hunt, one unposted version). The Shrine of Grimnir (a dug hall) raises four Troll Slayers;
+  unarmoured, fleet, always stubborn, +60% on a large foe and up to +50% near death; a Troll Slayer who slays a large foe is a Giant
+  Slayer (+100%), a Giant Slayer who slays a monster the hold's one Dragon Slayer (+150%, a hero: the detail session's showpiece is
+  commissioned, handoffs/dragon_slayer_2026-11-06.md; a fast stand-in till then). Grimnir's Fury burns twice as long on Slayers.
+- **Then** the roster in TWW1's order: Irondrakes next; then the war machines (Grudge Thrower, Cannon, Organ Gun, Flame Cannon).
 
 ## 10. For the user to change (each is my pick until then)
 

@@ -32,7 +32,11 @@ public final class Looks {
     /** 0.14: an Ironbreaker's axe or hammer, a crest or a masked helm's wings; a Hammerer's crest or wings, his beard braided or forked. */
     public static final Kind IRONBREAKER = new Kind("ironbreaker", List.of(List.of("v_axe", "v_hammer"), List.of("v_crest", "v_wings"), List.of("v_braids", "")));
     public static final Kind HAMMERER = new Kind("hammerer", List.of(List.of("v_crest", "v_wings"), List.of("v_braids", "v_fork")));
-    public static final List<Kind> ALL = List.of(MINER, WARRIOR, QUARRELLER, THUNDERER, LONGBEARD, LONGBEARD_GREAT, IRONBREAKER, HAMMERER);
+    /** 0.14.2: a Slayer's two axes or great axe, his crest tall or a pair of spikes, his beard braided or forked. */
+    public static final Kind TROLL_SLAYER = new Kind("troll_slayer", List.of(List.of("v_twin+v_twinl", "v_gaxe"), List.of("v_braids", "v_fork")));
+    public static final Kind GIANT_SLAYER = new Kind("giant_slayer", List.of(List.of("v_twin+v_twinl", "v_gaxe"), List.of("v_braids", "v_fork")));
+    public static final List<Kind> ALL = List.of(MINER, WARRIOR, QUARRELLER, THUNDERER, LONGBEARD, LONGBEARD_GREAT, IRONBREAKER, HAMMERER,
+            TROLL_SLAYER, GIANT_SLAYER);
 
     /** A Dwarf's look: his palette, and which part of each group he shows. Packed in an int ({@link #pack}) for the render state. */
     public record Look(int palette, int[] picks) {
@@ -78,6 +82,11 @@ public final class Looks {
         return Identifier.fromNamespaceAndPath(Khazuk.MODID, "textures/entity/" + kind.id() + (p == 0 ? "" : "_v" + p) + ".png");
     }
 
+    /** The bones of one choice: most are one bone, some several joined by {@code +} (a Slayer's two axes, one in each hand). */
+    public static List<String> bones(String part) {
+        return part.isEmpty() ? List.of() : List.of(part.split("\\+"));
+    }
+
     /** The bones a packed look hides: every part of each group but the one it shows. */
     public static List<String> hidden(Kind kind, int packed) {
         List<String> out = new ArrayList<>();
@@ -85,8 +94,8 @@ public final class Looks {
             int pick = packed >>> (4 + 4 * g) & 15;
             List<String> parts = kind.groups().get(g);
             for (int i = 0; i < parts.size(); i++) {
-                if (i != pick && !parts.get(i).isEmpty()) {
-                    out.add(parts.get(i));
+                if (i != pick) {
+                    out.addAll(bones(parts.get(i)));
                 }
             }
         }

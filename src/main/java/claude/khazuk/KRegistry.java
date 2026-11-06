@@ -81,6 +81,18 @@ public final class KRegistry {
     public static final DeferredHolder<EntityType<?>, EntityType<Hammerer>> HAMMERER = ENTITIES.register("hammerer",
             () -> EntityType.Builder.of(Hammerer::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
                     .build(key("hammerer")));
+    /** 0.14.2: the Slayers, raised by the Shrine of Grimnir: Troll Slayers, the Giant Slayers they grow into, and the hold's Dragon Slayer. */
+    public static final DeferredHolder<EntityType<?>, EntityType<Slayer>> TROLL_SLAYER = ENTITIES.register("troll_slayer",
+            () -> EntityType.Builder.of(Slayer::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("troll_slayer")));
+    public static final DeferredHolder<EntityType<?>, EntityType<Slayer>> GIANT_SLAYER = ENTITIES.register("giant_slayer",
+            () -> EntityType.Builder.of(Slayer::new, MobCategory.CREATURE).sized(0.8f, 1.5f).eyeHeight(1.2f).clientTrackingRange(10)
+                    .build(key("giant_slayer")));
+    /** The Dragon Slayer, the hold's Slayer hero (a showpiece commissioned: handoffs/dragon_slayer_2026-11-06.md; a fast stand-in till then). */
+    public static final DeferredHolder<EntityType<?>, EntityType<Slayer>> DRAGON_SLAYER = ENTITIES.register("dragon_slayer",
+            () -> EntityType.Builder.of(Slayer::new, MobCategory.CREATURE).sized(0.8f, 1.55f).eyeHeight(1.25f).clientTrackingRange(10)
+                    .build(key("dragon_slayer")));
+
     /** An Ironbreaker's Cinderblast bomb in flight. */
     public static final DeferredHolder<EntityType<?>, EntityType<Cinderblast>> CINDERBLAST = ENTITIES.register("cinderblast",
             () -> EntityType.Builder.<Cinderblast>of(Cinderblast::new, MobCategory.MISC).sized(0.3f, 0.3f).clientTrackingRange(6).updateInterval(5)
@@ -153,6 +165,15 @@ public final class KRegistry {
             p -> new SpawnEggItem(p.spawnEgg(IRONBREAKER.get())));
     public static final DeferredItem<SpawnEggItem> HAMMERER_EGG = ITEMS.registerItem("hammerer_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(HAMMERER.get())));
+    public static final DeferredItem<SpawnEggItem> TROLL_SLAYER_EGG = ITEMS.registerItem("troll_slayer_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(TROLL_SLAYER.get())));
+    public static final DeferredItem<SpawnEggItem> GIANT_SLAYER_EGG = ITEMS.registerItem("giant_slayer_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(GIANT_SLAYER.get())));
+    public static final DeferredItem<SpawnEggItem> DRAGON_SLAYER_EGG = ITEMS.registerItem("dragon_slayer_spawn_egg",
+            p -> new SpawnEggItem(p.spawnEgg(DRAGON_SLAYER.get())));
+    /** 0.14.2: the Ancestors' Plan of the Shrine of Grimnir, where the Slayers take their oath. */
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_SLAYER_SHRINE = ITEMS.registerItem("plan_slayer_shrine",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_slayer_shrine"));
     /** D5b: the Anvil of Doom, carried: set it down on the ground, facing the way you face. */
     public static final DeferredItem<claude.khazuk.hold.AnvilOfDoomItem> ANVIL_OF_DOOM_ITEM = ITEMS.registerItem("anvil_of_doom",
             p -> new claude.khazuk.hold.AnvilOfDoomItem(p.stacksTo(1).fireResistant()));
@@ -196,6 +217,10 @@ public final class KRegistry {
                 out.accept(LONGBEARD_GREAT_EGG.get());
                 out.accept(IRONBREAKER_EGG.get());
                 out.accept(HAMMERER_EGG.get());
+                out.accept(PLAN_SLAYER_SHRINE.get());
+                out.accept(TROLL_SLAYER_EGG.get());
+                out.accept(GIANT_SLAYER_EGG.get());
+                out.accept(DRAGON_SLAYER_EGG.get());
                 out.accept(ANVIL_OF_DOOM_ITEM.get());
                 out.accept(GRUNGNIS_HAMMER.get());
                 out.accept(VALAYAS_WARD.get());
@@ -236,6 +261,9 @@ public final class KRegistry {
         e.put(LONGBEARD_GREAT.get(), Longbeard.createAttributes(true).build());
         e.put(IRONBREAKER.get(), Ironbreaker.createAttributes().build());
         e.put(HAMMERER.get(), Hammerer.createAttributes().build());
+        e.put(TROLL_SLAYER.get(), Slayer.createAttributes(Slayer.Tier.TROLL).build());
+        e.put(GIANT_SLAYER.get(), Slayer.createAttributes(Slayer.Tier.GIANT).build());
+        e.put(DRAGON_SLAYER.get(), Slayer.createAttributes(Slayer.Tier.DRAGON).build());
         e.put(ANVIL_OF_DOOM.get(), claude.khazuk.hold.AnvilOfDoom.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
     }

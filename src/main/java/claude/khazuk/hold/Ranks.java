@@ -35,6 +35,8 @@ public final class Ranks {
      * on guard in the Mine; with a King's Throne Room, a Hammerer the same way until it keeps {@value #HAMMERER_EACH}, the god's guard.
      */
     public static final int ELITE_SECONDS = 60, ELITE_COST = 15, IRONBREAKER_EACH = 4, HAMMERER_EACH = 4;
+    /** 0.14.2: with a Shrine of Grimnir, a Troll Slayer every {@value #ELITE_SECONDS} s for {@value #SLAYER_COST} food until it keeps {@value #SLAYER_EACH}. */
+    public static final int SLAYER_COST = 12, SLAYER_EACH = 4;
 
     private int clock;
 
@@ -82,8 +84,8 @@ public final class Ranks {
         return s == null ? 0 : s.size();
     }
 
-    /** How many Longbeards of {@code type} the Great Hall has raised (a Warrior grown into one isn't of them). */
-    public static int count(ServerLevel level, ShrineBlockEntity hold, EntityType<? extends Longbeard> type) {
+    /** How many of {@code type} the hold's rooms have raised and still has (a Warrior grown into a Longbeard isn't of them). */
+    public static int count(ServerLevel level, ShrineBlockEntity hold, EntityType<?> type) {
         return hold.ranks().rolled(type);
     }
 
@@ -97,6 +99,7 @@ public final class Ranks {
         seeded = true;
         for (Dawi d : level.getEntitiesOfClass(Dawi.class, new AABB(hold.getBlockPos()).inflate(ShrineBlockEntity.RADIUS + 16),
                 m -> m.isAlive() && m.settlement() == hold && (m instanceof Marksman || m instanceof Ironbreaker || m instanceof Hammerer
+                        || m instanceof claude.khazuk.Slayer
                         || m instanceof Longbeard l && !l.veteran()))) {
             enlist(d);
         }
@@ -151,6 +154,9 @@ public final class Ranks {
         if (clock % ELITE_SECONDS == 40 && hold.has(HoldRooms.KEEP)) {
             raiseHammerer(level, hold);
         }
+        if (clock % ELITE_SECONDS == 50 && hold.has(HoldRooms.SLAYER_SHRINE)) {
+            raiseSlayer(level, hold);
+        }
     }
 
     /** The first room of the hold's with {@code f}, or null. */
@@ -190,6 +196,31 @@ public final class Ranks {
         if (n == 0) {
             hold.tellOwner(hold.settlementName() + ": the first Ironbreaker comes up in gromril head to toe, bombs at his belt, and goes down to "
                     + "stand guard in the Mine. What climbs out of the deeps meets him first.", ChatFormatting.GOLD);
+        }
+        return true;
+    }
+
+    /** One more Troll Slayer now, sworn at the Shrine of Grimnir (the clock's minute, and the tests), while the hold keeps fewer than its share. */
+    public boolean raiseSlayer(ServerLevel level, ShrineBlockEntity hold) {
+        int n = rolled(KRegistry.TROLL_SLAYER.get());
+        Building shrine = roomOf(hold, HoldRooms.SLAYER_SHRINE);
+        if (shrine == null || n >= SLAYER_EACH || hold.food() < SLAYER_COST) {
+            return false;
+        }
+        claude.khazuk.Slayer d = KRegistry.TROLL_SLAYER.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        if (d == null) {
+            return false;
+        }
+        hold.ration().spendFood(SLAYER_COST, "Troll Slayers sworn");
+        d.bindTo(hold);
+        hold.ranks().enlist(d);
+        BlockPos at = middleOf(shrine);                          // he comes up in the Shrine of Grimnir, sworn
+        d.emergeAt(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+        level.addFreshEntity(d);
+        if (n == 0 && rolled(KRegistry.GIANT_SLAYER.get()) + rolled(KRegistry.DRAGON_SLAYER.get()) == 0) {
+            hold.tellOwner(hold.settlementName() + ": at the Shrine of Grimnir a Dwarf shaves his head, dyes his crest and swears the Slayer's oath: "
+                    + "the first Troll Slayer. He seeks the biggest foe there is. Slay a giant of one and he is a Giant Slayer; slay a monster, "
+                    + "and he is the hold's Dragon Slayer.", ChatFormatting.GOLD);
         }
         return true;
     }

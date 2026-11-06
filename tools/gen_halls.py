@@ -772,8 +772,126 @@ def throne_room():
     return h
 
 
+def slayer_shrine():
+    """The Shrine of Grimnir (0.14.2), 17 long, 10 high, 15 wide: where the Slayers take their oath, and where the hold raises its Troll
+    Slayers. A dark hall of blackstone banded in gold under a stepped vault; two fire channels down its length, embers and fires behind
+    iron bars, either side of a red runner to the oath altar (a wither skull between an orange and a red candle, braziers either side);
+    behind it, on a gold-cornered plinth, Grimnir himself: bare-chested, an axe in each fist, his orange beard to his belt and his crest
+    burning up into the vault. Orange and red banners on the walls over trophy skulls, axes hung between them. Its station: the oath
+    stone, a gold block in the floor before the altar, at (9, 1, 7), facing the altar and the god."""
+    sx, sy, sz, C = 17, 10, 15, 7
+    h = Hall(sx, sy, sz, C, 3, 5, 37)
+    h.shell()
+
+    def top(x, z):
+        return 6 + min(min(z - 1, sz - 2 - z), 2)
+
+    vault(h, top, 1, sx - 2, 1, sz - 2, C)
+    # the walls blackstone to the vault's foot, a few bricks cracked, a gold band round the hall under the vault
+    for (x, y, z), s in sorted(h.b.items()):
+        if s != AIR and (x in (0, sx - 1) or z in (0, sz - 1)) and 1 <= y <= 6:
+            h.put(x, y, z, GOLD if y == 6 else ("minecraft:cracked_polished_blackstone_bricks" if h.r.random() < 0.1 else DARK_B))
+    # the floor: black stone, the aisle polished
+    for x in range(1, sx - 1):
+        for z in range(1, sz - 1):
+            h.put(x, 0, z, POL if C - 1 <= z <= C + 1 else (DARK if (x + z) % 2 else DARK_B))
+    # the fire channels: embers the length of them, a fire every fourth block, under iron bars, curbed in blackstone dotted with gold
+    for z in (4, 10):
+        for x in range(3, 12):
+            h.put(x, 0, z, FIRE if x % 4 == 1 else "minecraft:magma_block")
+            h.put(x, 1, z, "minecraft:iron_bars[east=true,west=true]")
+            for cz in (z - 1, z + 1):
+                h.put(x, 0, cz, GOLD if x % 3 == 0 else DARK_B)
+        brazier(h, 2, 1, z)                                              # braziers at the channels' heads, by the door
+    # the red runner from the door to the oath stone
+    for x in range(2, 9):
+        for z in (C - 1, C, C + 1):
+            h.put(x, 1, z, "minecraft:red_carpet")
+    h.put(9, 0, C, GOLD)                                                 # the oath stone: the station
+    h.stations.append(("oath", 9, 1, C, "east"))
+    # the oath altar: blackstone, a wither skull on it facing the door between an orange and a red candle, braziers either side
+    h.put(10, 1, C - 1, CHIS_B)
+    h.put(10, 1, C, DARK_B)
+    h.put(10, 1, C + 1, CHIS_B)
+    h.put(10, 2, C - 1, "minecraft:orange_candle[candles=3,lit=true]")
+    h.put(10, 2, C, "minecraft:wither_skeleton_skull[rotation=4]")
+    h.put(10, 2, C + 1, "minecraft:red_candle[candles=3,lit=true]")
+    brazier(h, 10, 1, C - 2)
+    brazier(h, 10, 1, C + 2)
+    # the plinth: a step up behind the altar, gold at its front corners and middle, braziers and skulls on its corners
+    for z in range(C - 2, C + 3):
+        h.put(11, 1, z, stair("polished_blackstone", "east"))
+    for x in range(12, sx - 1):
+        for z in range(3, 12):
+            edge = x == 12 or z in (3, 11)
+            h.put(x, 1, z, GOLD if (x == 12 and z in (3, C, 11)) else (CHIS_B if edge else DARK))
+    brazier(h, 12, 2, 3)
+    brazier(h, 12, 2, 11)
+    h.put(13, 2, 3, "minecraft:skeleton_skull[rotation=4]")
+    h.put(13, 2, 11, "minecraft:skeleton_skull[rotation=4]")
+    # Grimnir: his body two deep (x 14..15), his face, beard and boots on x 13
+    for x in (14, 15):
+        for z in (C - 1, C + 1):
+            h.put(x, 2, z, DARK)                                         # his legs
+        h.put(x, 2, C, DARK_B)
+        for z in range(C - 1, C + 2):
+            h.put(x, 3, z, GOLD)                                         # his belt
+            h.put(x, 6, z, SB)                                           # his head, shaved
+            h.put(x, 7, z, SB)
+        for z in range(C - 2, C + 3):
+            h.put(x, 4, z, SB)                                           # bare chest and arms
+            h.put(x, 5, z, SB)                                           # shoulders
+    for z in (C - 1, C + 1):
+        h.put(13, 2, z, stair("polished_blackstone", "east"))            # his boots
+    h.put(13, 3, C, GOLD)                                                # the beard's gold clasp at his belt
+    for z in range(C - 1, C + 2):
+        h.put(13, 4, z, "minecraft:red_terracotta" if z == C else "minecraft:orange_terracotta")    # the beard, braided
+        h.put(13, 6, z, "minecraft:orange_terracotta")                   # the moustache
+    for z in range(C - 2, C + 3):
+        h.put(13, 5, z, "minecraft:red_terracotta" if abs(z - C) == 2 else "minecraft:orange_terracotta")
+    h.put(13, 7, C - 1, DARK)                                            # the eyes in shadow, the nose between
+    h.put(13, 7, C, TRIM)
+    h.put(13, 7, C + 1, DARK)
+    for x in (13, 14, 15):
+        h.put(x, 8, C, "minecraft:orange_wool")                          # the crest, front to back
+        h.put(x, sy - 1, C, "minecraft:shroomlight")                     # burning up into the vault
+    # his axes: a haft in each fist, steel blades outward
+    for s in (-1, 1):
+        z = C + 3 * s
+        for y in range(2, 8):
+            h.put(14, y, z, DARK if y == 4 else HAFT)                    # the fist round the haft
+        for y in range(5, 8):
+            h.put(14, y, z + s, "minecraft:iron_block")
+        h.put(14, 6, z + 2 * s, "minecraft:iron_block")
+        h.put(14, 8, z, POST)                                            # the spike on its head
+    # hangings behind him: orange and red wool, banners in the corners
+    for z in (2, sz - 3):
+        for y in range(2, 7):
+            h.put(sx - 2, y, z, "minecraft:orange_wool" if y % 2 else "minecraft:red_wool")
+    for z in (1, sz - 2):
+        h.put(sx - 2, 6, z, "minecraft:orange_wall_banner[facing=west]")
+    # the long walls: banners over trophy skulls, axes hung between them
+    for z, f in ((1, "south"), (sz - 2, "north")):
+        for i, x in enumerate((3, 6, 9)):
+            h.put(x, 6, z, f"minecraft:{'red' if i == 1 else 'orange'}_wall_banner[facing={f}]")
+            h.put(x, 3, z, f"minecraft:{'wither_skeleton' if i % 2 == 0 else 'skeleton'}_wall_skull[facing={f}]")
+        for x in (4, 8, 11):
+            for y in (2, 3, 4):
+                h.put(x, y, z, "minecraft:dark_oak_fence")
+            h.put(x, 5, z, f"minecraft:grindstone[face=wall,facing={f}]")
+    # ribs across the vault, gold keystones; a wither skull over the door, gold over it outside
+    for x in (4, 8):
+        for z in range(1, sz - 1):
+            h.put(x, top(x, z), z, GOLD if z == C else DARK_B)
+    h.put(1, 7, C, "minecraft:wither_skeleton_wall_skull[facing=east]")
+    for z in range(C - 2, C + 3):
+        h.put(0, 7, z, GOLD if z % 2 == 1 else CHIS_B)
+    hang(h, 6, C, top(6, C), 2)
+    return h
+
+
 HALLS = {"dawi_great_hall": great_hall_v1, "dawi_grand_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury,
-         "dawi_runic_forge": runic_forge, "dawi_throne_room": throne_room}
+         "dawi_runic_forge": runic_forge, "dawi_throne_room": throne_room, "dawi_slayer_shrine": slayer_shrine}
 DATA_VERSION = 4790                                                      # 26.1.2's, as the bridge's structure_save writes it
 
 # 26.1.2's own blockstate files (block bench/mc-source-26.1.2): every block a hall uses must have one, and every state it sets must be one
@@ -823,6 +941,12 @@ def _known(name):
             props["facing"] = {"north", "south", "west", "east"}
         elif path.endswith("_banner"):
             props["rotation"] = {str(i) for i in range(16)}
+        elif path.endswith("_wall_skull"):                              # so is a skull's
+            props["facing"] = {"north", "south", "west", "east"}
+            props["powered"] = {"true", "false"}
+        elif path.endswith("_skull"):
+            props["rotation"] = {str(i) for i in range(16)}
+            props["powered"] = {"true", "false"}
     _known_cache[name] = props
     return props
 

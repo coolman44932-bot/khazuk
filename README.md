@@ -25,7 +25,9 @@ its gold, brew its ale, keep the Book of Grudges and fight for it.
 - **The units:** Miners, Dwarf Warriors, Quarrellers, Thunderers, Longbeards (with great weapons too), the Runesmith and the Runelord
   with the Anvil of Doom. Warriors with enough kills become Longbeards. The Mine raises Ironbreakers, gromril-armoured guards of the
   deeps who throw Cinderblast bombs. The King's Throne Room raises Hammerers, your bodyguard: they keep at your side in the hold,
-  strike whatever strikes you, and take a quarter off every blow you take. Every unit rolls its own look: beards, helms and colours, as
+  strike whatever strikes you, and take a quarter off every blow you take. The Shrine of Grimnir raises Troll Slayers: no armour,
+  huge blows on large foes, harder the nearer they are to death. One who slays a giant of a foe becomes a Giant Slayer, and a Giant
+  Slayer who slays a monster becomes the hold's Dragon Slayer. Every unit rolls its own look: beards, helms and colours, as
   in Total War: WARHAMMER III.
 - **The god's powers,** paid from the hold's devotion (prayer at the Shrine, ale, Runesmiths and settled grudges): Grungni's Hammer,
   Valaya's Ward and Grimnir's Fury. Ride Thorgrim's **Throne of Power** for cheaper powers.

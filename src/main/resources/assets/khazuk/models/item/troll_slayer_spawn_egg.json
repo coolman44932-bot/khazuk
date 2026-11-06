@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "khazuk:item/troll_slayer_spawn_egg"
+  }
+}

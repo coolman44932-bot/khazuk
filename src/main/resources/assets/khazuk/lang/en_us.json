@@ -42,5 +42,12 @@
   "item.khazuk.hammerer_spawn_egg": "Hammerer Spawn Egg",
   "entity.khazuk.cinderblast": "Cinderblast Bomb",
   "block.khazuk.gilded_stone": "Gilded Stone",
-  "block.khazuk.hoard_gold": "Hoard Gold"
+  "block.khazuk.hoard_gold": "Hoard Gold",
+  "entity.khazuk.troll_slayer": "Troll Slayer",
+  "item.khazuk.troll_slayer_spawn_egg": "Troll Slayer Spawn Egg",
+  "entity.khazuk.giant_slayer": "Giant Slayer",
+  "item.khazuk.giant_slayer_spawn_egg": "Giant Slayer Spawn Egg",
+  "entity.khazuk.dragon_slayer": "Dragon Slayer",
+  "item.khazuk.dragon_slayer_spawn_egg": "Dragon Slayer Spawn Egg",
+  "item.khazuk.plan_slayer_shrine": "Ancestors' Plan: Shrine of Grimnir"
 }
