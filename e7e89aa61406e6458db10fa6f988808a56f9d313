@@ -1,0 +1,1 @@
+REVIEW PASS e7e89aa61406e6458db10fa6f988808a56f9d313: fix-reviewer (Sonnet) 2026-11-06, the burst's hurt-cooldown reset and forget-before-absorb are safe (forget is a no-op off the roll), the three new tests are sound and fail on the old code
