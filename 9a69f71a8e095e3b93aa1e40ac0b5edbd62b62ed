@@ -1,0 +1,1 @@
+REVIEW PASS 9a69f71a8e095e3b93aa1e40ac0b5edbd62b62ed: fix-reviewer (Sonnet) 2026-11-06, no blocking findings (its report ended without the verdict line): death state round-trips (Health, DeathTime, the new flags), no stuck wreck and no second pilot, the test fails on the old code; minor: old saves mid-death have no burst key
