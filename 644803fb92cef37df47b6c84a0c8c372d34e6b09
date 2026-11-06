@@ -1,0 +1,1 @@
+REVIEW PASS 644803fb92cef37df47b6c84a0c8c372d34e6b09: fix-reviewer (Sonnet) 2026-11-06, no problems (its report ended without the verdict line): overheat_walk while moving hot, overheat standing; the clip is in the JSON (0.9 s loop), the other six unchanged, clip_names OK
