@@ -160,10 +160,10 @@ public class Slayer extends Warrior {
     public void aiStep() {
         super.aiStep();
         if (earned != null && level() instanceof ServerLevel sl && isAlive() && !isBurrowing()) {
-            Tier t = earned;
-            earned = null;
             ShrineBlockEntity h = settlement();
-            if (h != null) {
+            if (h != null) {                                     // far from the hold he keeps what he earned till its Shrine is in reach (the review of 8a7fa52)
+                Tier t = earned;
+                earned = null;
                 rise(sl, h, t);
             }
         }
@@ -188,6 +188,9 @@ public class Slayer extends Warrior {
         s.setHealth(s.getMaxHealth() * Math.max(0.25f, getHealth() / getMaxHealth()));
         s.copyKills(this);
         s.takeOrders(this);
+        if (claude.khazuk.god.AncestorPowers.furious(this)) {   // Grimnir's Fury goes on burning in him (the review of 8a7fa52)
+            claude.khazuk.god.AncestorPowers.rage(s, claude.khazuk.god.AncestorPowers.furyUntil(this));
+        }
         hold.ranks().forget(getUUID());
         hold.ranks().enlist(s);                                  // on the roll as what he is now: the Shrine of Grimnir raises another Troll Slayer
         discard();

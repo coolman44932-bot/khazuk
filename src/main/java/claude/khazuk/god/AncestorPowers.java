@@ -120,6 +120,12 @@ public final class AncestorPowers {
         return until != null && e.level().getGameTime() < until;
     }
 
+    /** The game tick {@code e}'s Fury ends, or 0 if he has none on him. */
+    public static long furyUntil(LivingEntity e) {
+        Long until = FURIOUS.get(e);
+        return until == null ? 0 : until;
+    }
+
     /** {@code e} rages until game tick {@code until} (the Fury, and the tests). */
     public static void rage(LivingEntity e, long until) {
         FURIOUS.put(e, until);

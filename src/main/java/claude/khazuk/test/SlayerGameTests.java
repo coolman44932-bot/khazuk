@@ -153,6 +153,27 @@ public class SlayerGameTests {
                 .thenSucceed();
     }
 
+    /** What he earned waits for his hold's Shrine (a Slayer far off, its chunk unloaded); risen, Grimnir's Fury goes on burning in him. */
+    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazuk")
+    public static void aSlayersEarningWaitsForHisHoldAndHisFuryRisesWithHim(GameTestHelper h) {
+        Slayer lone = h.spawn(KRegistry.TROLL_SLAYER.get(), new BlockPos(18, 1, 18));   // of no hold in reach
+        lone.setNoAi(true);
+        lone.earnForTests(Slayer.Tier.GIANT);
+        ShrineBlockEntity heart = hold(h);
+        Slayer troll = slayer(h, KRegistry.TROLL_SLAYER.get(), heart, new BlockPos(6, 1, 6));
+        troll.setNoAi(true);
+        AncestorPowers.rage(troll, h.getLevel().getGameTime() + 400);
+        troll.earnForTests(Slayer.Tier.GIANT);
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(troll.isRemoved(), "the Troll Slayer hasn't risen"))
+                .thenExecute(() -> {
+                    h.assertTrue(!lone.isRemoved() && lone.earned() == Slayer.Tier.GIANT, "a Slayer with no hold in reach lost what he earned: " + lone.earned());
+                    List<Slayer> s = h.getLevel().getEntitiesOfClass(Slayer.class, new AABB(troll.blockPosition()).inflate(2), x -> x.tier() == Slayer.Tier.GIANT);
+                    h.assertTrue(s.size() == 1 && AncestorPowers.furious(s.get(0)) && s.get(0).furyUp(), "risen, the Fury: " + s);
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
     public static void aMonsterIsWhatMakesADragonSlayer(GameTestHelper h) {
         var golem = h.spawn(EntityType.IRON_GOLEM, new BlockPos(4, 1, 4));   // 100 health: a monster by its might
