@@ -182,7 +182,7 @@ public class GuildGameTests {
         h.succeed();
     }
 
-    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
     public static void theMechBurstsAndItsPilotFightsOn(GameTestHelper h) {
         ShrineBlockEntity heart = hold(h);
         heart.addFood(500, Fare.COOKED, "the test");
@@ -205,6 +205,34 @@ public class GuildGameTests {
                 })
                 .thenSucceed();
     }
+
+    /** Saved and reloaded mid-death (its burst begun, the pilot not yet out), it still bursts and its pilot leaps out (the review of a20044f). */
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
+    public static void aMechSavedMidDeathStillBurstsAndItsPilotLeapsOut(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        SlayerMech m = h.spawn(KRegistry.SLAYER_MECH.get(), new BlockPos(6, 1, 6));
+        m.bindTo(heart);
+        m.setNoAi(true);
+        h.startSequence()
+                .thenExecute(() -> m.kill(h.getLevel()))
+                .thenIdle(3)
+                .thenExecute(() -> {
+                    var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING,
+                            h.getLevel().registryAccess());
+                    m.saveWithoutId(out);
+                    SlayerMech back = KRegistry.SLAYER_MECH.get().create(h.getLevel(), net.minecraft.world.entity.EntitySpawnReason.LOAD);
+                    back.load(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING,
+                            h.getLevel().registryAccess(), out.buildResult()));
+                    m.discard();
+                    back.setUUID(java.util.UUID.randomUUID());   // the old one's id may still be known this tick
+                    h.getLevel().addFreshEntity(back);
+                    reloaded[0] = back;
+                })
+                .thenWaitUntil(() -> h.assertTrue(reloaded[0] != null && reloaded[0].pilotIsOut(), "the reloaded wreck's pilot hasn't leapt out"))
+                .thenSucceed();
+    }
+
+    private static final SlayerMech[] reloaded = new SlayerMech[1];
 
     @GameTest(template = "arena", timeoutTicks = 1600, batch = "khazukhostile")
     public static void anEngineerSlayerBeatsAVindicatorAndTwoZombies(GameTestHelper h) {

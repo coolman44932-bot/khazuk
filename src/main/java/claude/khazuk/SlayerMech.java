@@ -51,7 +51,7 @@ public class SlayerMech extends Dawi {
     public static final int BLOWS_AT = 7, PILOT_OUT_AT = 12;
 
     private float heat;
-    private boolean hot, burst, pilotOut;
+    private boolean hot, burst, blown, pilotOut;
     /** The pilot who leapt out, for the tests. */
     public Slayer pilotForTests;
 
@@ -180,18 +180,19 @@ public class SlayerMech extends Dawi {
     /** It breaks: the burst clip plays out over vanilla's 20 ticks of death; the boiler blows at {@value #BLOWS_AT}, the pilot leaps out at {@value #PILOT_OUT_AT}. */
     @Override
     public void die(DamageSource source) {
-        if (!burst && level() instanceof ServerLevel) {
+        super.die(source);
+        if (!burst && isDeadOrDying() && level() instanceof ServerLevel) {   // only a death that happened (a mod may cancel it: the review of a20044f)
             burst = true;
             triggerAnim("attack", "burst");
         }
-        super.die(source);
     }
 
     @Override
     protected void tickDeath() {
         super.tickDeath();
         if (level() instanceof ServerLevel sl && burst) {
-            if (deathTime == BLOWS_AT) {
+            if (deathTime >= BLOWS_AT && !blown) {
+                blown = true;
                 blow(sl);
             }
             if (deathTime >= PILOT_OUT_AT && !pilotOut) {
@@ -247,11 +248,17 @@ public class SlayerMech extends Dawi {
     protected void addAdditionalSaveData(ValueOutput out) {
         super.addAdditionalSaveData(out);
         out.putFloat("heat", heat);
+        out.putBoolean("burst", burst);                          // saved mid-death, it bursts and its pilot leaps out after the reload (the review of a20044f)
+        out.putBoolean("blown", blown);
+        out.putBoolean("pilot_out", pilotOut);
     }
 
     @Override
     protected void readAdditionalSaveData(ValueInput in) {
         super.readAdditionalSaveData(in);
         heat = in.getFloatOr("heat", 0f);
+        burst = in.getBooleanOr("burst", false);
+        blown = in.getBooleanOr("blown", false);
+        pilotOut = in.getBooleanOr("pilot_out", false);
     }
 }
