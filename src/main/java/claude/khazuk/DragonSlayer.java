@@ -37,6 +37,15 @@ public class DragonSlayer extends Slayer {
         super(type, level);
     }
 
+    /** The deathblow's own clip carries its landing: the plain attack clip mustn't cut it short (the review of 3550c2c). */
+    @Override
+    protected boolean playsBlowClip() {
+        return !landing;
+    }
+
+    /** Deathblows that found their foe gone and gave their wait back, for the tests. */
+    public int whiffsForTests;
+
     @Override
     protected void moreTriggers(AnimationController<Dawi> attack) {
         attack.triggerableAnim("deathblow", DEATHBLOW);
@@ -68,6 +77,9 @@ public class DragonSlayer extends Slayer {
             deathblowAt = null;
             if (isAlive() && t.isAlive() && distanceTo(t) <= DEATHBLOW_REACH) {
                 land(sl, t);
+            } else {
+                next = tickCount;                                // the foe gone from under the axe: the wait given back (the review of 3550c2c)
+                whiffsForTests++;
             }
         }
     }

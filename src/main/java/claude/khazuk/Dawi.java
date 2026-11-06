@@ -671,7 +671,9 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
             }
         }
         if (hit) {
-            triggerAnim("attack", "attack");
+            if (playsBlowClip()) {
+                triggerAnim("attack", "attack");
+            }
             attacksForTests++;
         }
         return hit;
@@ -744,6 +746,11 @@ public abstract class Dawi extends SettlerMob implements GeoEntity {
         AnimationController<Dawi> attack = new AnimationController<Dawi>("attack", 2, test -> PlayState.STOP).triggerableAnim("attack", ATTACK);
         moreTriggers(attack);
         controllers.add(attack);
+    }
+
+    /** Whether a landed blow plays the plain attack clip (not while a unit's own clip carries the blow: the Dragon Slayer's deathblow). */
+    protected boolean playsBlowClip() {
+        return true;
     }
 
     /** A unit's own triggered clips on the attack controller beside the blow (the Dragon Slayer's deathblow); each only in its own model. */

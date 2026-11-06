@@ -193,6 +193,25 @@ public class SlayerGameTests {
         });
     }
 
+    /** A deathblow whose foe is gone from under the axe gives its wait back: the next large foe gets one at once (the review of 3550c2c). */
+    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazuk")
+    public static void aWhiffedDeathblowGivesItsWaitBack(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        claude.khazuk.DragonSlayer d = (claude.khazuk.DragonSlayer) slayer(h, KRegistry.DRAGON_SLAYER.get(), heart, new BlockPos(5, 1, 5));
+        d.setNoAi(true);
+        var golem = h.spawn(EntityType.IRON_GOLEM, new BlockPos(7, 1, 5));
+        golem.setNoAi(true);
+        d.doHurtTarget(h.getLevel(), golem);
+        golem.teleportTo(golem.getX() + 10, golem.getY(), golem.getZ());   // gone from under the axe
+        h.runAfterDelay(claude.khazuk.DragonSlayer.DEATHBLOW_LANDS + 3, () -> {
+            h.assertTrue(d.whiffsForTests == 1 && d.deathblowsForTests == 0, "whiffs " + d.whiffsForTests + ", landed " + d.deathblowsForTests);
+            var other = h.spawn(EntityType.IRON_GOLEM, new BlockPos(5, 1, 7));
+            other.setNoAi(true);
+            h.assertTrue(d.doHurtTarget(h.getLevel(), other) && d.deathblowComing(), "the wait wasn't given back: no deathblow on the next large foe");
+            h.succeed();
+        });
+    }
+
     @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
     public static void aMonsterIsWhatMakesADragonSlayer(GameTestHelper h) {
         var golem = h.spawn(EntityType.IRON_GOLEM, new BlockPos(4, 1, 4));   // 100 health: a monster by its might
