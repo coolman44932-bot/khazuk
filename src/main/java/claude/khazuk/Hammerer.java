@@ -36,8 +36,8 @@ import java.util.EnumSet;
  * every other foe within {@value #RING_REACH} blocks of the one struck takes {@value #RING_SHARE} of it and is thrown back too.</li>
  * <li><b>Oathsworn:</b> always stubborn (immune to fear): a Hammerer never gives ground.</li>
  * <li><b>The King's Guard:</b> raised by the hold's King's Throne Room ({@value claude.khazuk.hold.Ranks#HAMMERER_EACH} of them, hold/Ranks).
- * While their god walks in the hold they keep at his side; they strike whatever strikes him and whatever he strikes; and with a Hammerer
- * within {@value #GUARD_REACH} blocks the god takes {@value #GUARD_TAKEN} of every blow. When he is away they stand guard in the Throne
+ * While their god walks in the hold they keep at his side; they strike whatever strikes him and any foe of the hold he strikes; and with a Hammerer
+ * * within {@value #GUARD_REACH} blocks the god takes {@value #GUARD_TAKEN} of every blow. When he is away they stand guard in the Throne
  * Room. Their god can order them as any Dwarf (follow, hold) and they do as told.</li>
  * </ul>
  * His stats are the stronger of the army book's and TWW3's (the user's rule): the best of the hold's foot with a great weapon.
@@ -223,7 +223,10 @@ public class Hammerer extends Warrior {
         }
     }
 
-    /** What the guard should answer for {@code king} now: who struck him lately, else who he struck lately. Never the hold's own. */
+    /**
+     * What the guard should answer for {@code king} now: whatever struck him lately, else a foe of the hold's he struck lately (a cow or a
+     * villager he swings at is his own business: the review of 2298b06). Never the hold's own, a player or a tame pet.
+     */
     static @Nullable LivingEntity markOf(Hammerer u, ServerPlayer king) {
         int now = king.tickCount;
         LivingEntity by = king.getLastHurtByMob();
@@ -231,7 +234,7 @@ public class Hammerer extends Warrior {
             return by;
         }
         LivingEntity at = king.getLastHurtMob();
-        if (at != null && at.isAlive() && now - king.getLastHurtMobTimestamp() < ANSWER_TICKS && answerable(u, at)) {
+        if (at instanceof Mob m && m.isAlive() && now - king.getLastHurtMobTimestamp() < ANSWER_TICKS && answerable(u, m) && Muster.foe(m)) {
             return at;
         }
         return null;

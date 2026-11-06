@@ -121,6 +121,21 @@ public class EliteGameTests {
         h.succeed();
     }
 
+    /** The Shrine's own clock raises them: a Hammerer within a minute of a Throne Room standing, an Ironbreaker within a minute of a Mine. */
+    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
+    public static void theShrinesClockRaisesBothWithinAMinute(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        heart.addFood(500, Fare.COOKED, "the test");
+        heart.addBuilding(room(h, "dawi_throne_room", new BlockPos(2, 1, 16), 4), false);
+        heart.addBuilding(room(h, "dawi_mine", new BlockPos(2, 1, 2), 4), false);
+        for (int s = 0; s < Ranks.ELITE_SECONDS; s++) {
+            heart.ranks().second(h.getLevel(), heart);
+        }
+        int hm = Ranks.count(h.getLevel(), heart, Hammerer.class), ib = Ranks.count(h.getLevel(), heart, Ironbreaker.class);
+        h.assertTrue(hm == 1 && ib == 1, "a minute of the clock raised " + hm + " Hammerers and " + ib + " Ironbreakers, not one each");
+        h.succeed();
+    }
+
     /** Hostile (Normal) batch: the husk's blow, and the fire, must land. */
     @GameTest(template = "arena", timeoutTicks = 40, batch = "khazukhostile")
     public static void gromrilTurnsMoreThanAWarriorsShieldAndFireBitesHalf(GameTestHelper h) {
@@ -230,6 +245,17 @@ public class EliteGameTests {
                 })
                 .thenWaitUntil(() -> h.assertTrue(hm.getTarget() instanceof net.minecraft.world.entity.animal.cow.Cow,
                         "the guard goes for " + hm.getTarget() + ", not the god's attacker"))
+                .thenExecute(() -> {
+                    // one the god struck himself, no foe of the hold's: his own business, not the guard's (the review of 2298b06)
+                    hm.setTarget(null);
+                    god.setLastHurtByMob(null);
+                    var villager = h.spawn(EntityType.VILLAGER, new BlockPos(16, 1, 20));
+                    villager.setNoAi(true);
+                    god.setLastHurtMob(villager);
+                })
+                .thenIdle(40)
+                .thenExecute(() -> h.assertTrue(!(hm.getTarget() instanceof net.minecraft.world.entity.npc.villager.Villager),
+                        "the guard went for a villager the god struck"))
                 .thenSucceed();
     }
 
@@ -253,7 +279,7 @@ public class EliteGameTests {
                                 + me.getName().getString() + " at " + me.getHealth());
                     }
                 })
-                .thenExecute(() -> Khazuk.LOG.info("KHAZUK floor: a {} beat an axe vindicator and three zombies with {}/{} health left",
+                .thenExecute(() -> Khazuk.LOG.info("KHAZUK floor: the {} beat an axe vindicator and three zombies with {}/{} health left",
                         me.getName().getString(), me.getHealth(), me.getMaxHealth()))
                 .thenSucceed();
     }
