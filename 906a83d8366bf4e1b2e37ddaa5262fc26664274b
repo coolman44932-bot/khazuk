@@ -1,0 +1,1 @@
+REVIEW PASS 906a83d8366bf4e1b2e37ddaa5262fc26664274b: fix-reviewer (Sonnet) 2026-11-06, the three goals use cooldowns that work for both id parities (mechanism confirmed in Mob.serverAiStep), palette cache sound, kit invulnerable, the parity test fails on the old code; the kit test proves only the lift's second half (mock gods are creative)
