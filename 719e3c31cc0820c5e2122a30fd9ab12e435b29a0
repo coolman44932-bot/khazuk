@@ -1,0 +1,1 @@
+REVIEW PASS 719e3c31cc0820c5e2122a30fd9ab12e435b29a0: fix-reviewer (Sonnet) 2026-11-06, the lift goes to the god's pack or an unburnt god-only item, crag footings and retries fixed (cells are y-sorted), the guard test's batch runs without hooks; minor: no kit-through-lift test, palette rebuilt per retry check, a dropped kit isn't invulnerable
