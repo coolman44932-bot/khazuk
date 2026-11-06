@@ -158,6 +158,7 @@ public class Hammerer extends Warrior {
     /** At work (no other order): at the god's side while he walks in the hold, at the Throne Room's post while he is away. */
     static final class KingsGuard extends Goal {
         private final Hammerer u;
+        private int nextMove;
 
         KingsGuard(Hammerer u) {
             this.u = u;
@@ -180,7 +181,8 @@ public class Hammerer extends Warrior {
             ServerPlayer king = u.kingInHold();
             if (king != null) {
                 u.getLookControl().setLookAt(king);
-                if (u.distanceToSqr(king) > 9 && u.tickCount % 10 == 0) {
+                if (u.distanceToSqr(king) > 9 && u.tickCount >= nextMove) {
+                    nextMove = u.tickCount + 10;                 // a cooldown, never tickCount % n: a goal ticks only on every other tick (Mob#serverAiStep), so half the units never saw tickCount % 10 == 0
                     u.getNavigation().moveTo(king, 1.2);
                 } else if (u.distanceToSqr(king) <= 4) {
                     u.getNavigation().stop();
@@ -188,7 +190,8 @@ public class Hammerer extends Warrior {
                 return;
             }
             BlockPos p = u.post();
-            if (p != null && u.distanceToSqr(Vec3.atBottomCenterOf(p)) > 2.25 && u.tickCount % 20 == 0) {
+            if (p != null && u.distanceToSqr(Vec3.atBottomCenterOf(p)) > 2.25 && u.tickCount >= nextMove) {
+                nextMove = u.tickCount + 20;
                 u.getNavigation().moveTo(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, 1.0);
             }
         }

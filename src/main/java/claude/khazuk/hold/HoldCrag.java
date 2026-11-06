@@ -84,6 +84,7 @@ public final class HoldCrag {
     @net.neoforged.bus.api.SubscribeEvent
     static void serverStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent e) {
         cells = null;
+        palette = null;
     }
 
     static Cells cells(ServerLevel level) {
@@ -311,8 +312,13 @@ public final class HoldCrag {
     /** How a cell looks for a built roof over it: not at all (a column's foot), at what stands there, or past the mountain's own stone. */
     enum Roof { NONE, LOOK, UNDER_OTHERS }
 
-    /** The blocks the mountain is made of: over a retried cell they are its own, not a roof. */
+    private static java.util.@Nullable Set<net.minecraft.world.level.block.Block> palette;
+
+    /** The blocks the mountain is made of: over a retried cell they are its own, not a roof. Built once a server (the review of 719e3c3). */
     private static java.util.Set<net.minecraft.world.level.block.Block> palette(ServerLevel level) {
+        if (palette != null) {
+            return palette;
+        }
         Cells c = cells(level);
         java.util.Set<net.minecraft.world.level.block.Block> out = new java.util.HashSet<>();
         for (BlockState st : c.states()) {
@@ -320,7 +326,8 @@ public final class HoldCrag {
         }
         out.add(Blocks.COBBLESTONE);
         out.add(Blocks.STONE);
-        return out;
+        palette = java.util.Set.copyOf(out);
+        return palette;
     }
 
     /** What the mountain may take: air, the land and its cover, water; never a block entity. */

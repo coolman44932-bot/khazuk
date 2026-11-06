@@ -18,6 +18,7 @@ final class DawiGoals {
     /** Sent home: to its Shrine, and down into the ground at it (or where it stands once its time is out). */
     static final class Homeward extends Goal {
         private final Dawi u;
+        private int nextPath;
 
         Homeward(Dawi u) {
             this.u = u;
@@ -36,7 +37,8 @@ final class DawiGoals {
                 u.sinkHome();
                 return;
             }
-            if (u.getNavigation().isDone() && u.tickCount % 20 == 0) {   // a fresh path a second, not a tick (the bug hunt of 2d0b04c)
+            if (u.getNavigation().isDone() && u.tickCount >= nextPath) {   // a fresh path a second, not a tick (the bug hunt of 2d0b04c); a cooldown, never tickCount % n (goals tick every other tick)
+                nextPath = u.tickCount + 20;
                 u.getNavigation().moveTo(h.getX() + 0.5, h.getY() + 1, h.getZ() + 0.5, 1.1);
             }
         }
@@ -45,6 +47,7 @@ final class DawiGoals {
     /** Ordered to follow: after its owner, a few blocks behind. */
     static final class FollowOwner extends Goal {
         private final Dawi u;
+        private int nextPath;
         private ServerPlayer owner;
 
         FollowOwner(Dawi u) {
@@ -70,7 +73,8 @@ final class DawiGoals {
         @Override
         public void tick() {
             u.getLookControl().setLookAt(owner);
-            if (u.tickCount % 10 == 0) {
+            if (u.tickCount >= nextPath) {
+                nextPath = u.tickCount + 10;                    // a cooldown, never tickCount % n (goals tick every other tick)
                 u.getNavigation().moveTo(owner, 1.2);
             }
         }

@@ -101,6 +101,31 @@ public class BugHuntGameTests {
         });
     }
 
+    /** Lifted mid-job, the Shrine keeps the god's kit in the hold it carries: nothing is left on the floor (the review of 719e3c3). */
+    @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
+    public static void aLiftedShrineKeepsTheKitAtItsForge(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        var god = h.makeMockServerPlayerInLevel();
+        heart.claim(god, "Karak Test");
+        heart.runes().kit(new ItemStack(net.minecraft.world.item.Items.IRON_CHESTPLATE));
+        BlockPos at = h.absolutePos(HEART);
+        var state = h.getLevel().getBlockState(at);
+        heart.lifting();                                         // what ShrineBlock#playerWillDestroy marks for its god (a mock god is creative)
+        h.getLevel().removeBlock(at, false);
+        KRegistry.SHRINE.get().playerDestroy(h.getLevel(), god, at, state, heart, ItemStack.EMPTY);
+        h.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new AABB(at).inflate(4),
+                e -> e.getItem().is(net.minecraft.world.item.Items.IRON_CHESTPLATE)).isEmpty(), "the kit was dropped at the dais, not carried");
+        ItemStack lifted = ItemStack.EMPTY;
+        for (int i = 0; i < god.getInventory().getContainerSize(); i++) {
+            if (ShrineBlock.carried(god.getInventory().getItem(i)) != null) {
+                lifted = god.getInventory().getItem(i);
+            }
+        }
+        var data = lifted.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
+        h.assertTrue(data != null && data.contains("rune_kit"), "the lifted hold doesn't carry the kit: " + data);
+        h.succeed();
+    }
+
     @GameTest(template = "arena", timeoutTicks = 40, batch = "khazuk")
     public static void aDwarfAwayFromHisHoldStillKnowsHisGod(GameTestHelper h) {
         ShrineBlockEntity heart = hold(h);

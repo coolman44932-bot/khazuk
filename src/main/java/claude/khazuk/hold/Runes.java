@@ -291,6 +291,7 @@ public final class Runes {
     private static void keep(ServerLevel level, ShrineBlockEntity hold, double x, double y, double z, ItemStack stack) {
         net.minecraft.world.entity.item.ItemEntity e = new net.minecraft.world.entity.item.ItemEntity(level, x, y, z, stack, 0, 0.1, 0);
         e.setUnlimitedLifetime();
+        e.setInvulnerable(true);                                 // lava, fire, a cactus can't take it either (the review of 719e3c3)
         if (hold.owner() != null) {
             e.setTarget(hold.owner());
         }

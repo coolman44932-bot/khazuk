@@ -240,7 +240,8 @@ public class EliteGameTests {
         h.assertTrue(!Hammerer.Guard.guarded(god), "a Hammerer of no hold guards the god");
         h.startSequence()
                 .thenWaitUntil(() -> h.assertTrue(hm.distanceToSqr(god) <= 9, "the Hammerer is " + Math.sqrt(hm.distanceToSqr(god)) + " from his god; target "
-                        + hm.getTarget() + ", goals " + hm.runningGoals() + ", his god in the hold " + (hm.kingInHold() != null)))
+                        + hm.getTarget() + ", goals " + hm.runningGoals() + ", his god in the hold " + (hm.kingInHold() != null) + " (the very god " + (hm.kingInHold() == god)
+                        + "), entity id " + hm.getId() + " tickCount " + hm.tickCount + ", nav done " + hm.getNavigation().isDone() + ", onGround " + hm.onGround()))
                 .thenExecute(() -> {
                     h.assertTrue(Hammerer.Guard.guarded(god), "the god isn't guarded with his Hammerer beside him");
                     // a cow, no foe of the hold's (a zombie would be one, and gone in this peaceful batch): only the god's word makes it a mark
@@ -261,6 +262,36 @@ public class EliteGameTests {
                 .thenIdle(40)
                 .thenExecute(() -> h.assertTrue(!(hm.getTarget() instanceof net.minecraft.world.entity.npc.villager.Villager),
                         "the guard went for a villager the god struck"))
+                .thenSucceed();
+    }
+
+    /**
+     * Followers of either entity-id parity follow (the laptop's flake, diagnosed: a goal ticks only every other tick, on the ticks its id's
+     * parity picks, so a move keyed to {@code tickCount % 10} never came for half of them; FollowOwner, KingsGuard and Homeward had it).
+     * Two Warriors on follow and two Hammerers on guard, each pair spawned one after the other: ids of both parities.
+     */
+    @GameTest(template = "arena", timeoutTicks = 300, batch = "khazukguard")
+    public static void followersOfEitherIdParityComeToTheirGod(GameTestHelper h) {
+        ShrineBlockEntity heart = hold(h);
+        var god = h.makeMockServerPlayerInLevel();
+        heart.claim(god, "Karak Test");
+        god.snapTo(h.absolutePos(new BlockPos(18, 1, 12)).getBottomCenter());
+        Warrior w1 = bound(h, KRegistry.WARRIOR.get(), heart, new BlockPos(3, 1, 3));
+        Warrior w2 = bound(h, KRegistry.WARRIOR.get(), heart, new BlockPos(3, 1, 5));
+        Hammerer g1 = bound(h, KRegistry.HAMMERER.get(), heart, new BlockPos(3, 1, 19));
+        Hammerer g2 = bound(h, KRegistry.HAMMERER.get(), heart, new BlockPos(3, 1, 21));
+        w1.setMode(SettlerMob.Mode.FOLLOW);
+        w2.setMode(SettlerMob.Mode.FOLLOW);
+        h.assertTrue((w1.getId() + w2.getId()) % 2 == 1 && (g1.getId() + g2.getId()) % 2 == 1, "the pairs' ids aren't of both parities: "
+                + w1.getId() + "/" + w2.getId() + ", " + g1.getId() + "/" + g2.getId());
+        List<Warrior> all = List.of(w1, w2, g1, g2);
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    for (Warrior w : all) {
+                        h.assertTrue(w.distanceToSqr(god) <= 16, "the " + w.getName().getString() + " of id " + w.getId() + " is "
+                                + Math.sqrt(w.distanceToSqr(god)) + " from his god; goals " + w.runningGoals());
+                    }
+                })
                 .thenSucceed();
     }
 
