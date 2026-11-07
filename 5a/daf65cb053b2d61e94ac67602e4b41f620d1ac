@@ -1,0 +1,1 @@
+REVIEW FAIL 5adaf65cb053b2d61e94ac67602e4b41f620d1ac: the stale-mark removal ran before begin's refusal, so a refused click at a carved gate dropped its mark; fixed in the next commit
