@@ -74,6 +74,12 @@ public final class HoldCrag {
     private final Long2IntMap done = new Long2IntOpenHashMap();
     /** Whether {@link #done} changed since the hold last saved. */
     private boolean dirty;
+    /**
+     * Carved gates whose own box has its mountain (the user's game, 2026-11-06: "theres holes here"): a carved gate's template leaves open
+     * the space round its walls that the mountain fills on the surface, so down in the rock the mountain rises in its box only, never out
+     * into the cave round it. A carved gate risen before this (marked done with nothing raised) is raised again once, in its box.
+     */
+    private final it.unimi.dsi.fastutil.longs.LongOpenHashSet boxed = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
 
     /** Cells left open because someone stood there, per gate: tried again each second once the rest is up, for {@value #RETRY_SECONDS} s. */
     private final it.unimi.dsi.fastutil.longs.Long2ObjectMap<it.unimi.dsi.fastutil.ints.IntArrayList> waiting = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
@@ -134,7 +140,8 @@ public final class HoldCrag {
 
     /**
      * Whether the gate at {@code pl} was carved out of the rock (Founding#beginCarved), as decided when its plan was used and kept
-     * ({@link CarvedGates}). No mountain rises round it: it would fill the caves round it with stone.
+     * ({@link CarvedGates}). Its mountain rises in its own box only (round its walls, where the template leaves open what the mountain fills
+     * on the surface), never out into the caves round it.
      */
     public static boolean carved(ServerLevel level, PlanPlacement pl) {
         return CarvedGates.of(level).has(pl.door());
@@ -196,9 +203,14 @@ public final class HoldCrag {
         Cells c = cells(level);
         LongSet gates = new LongOpenHashSet();
         Building rising = null;
+        CarvedGates carvedGates = CarvedGates.of(level);
         for (Building b : hold.buildings()) {
             if (b.door() != null && gate(b)) {
                 gates.add(b.door().asLong());
+                if (carvedGates.has(b.door()) && boxed.add(b.door().asLong())) {
+                    done.put(b.door().asLong(), 0);              // carved: its box's mountain, from the start (once)
+                    dirty = true;
+                }
                 if (rising == null && (done.getOrDefault(b.door().asLong(), 0) < c.size() || waiting.containsKey(b.door().asLong()))) {
                     rising = b;
                 }
@@ -219,13 +231,10 @@ public final class HoldCrag {
         }
         long key = rising.door().asLong();
         int i = done.getOrDefault(key, 0);
-        if (i == 0 && carved(level, pl)) {
-            done.put(key, c.size());                             // carved down in the rock: the rock round it is its mountain
-            dirty = true;
-            return false;
-        }
+        boolean inRock = carved(level, pl);
         if (i == 0) {
-            hold.tellOwner("Grungni raises the mountain round the " + pl.room().displayName() + "!", ChatFormatting.GOLD);
+            hold.tellOwner(inRock ? "Grungni fills the rock back round the " + pl.room().displayName() + "'s walls."
+                    : "Grungni raises the mountain round the " + pl.room().displayName() + "!", ChatFormatting.GOLD);
         }
         List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, new AABB(pl.box().minX() - 16, pl.box().minY() - 2 - FOOTING,
                 pl.box().minZ() - 16, pl.box().maxX() + 17, pl.box().maxY() + 12, pl.box().maxZ() + 17), e -> !e.isSpectator());
@@ -255,10 +264,13 @@ public final class HoldCrag {
         it.unimi.dsi.fastutil.ints.IntArrayList held = waiting.get(key);
         for (; i < end; i++) {
             BlockPos p = pl.world(new BlockPos(c.xs[i], c.ys[i], c.zs[i]));
+            if (inRock && !pl.box().isInside(p)) {
+                continue;                                        // carved: the cave round it keeps its air
+            }
             if (!level.isLoaded(p)) {
                 break;                                           // wait for its chunk
             }
-            int r = cell(level, c, i, p, near, keepOut, false);
+            int r = cell(level, c, i, p, near, keepOut, false, !inRock);
             if (r == OCCUPIED) {
                 if (held == null) {
                     held = new it.unimi.dsi.fastutil.ints.IntArrayList();
@@ -281,7 +293,7 @@ public final class HoldCrag {
             for (int k = 0; k < held.size(); k++) {
                 int j = held.getInt(k);
                 BlockPos p = pl.world(new BlockPos(c.xs[j], c.ys[j], c.zs[j]));
-                if (level.isLoaded(p) && cell(level, c, j, p, near, keepOut, true) == OCCUPIED) {
+                if (level.isLoaded(p) && cell(level, c, j, p, near, keepOut, true, !inRock) == OCCUPIED) {
                     still.add(j);
                 }
             }
@@ -305,14 +317,15 @@ public final class HoldCrag {
     static final int PLACED = 1, REFUSED = 0, OCCUPIED = -1;
 
     /** Cell {@code i} of the mountain at {@code p}, and its column's foot if it is the lowest: {@link #PLACED}, {@link #REFUSED} or {@link #OCCUPIED}. */
-    private static int cell(ServerLevel level, Cells c, int i, BlockPos p, List<LivingEntity> near, List<BoundingBox> keepOut, boolean retry) {
+    private static int cell(ServerLevel level, Cells c, int i, BlockPos p, List<LivingEntity> near, List<BoundingBox> keepOut, boolean retry,
+                            boolean feet) {
         BlockState s = c.states[i];
         if (s.getBlock() instanceof FallingBlock && level.getBlockState(p.below()).isAir()) {
             s = Blocks.COBBLESTONE.defaultBlockState();           // nothing loose over a hollow
         }
         // a retried cell may have the mountain's own stone over it by now: that isn't a roof (the review of cb5d663)
         int r = place(level, p, s, near, keepOut, retry ? Roof.UNDER_OTHERS : Roof.LOOK);
-        if (r == PLACED && c.foot[i]) {
+        if (r == PLACED && c.foot[i] && feet) {                // a carved gate's box stands on the rock: no feet down into a cave under it
             BlockState fill = s.is(Blocks.MOSS_CARPET) || s.getBlock() instanceof FallingBlock ? Blocks.STONE.defaultBlockState() : s;
             BlockPos q = p.below();
             for (int d = 0; d < FOOTING && level.isLoaded(q) && hollow(level.getBlockState(q)); d++, q = q.below()) {
@@ -437,6 +450,7 @@ public final class HoldCrag {
             wait.add(w);
         }
         tag.put("crag_waiting", wait);
+        tag.putLongArray("crag_boxed", boxed.toLongArray());
     }
 
     public void load(CompoundTag tag) {
@@ -445,6 +459,10 @@ public final class HoldCrag {
         int[] counts = tag.getIntArray("crag_done").orElse(new int[0]);
         for (int k = 0; k < Math.min(doors.length, counts.length); k++) {
             done.put(doors[k], counts[k]);
+        }
+        boxed.clear();
+        for (long d : tag.getLongArray("crag_boxed").orElse(new long[0])) {
+            boxed.add(d);
         }
         waiting.clear();
         for (net.minecraft.nbt.Tag t : tag.getListOrEmpty("crag_waiting")) {

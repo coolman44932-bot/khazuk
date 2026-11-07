@@ -233,9 +233,14 @@ public class FoundingGameTests {
         ShrineBlockEntity hold = (ShrineBlockEntity) level.getBlockEntity(spot);
         h.assertTrue(hold.has(HoldRooms.GATE) && hold.settlementName().equals("Karak Varn"), "the hold doesn't own its carved gate");
         h.assertTrue(HoldCrag.carved(level, pl), "the carved gate doesn't read as down in the rock");
-        hold.crags().second(level, hold, HoldCrag.PER_SECOND);
+        BlockPos wall = pl.world(new BlockPos(16, 8, 4));             // round the gate's walls: open in the template, the mountain's on the surface
+        h.assertTrue(level.getBlockState(wall).isAir(), "the test needs a cell round the gate's walls the carve left open: " + level.getBlockState(wall));
+        for (int s = 0; s < 40 && !hold.crags().risen(level, pl.door()); s++) {
+            hold.crags().second(level, hold, HoldCrag.PER_SECOND);
+        }
         h.assertTrue(hold.crags().risen(level, pl.door()) && level.getBlockState(outside.relative(Direction.WEST)).isAir(),
-                "a mountain rose round a gate carved in the rock (the pocket: " + level.getBlockState(outside.relative(Direction.WEST)) + ")");
+                "a mountain rose out round a gate carved in the rock (the pocket: " + level.getBlockState(outside.relative(Direction.WEST)) + ")");
+        h.assertTrue(!level.getBlockState(wall).isAir(), "the holes round a carved gate's walls weren't filled (the user's game: \"theres holes here\")");
         CarvedGates.of(level).remove(pl.door());
         h.succeed();
     }
