@@ -12,6 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * The Ancestors' Plan: the god's own plan of one of the hold's buildings, drawn in gold on a stone tablet. Never used up: the gold is the
@@ -93,7 +95,21 @@ public class AncestorPlan extends Item {
             tell.accept(Component.literal("Only the Dawi's god founds a hold. Wake them first: strike a gold ingot on the deep rock.").withStyle(ChatFormatting.RED));
             return false;
         }
-        String no = claude.settlementcore.settlement.Founding.of(level).begin(level, placement(room, ground, facing), p.getUUID());
+        if (underRock(level, room, ground, tell)) {
+            return false;
+        }
+        PlanPlacement pl = placement(room, ground, facing);
+        GrungniClears cleared = GrungniClears.clear(level, pl);  // what stands on the ground broken, water dammed, hollows filled
+        if (cleared.refusal() != null) {
+            tell.accept(Component.literal(cleared.refusal().why()).withStyle(ChatFormatting.RED));
+            return false;
+        }
+        String no = claude.settlementcore.settlement.Founding.of(level).begin(level, pl, p.getUUID());
+        if (no != null) {
+            cleared.putBack();
+        } else {
+            cleared.keep();
+        }
         if (no == null) {
             tell.accept(Component.literal("Grungni raises the " + room.displayName() + ". When it stands, walk its passage and set the Shrine on "
                     + "the dais in the hall at its end.").withStyle(ChatFormatting.GOLD));
@@ -101,6 +117,24 @@ public class AncestorPlan extends Item {
         }
         tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
         return false;
+    }
+
+    /** Rock (or anything solid) more than this far over the ground hit: the plan was used down in a cave or a mine. */
+    public static final int ROOF = 4;
+
+    /**
+     * A raised building (the Hold Gate) stands under the open sky: the engine sites it from the land's surface down, so used down in the deep
+     * rock (where the god wakes the Dawi) it read the lakes and hills far overhead and refused with them ("the water ... stands 58 above the
+     * Hold Gate's floor"; the user's game, 2026-11-06). Told plainly instead: carry the plan up. True if refused.
+     */
+    static boolean underRock(Level level, Rooms.Room room, BlockPos ground, java.util.function.Consumer<Component> tell) {
+        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ground.getX(), ground.getZ()) - 1;
+        if (top - ground.getY() <= ROOF || !level.getFluidState(new BlockPos(ground.getX(), top, ground.getZ())).isEmpty()) {
+            return false;                                        // open ground, a shallow overhang, or under water (the engine says why)
+        }
+        tell.accept(Component.literal("The " + room.displayName() + " is raised on open ground under the sky, and you are " + (top - ground.getY())
+                + " blocks under the surface here. Carry its plan up and set it down where the hold should stand.").withStyle(ChatFormatting.RED));
+        return true;
     }
 
     /** Begins digging the hall at {@code pl} for {@code hold}: refused (and told why) where the engine won't dig it; else begun, paid. True if begun. */
@@ -123,6 +157,9 @@ public class AncestorPlan extends Item {
      *  raise it; else begun, its gold taken by the engine. {@code free}: a creative god pays nothing. True if begun. */
     public static boolean setOut(ShrineBlockEntity hold, ServerLevel level, Rooms.Room room, BlockPos ground, Direction facing, boolean free,
                                  java.util.function.Consumer<Component> tell) {
+        if (Rooms.isRaised(room.id()) && underRock(level, room, ground, tell)) {
+            return false;
+        }
         PlanPlacement pl = placement(room, ground, facing);
         if (room.function() == HoldRooms.GATE && HoldCrag.buries(level, pl, hold.getBlockPos())) {
             tell.accept(Component.literal("The mountain round the " + room.displayName() + " would bury the Shrine: set it out further away, "

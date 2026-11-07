@@ -48,9 +48,14 @@ public final class KhazukClient {
             long now = mc.level.getGameTime();
             if (!outlining || !key.equals(outlinedFor) || now - outlinedAt >= 20) {
                 var pl = claude.khazuk.hold.AncestorPlan.aimed(plan.room(), hit.getBlockPos(), mc.player.getBlockY(), mc.player.getDirection());
-                claude.settlementcore.client.PlanOutline.show(claude.settlementcore.room.Rooms.isRaised(plan.room().id())
+                var shown = claude.settlementcore.room.Rooms.isRaised(plan.room().id())
                         ? claude.settlementcore.room.Siting.preview(mc.level, pl)
-                        : new claude.settlementcore.room.Siting.Preview(pl, null, java.util.List.of()));   // a dug hall: its box in the rock
+                        : new claude.settlementcore.room.Siting.Preview(pl, null, java.util.List.of());   // a dug hall: its box in the rock
+                if (shown.refusal() != null && claude.settlementcore.settlement.Founding.isFoundingHall(plan.room())
+                        && claude.khazuk.hold.GrungniClears.mends(shown.refusal().why())) {
+                    shown = new claude.settlementcore.room.Siting.Preview(pl, null, shown.columns());   // the gate's ground Grungni mends himself
+                }
+                claude.settlementcore.client.PlanOutline.show(shown);
                 outlinedFor = key;
                 outlinedAt = now;
                 outlining = true;

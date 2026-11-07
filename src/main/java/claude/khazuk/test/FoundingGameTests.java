@@ -94,6 +94,87 @@ public class FoundingGameTests {
     }
 
     /**
+     * Grungni clears his gate's ground (the user, 2026-11-06: "shouldnt it break stuff out of the way, and fill hollow ground"): a cobblestone
+     * pillar and a fence on the site are broken and drop, a cave under it is filled with stone, a pool standing over its floor is turned to
+     * stone, and the gate is founded where the engine alone refused it.
+     */
+    @GameTest(template = "field", timeoutTicks = 40, batch = "khazuk")
+    public static void grungniClearsHisGatesGround(GameTestHelper h) {
+        var god = h.makeMockServerPlayerInLevel();
+        Waking.setGod(god, new Waking.God(true, "Karak Hirn", 0, false));
+        Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
+        var level = h.getLevel();
+        PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(DOOR_GROUND), Direction.EAST);
+        int floor = pl.door().getY() - 1;
+        BlockPos mid = new BlockPos(pl.box().getCenter().getX(), floor, pl.box().getCenter().getZ());
+        for (int y = 1; y <= 3; y++) {
+            level.setBlockAndUpdate(mid.above(y), Blocks.COBBLESTONE.defaultBlockState());
+        }
+        level.setBlockAndUpdate(mid.east(2).above(), Blocks.OAK_FENCE.defaultBlockState());
+        BlockPos cave = mid.west(3).below();
+        level.setBlockAndUpdate(cave, Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(cave.below(), Blocks.AIR.defaultBlockState());
+        BlockPos pool = mid.south(3).above();
+        level.setBlockAndUpdate(pool, Blocks.WATER.defaultBlockState());
+        h.assertTrue(claude.settlementcore.room.Siting.plan(level, pl, claude.settlementcore.room.RoomShoring.Warren.alone(), true)
+                instanceof claude.settlementcore.room.Siting.Refusal, "the test needs a site the engine alone refuses");
+        List<String> told = new ArrayList<>();
+        h.assertTrue(AncestorPlan.found(level, god, gate, h.absolutePos(DOOR_GROUND), Direction.EAST, c -> told.add(c.getString())),
+                "Grungni didn't clear his gate's ground: " + told);
+        h.assertTrue(!level.getBlockState(mid.above(2)).is(Blocks.COBBLESTONE) && !level.getBlockState(mid.east(2).above()).is(Blocks.OAK_FENCE),
+                "what stood on the site still stands");
+        h.assertTrue(level.getBlockState(cave).is(Blocks.STONE) && level.getBlockState(cave.below()).is(Blocks.STONE), "the cave under the site isn't filled");
+        h.assertTrue(level.getFluidState(pool).isEmpty(), "the pool still stands on the site");
+        h.assertTrue(!level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(mid).inflate(4),
+                e -> e.getItem().is(Blocks.COBBLESTONE.asItem())).isEmpty(), "the broken pillar didn't drop");
+        h.succeed();
+    }
+
+    /** A chest on the site is another's hoard: Grungni won't break it, so the gate is refused there and every block he changed is put back. */
+    @GameTest(template = "field", timeoutTicks = 20, batch = "khazuk")
+    public static void aHoardOnTheSiteIsLeftAndTheGroundPutBack(GameTestHelper h) {
+        var god = h.makeMockServerPlayerInLevel();
+        Waking.setGod(god, new Waking.God(true, "Karak Hirn", 0, false));
+        Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
+        var level = h.getLevel();
+        PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(DOOR_GROUND), Direction.EAST);
+        int floor = pl.door().getY() - 1;
+        BlockPos mid = new BlockPos(pl.box().getCenter().getX(), floor, pl.box().getCenter().getZ());
+        level.setBlockAndUpdate(mid.above(), Blocks.CHEST.defaultBlockState());
+        level.setBlockAndUpdate(mid.east(3).above(), Blocks.COBBLESTONE.defaultBlockState());
+        BlockPos cave = mid.west(3).below();
+        level.setBlockAndUpdate(cave, Blocks.AIR.defaultBlockState());
+        List<String> told = new ArrayList<>();
+        h.assertTrue(!AncestorPlan.found(level, god, gate, h.absolutePos(DOOR_GROUND), Direction.EAST, c -> told.add(c.getString())),
+                "the gate was founded over a chest");
+        h.assertTrue(told.size() == 1 && told.get(0).startsWith("Something stands at " + mid.getX() + " " + (floor + 1) + " " + mid.getZ()),
+                "the refusal doesn't point at the chest: " + told);
+        h.assertTrue(level.getBlockState(mid.above()).is(Blocks.CHEST) && level.getBlockState(mid.east(3).above()).is(Blocks.COBBLESTONE)
+                && level.getBlockState(cave).isAir(), "the ground wasn't put back as it was");
+        h.assertTrue(level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(mid).inflate(6)).isEmpty(),
+                "something dropped though the gate was refused");
+        h.assertTrue(!Founding.of(level).rising(pl.door()), "a gate rose over the chest");
+        h.succeed();
+    }
+
+    /** The gate's plan used down under rock (where the god wakes the Dawi) is refused plainly: carry it up (the user's game, 2026-11-06). */
+    @GameTest(template = "field", timeoutTicks = 20, batch = "khazuk")
+    public static void theGatesPlanUsedUnderRockSaysCarryItUp(GameTestHelper h) {
+        var god = h.makeMockServerPlayerInLevel();
+        Waking.setGod(god, new Waking.God(true, "Karak Hirn", 1, true));
+        for (int y = DOOR_GROUND.getY() + 3; y <= DOOR_GROUND.getY() + 3 + AncestorPlan.ROOF + 4; y++) {
+            h.setBlock(DOOR_GROUND.atY(y), Blocks.STONE.defaultBlockState());   // a roof of rock over the spot
+        }
+        List<String> told = new ArrayList<>();
+        Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
+        boolean begun = AncestorPlan.found(h.getLevel(), god, gate, h.absolutePos(DOOR_GROUND), Direction.EAST, c -> told.add(c.getString()));
+        h.assertTrue(!begun && told.size() == 1 && told.get(0).contains("under the surface") && told.get(0).contains("Carry its plan up"),
+                "under rock the gate's plan said: " + told + " (begun " + begun + ")");
+        h.assertTrue(!Founding.of(h.getLevel()).rising(AncestorPlan.placement(gate, h.absolutePos(DOOR_GROUND), Direction.EAST).door()), "a gate rose under the rock");
+        h.succeed();
+    }
+
+    /**
      * A god whose first hold stands far off (loaded, so it is the nearest Shrine of theirs) uses the Hold Gate's plan out on open ground,
      * through the plan's own use: a second hold is founded there, not the gate set out for the far hold's Miners (the review of 31991f2).
      */
