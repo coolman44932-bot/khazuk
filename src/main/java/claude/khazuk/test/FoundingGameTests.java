@@ -158,21 +158,64 @@ public class FoundingGameTests {
         h.succeed();
     }
 
-    /** The gate's plan used down under rock (where the god wakes the Dawi) is refused plainly: carry it up (the user's game, 2026-11-06). */
-    @GameTest(template = "field", timeoutTicks = 20, batch = "khazuk")
-    public static void theGatesPlanUsedUnderRockSaysCarryItUp(GameTestHelper h) {
+    /**
+     * Founded down in the rock (the user, 2026-11-06: "dwarves cant build underground?"): the gate's plan used by a god standing in a pocket
+     * of solid rock is carved out of it by Grungni (Settlement Core's carved founding), its doorway left open onto the pocket; its Shrine
+     * founds the hold as ever, and no mountain rises round it (the rock is its mountain: it would fill the pocket).
+     */
+    @GameTest(template = "field", timeoutTicks = 100, batch = "khazuk")
+    public static void aHoldGateFoundedInTheRockIsCarvedOutOfIt(GameTestHelper h) {
         var god = h.makeMockServerPlayerInLevel();
-        Waking.setGod(god, new Waking.God(true, "Karak Hirn", 1, true));
-        for (int y = DOOR_GROUND.getY() + 3; y <= DOOR_GROUND.getY() + 3 + AncestorPlan.ROOF + 4; y++) {
-            h.setBlock(DOOR_GROUND.atY(y), Blocks.STONE.defaultBlockState());   // a roof of rock over the spot
-        }
-        god.setPos(net.minecraft.world.phys.Vec3.atBottomCenterOf(h.absolutePos(DOOR_GROUND.above())));   // standing under the roof
-        List<String> told = new ArrayList<>();
+        Waking.setGod(god, new Waking.God(true, "Karak Varn", 0, false));
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
-        boolean begun = AncestorPlan.found(h.getLevel(), god, gate, h.absolutePos(DOOR_GROUND), Direction.EAST, c -> told.add(c.getString()));
-        h.assertTrue(!begun && told.size() == 1 && told.get(0).contains("under the surface") && told.get(0).contains("Carry its plan up"),
-                "under rock the gate's plan said: " + told + " (begun " + begun + ")");
-        h.assertTrue(!Founding.of(h.getLevel()).rising(AncestorPlan.placement(gate, h.absolutePos(DOOR_GROUND), Direction.EAST).door()), "a gate rose under the rock");
+        var level = h.getLevel();
+        Founding f = Founding.of(level);
+        BlockPos ground = h.absolutePos(DOOR_GROUND);
+        PlanPlacement pl = AncestorPlan.placement(gate, ground, Direction.EAST);
+        net.minecraft.world.level.levelgen.structure.BoundingBox box = pl.box();
+        int roof = Math.min(box.maxY() + 8, h.absolutePos(new BlockPos(0, 58, 0)).getY());
+        net.minecraft.world.level.block.state.BlockState rock = Blocks.DEEPSLATE.defaultBlockState();
+        for (int x = box.minX() - 6; x <= box.maxX() + 2; x++) {          // the mountain's rock, over the site and the god's pocket
+            for (int z = box.minZ() - 2; z <= box.maxZ() + 2; z++) {
+                for (int y = ground.getY() + 1; y <= roof; y++) {
+                    level.setBlock(new BlockPos(x, y, z), rock, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+                }
+            }
+        }
+        BlockPos outside = pl.door().relative(Direction.WEST);            // the doorway's outside, in the god's pocket
+        for (int x = outside.getX() - 3; x <= outside.getX(); x++) {
+            for (int z = outside.getZ() - 1; z <= outside.getZ() + 1; z++) {
+                for (int y = outside.getY(); y <= outside.getY() + 2; y++) {
+                    level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+                }
+            }
+        }
+        god.setPos(net.minecraft.world.phys.Vec3.atBottomCenterOf(outside.relative(Direction.WEST, 2)));
+        h.assertTrue(AncestorPlan.underRock(level, god.blockPosition()), "the test needs the god down in the rock: "
+                + AncestorPlan.rockOver(level, god.blockPosition()) + " over him");
+        List<String> told = new ArrayList<>();
+        h.assertTrue(AncestorPlan.found(level, god, gate, ground, Direction.EAST, c -> told.add(c.getString())),
+                "the gate wasn't carved out of the rock: " + told);
+        h.assertTrue(told.get(0).startsWith("Grungni carves") && f.carving(pl.door()), "the gate isn't being carved: " + told);
+        for (int s = 0; s < 600 && f.rising(pl.door()); s++) {
+            f.second(level, Founding.PER_SECOND);
+        }
+        h.assertTrue(!f.rising(pl.door()), "the gate was never carved through");
+        BlockPos spot = Founding.heartSpot(pl);
+        h.assertTrue(level.getBlockState(spot).isAir() && level.getBlockState(spot.below()).is(Blocks.POLISHED_DEEPSLATE),
+                "the carved gate's dais isn't there with its spot open: " + level.getBlockState(spot) + " on " + level.getBlockState(spot.below()));
+        h.assertTrue(level.getBlockState(pl.door()).isAir() && level.getBlockState(outside).isAir(), "the carved gate's doorway isn't open onto the pocket");
+        h.assertTrue(level.getBlockState(new BlockPos(pl.door().getX(), box.maxY() + 2, pl.door().getZ() + 3)).is(Blocks.DEEPSLATE),
+                "the rock over the gate was cut");
+        h.assertTrue(f.spot(spot, god.getUUID()), "the carved gate's spot doesn't wait for its Shrine");
+        level.setBlockAndUpdate(spot, KRegistry.SHRINE.get().defaultBlockState());
+        KRegistry.SHRINE.get().setPlacedBy(level, spot, KRegistry.SHRINE.get().defaultBlockState(), god, new ItemStack(KRegistry.SHRINE_ITEM.get()));
+        ShrineBlockEntity hold = (ShrineBlockEntity) level.getBlockEntity(spot);
+        h.assertTrue(hold.has(HoldRooms.GATE) && hold.settlementName().equals("Karak Varn"), "the hold doesn't own its carved gate");
+        h.assertTrue(HoldCrag.carved(level, pl), "the carved gate doesn't read as down in the rock");
+        hold.crags().second(level, hold, HoldCrag.PER_SECOND);
+        h.assertTrue(hold.crags().risen(level, pl.door()) && level.getBlockState(outside.relative(Direction.WEST)).isAir(),
+                "a mountain rose round a gate carved in the rock (the pocket: " + level.getBlockState(outside.relative(Direction.WEST)) + ")");
         h.succeed();
     }
 

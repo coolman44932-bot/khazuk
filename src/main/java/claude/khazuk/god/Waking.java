@@ -219,7 +219,7 @@ public final class Waking {
         p.sendSystemMessage(Component.literal("The rock splits, and the first Dawi step out of the mountain, beards white with stone dust. They kneel: "
                 + "they call you the Ancestors.").withStyle(ChatFormatting.GOLD));
         p.sendSystemMessage(Component.literal("They hand you their Ancestor Shrine, the plans of a hold and its gold, and go back into the stone to wait. "
-                + "Go up into the open and set the Hold Gate's plan down where the hold should be: Grungni raises the gate, and on the dais at the end of its passage "
+                + "Set the Hold Gate's plan down where the hold should be, out on open ground or down here in the rock: Grungni raises or carves the gate, and on the dais at the end of its passage "
                 + "you set the Shrine. Then they come up to it, and the mountain rises round their gate.").withStyle(ChatFormatting.YELLOW));
         level.playSound(null, at, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 1f, 0.6f);
         if (p.connection != null && p.connection.hasChannel(AskName.TYPE)) {

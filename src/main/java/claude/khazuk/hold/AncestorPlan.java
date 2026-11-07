@@ -95,10 +95,17 @@ public class AncestorPlan extends Item {
             tell.accept(Component.literal("Only the Dawi's god founds a hold. Wake them first: strike a gold ingot on the deep rock.").withStyle(ChatFormatting.RED));
             return false;
         }
-        if (underRock(level, room, p.blockPosition(), tell)) {
-            return false;
-        }
         PlanPlacement pl = placement(room, ground, facing);
+        if (underRock(level, p.blockPosition())) {               // down in the rock: Grungni carves the gate out of it
+            String no = claude.settlementcore.settlement.Founding.of(level).beginCarved(level, pl, p.getUUID());
+            if (no != null) {
+                tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
+                return false;
+            }
+            tell.accept(Component.literal("Grungni carves the " + room.displayName() + " out of the rock. When it is cut, walk its passage and "
+                    + "set the Shrine on the dais in the hall at its end: the rock round it is its mountain.").withStyle(ChatFormatting.GOLD));
+            return true;
+        }
         GrungniClears cleared = GrungniClears.clear(level, pl);  // what stands on the ground broken, water dammed, hollows filled
         if (cleared.refusal() != null) {
             tell.accept(Component.literal(cleared.refusal().why()).withStyle(ChatFormatting.RED));
@@ -123,20 +130,23 @@ public class AncestorPlan extends Item {
     public static final int ROOF = 4;
 
     /**
-     * A raised building (the Hold Gate) stands under the open sky: the engine sites it from the land's surface down, so used down in the deep
-     * rock (where the god wakes the Dawi) it read the lakes and hills far overhead and refused with them ("the water ... stands 58 above the
-     * Hold Gate's floor"; the user's game, 2026-11-06). Told plainly instead: carry the plan up. Measured over where the god stands, not the
-     * block aimed at: aimed at a tree's trunk or the foot of a cliff in the open, the plan is not underground (the review of 7f8ce4e). True if
-     * refused.
+     * Whether the god stands down in the rock (a cave, a mine), more than {@link #ROOF} under anything solid: there the Hold Gate is carved
+     * out of the rock (Settlement Core's carved founding), not raised under the sky (the user, 2026-11-06: "dwarves cant build underground?";
+     * the engine sites a raised one from the land's surface down, so down there it read the lakes far overhead). Measured over where the god
+     * stands, not the block aimed at: aimed at a tree's trunk or a cliff's foot in the open, the plan is not underground (the review of
+     * 7f8ce4e). Under water is not under rock.
      */
-    static boolean underRock(Level level, Rooms.Room room, BlockPos feet, java.util.function.Consumer<Component> tell) {
-        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 1;
-        if (top - feet.getY() <= ROOF + 1 || !level.getFluidState(new BlockPos(feet.getX(), top, feet.getZ())).isEmpty()) {
-            return false;                                        // open ground, a shallow overhang, or under water (the engine says why)
+    public static boolean underRock(Level level, BlockPos feet) {
+        return rockOver(level, feet) > ROOF + 1;
+    }
+
+    /** How far the solid top of {@code p}'s column stands over it (0 or less in the open; 0 under water). */
+    public static int rockOver(Level level, BlockPos p) {
+        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, p.getX(), p.getZ()) - 1;
+        if (!level.getFluidState(new BlockPos(p.getX(), top, p.getZ())).isEmpty()) {
+            return 0;
         }
-        tell.accept(Component.literal("The " + room.displayName() + " is raised on open ground under the sky, and you are " + (top - feet.getY())
-                + " blocks under the surface here. Carry its plan up and set it down where the hold should stand.").withStyle(ChatFormatting.RED));
-        return true;
+        return top - p.getY();
     }
 
     /** Begins digging the hall at {@code pl} for {@code hold}: refused (and told why) where the engine won't dig it; else begun, paid. True if begun. */

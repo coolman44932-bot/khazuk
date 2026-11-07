@@ -132,6 +132,15 @@ public final class HoldCrag {
         }
     }
 
+    /**
+     * Whether the gate at {@code pl} stands down in the rock (carved, Founding#beginCarved): rock more than {@link AncestorPlan#ROOF} over its
+     * own top. No mountain rises round it: it would fill the caves round a deep gate with stone.
+     */
+    public static boolean carved(ServerLevel level, PlanPlacement pl) {
+        BlockPos top = new BlockPos(pl.door().getX(), pl.box().maxY(), pl.door().getZ());
+        return AncestorPlan.rockOver(level, top) > AncestorPlan.ROOF;
+    }
+
     /** Whether {@code b} is a Hold Gate. */
     public static boolean gate(Building b) {
         Rooms.Room r = Rooms.get(b.room());
@@ -211,6 +220,11 @@ public final class HoldCrag {
         }
         long key = rising.door().asLong();
         int i = done.getOrDefault(key, 0);
+        if (i == 0 && carved(level, pl)) {
+            done.put(key, c.size());                             // carved down in the rock: the rock round it is its mountain
+            dirty = true;
+            return false;
+        }
         if (i == 0) {
             hold.tellOwner("Grungni raises the mountain round the " + pl.room().displayName() + "!", ChatFormatting.GOLD);
         }
