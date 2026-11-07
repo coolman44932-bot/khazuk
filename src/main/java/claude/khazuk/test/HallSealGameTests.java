@@ -44,6 +44,52 @@ public class HallSealGameTests {
         h.succeed();
     }
 
+    /** The Great Hall is built with a sealed arch in each side wall too, so the hold branches hall to hall. */
+    @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
+    public static void theGreatHallIsBuiltWithTwoSealedArches(GameTestHelper h) {
+        int north = 0, south = 0;
+        Rooms.Room gh = HoldRooms.room("dawi_grand_hall");
+        for (RoomTemplates.Entry e : RoomTemplates.get(h.getLevel(), gh.id())) {
+            if (e.state().getBlock() instanceof HallSeal) {
+                Direction f = e.state().getValue(HallSeal.FACING);
+                if (f == Direction.NORTH && e.local().getZ() == 0) {
+                    north++;
+                } else if (f == Direction.SOUTH && e.local().getZ() == gh.sizeZ() - 1) {
+                    south++;
+                }
+            }
+        }
+        h.assertTrue(north == 9 && south == 9, "the Great Hall's sealed arches: " + north + " in its north wall, " + south + " in its south");
+        h.succeed();
+    }
+
+    /**
+     * The runtime walls guard (AncestorPlan#cutsInto): a Great Hall dug through the gate's seal cuts none of it; a hall aimed back through
+     * the gate's passage at its gatehouse is refused, naming the gate.
+     */
+    @GameTest(template = "field", timeoutTicks = 20, batch = "khazuk")
+    public static void aHallMayNotCutIntoAnother(GameTestHelper h) {
+        var level = h.getLevel();
+        h.setBlock(new BlockPos(64, 3, 64), KRegistry.SHRINE.get().defaultBlockState());
+        if (!(level.getBlockEntity(h.absolutePos(new BlockPos(64, 3, 64))) instanceof claude.khazuk.ShrineBlockEntity hold)) {
+            throw h.assertionException("no Shrine");
+        }
+        hold.claim(h.makeMockServerPlayerInLevel(), "Karak Test");
+        Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
+        PlanPlacement g = AncestorPlan.placement(gate, h.absolutePos(new BlockPos(4, 2, 36)), Direction.EAST);
+        hold.addBuilding(new claude.settlementcore.settlement.Building(gate.id(), g.box(), g.door(), g.facing()), false);
+        BlockPos seal = g.world(new BlockPos(28, 3, 21));
+        Direction runs = RoomTemplates.get(level, gate.id()).stream().filter(e -> e.local().equals(new BlockPos(28, 3, 21))).findFirst()
+                .orElseThrow().state().rotate(g.rotation()).getValue(HallSeal.FACING);
+        PlanPlacement through = PlanPlacement.compute(HoldRooms.room("dawi_grand_hall"), seal, runs);
+        String ok = AncestorPlan.cutsInto(hold, level, through);
+        h.assertTrue(ok == null, "a Great Hall through the gate's own seal was refused: " + ok);
+        PlanPlacement back = PlanPlacement.compute(HoldRooms.room("dawi_barracks"), g.world(new BlockPos(20, 3, 15)), Direction.WEST);
+        String no = AncestorPlan.cutsInto(hold, level, back);
+        h.assertTrue(no != null && no.contains("Hold Gate"), "a hall cut back through the gatehouse wasn't refused: " + no);
+        h.succeed();
+    }
+
     /** Aimed at any block of a 3 x 3 seal, a hall's door goes to its bottom middle, running the way it faces, whichever way the god looks. */
     @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
     public static void aPlanAimedAtASealIsDugThroughItsMiddle(GameTestHelper h) {

@@ -195,10 +195,48 @@ public class AncestorPlan extends Item {
         return n;
     }
 
+    /**
+     * Why a hall dug at {@code pl} would cut into another of the hold's halls, or null if it cuts none (the walls guard's runtime half; the
+     * user, 2026-11-06: "protecting from making wall less rooms"): any of its stone (a wall, a pillar, a stair: its template's every cell but
+     * air) inside the new hall's box, but for the wall the new hall is dug from (its door's face: two halls share it there). The engine
+     * keeps another room's open air but would cut its walls: a Great Hall's side door aimed back at the gatehouse would cut its towers.
+     */
+    public static @org.jspecify.annotations.Nullable String cutsInto(ShrineBlockEntity hold, ServerLevel level, PlanPlacement pl) {
+        net.minecraft.world.level.levelgen.structure.BoundingBox box = pl.box();
+        Direction f = pl.facing();
+        for (claude.settlementcore.settlement.Building b : hold.buildings()) {
+            if (!b.box().intersects(box)) {
+                continue;
+            }
+            PlanPlacement bp = claude.settlementcore.settlement.BuildingBook.placementOf(b);
+            if (bp == null) {
+                continue;
+            }
+            for (claude.settlementcore.room.RoomTemplates.Entry e : claude.settlementcore.room.RoomTemplates.get(level, b.room())) {
+                if (e.state().isAir()) {
+                    continue;
+                }
+                BlockPos p = bp.world(e.local());
+                int along = (p.getX() - pl.door().getX()) * f.getStepX() + (p.getZ() - pl.door().getZ()) * f.getStepZ();
+                if (along != 0 && box.isInside(p)) {
+                    Rooms.Room r = Rooms.get(b.room());
+                    return "The " + pl.room().displayName() + " would cut into the " + (r == null ? b.room() : r.displayName()) + " at "
+                            + p.getX() + " " + p.getY() + " " + p.getZ() + ": dig it through another door";
+                }
+            }
+        }
+        return null;
+    }
+
     /** Begins digging the hall at {@code pl} for {@code hold}: refused (and told why) where the engine won't dig it; else begun, paid. True if begun. */
     public static boolean dig(ShrineBlockEntity hold, ServerLevel level, PlanPlacement pl, boolean free, java.util.function.Consumer<Component> tell) {
         if (pl.box().inflatedBy(1).isInside(hold.getBlockPos())) {
             tell.accept(Component.literal("The " + pl.room().displayName() + " would be dug round the Shrine: aim it further off.").withStyle(ChatFormatting.RED));
+            return false;
+        }
+        String cuts = cutsInto(hold, level, pl);
+        if (cuts != null) {
+            tell.accept(Component.literal(cuts).withStyle(ChatFormatting.RED));
             return false;
         }
         String no = hold.works().dig(level, pl, free);

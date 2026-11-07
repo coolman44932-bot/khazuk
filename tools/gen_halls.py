@@ -704,8 +704,24 @@ def great_hall():
         brazier(h, 25, 1, z)
     for z in (5, sz - 6):                                                # lanterns hung either side of the dais (one over it hid the face)
         hang(h, 29, z, top(29, z), 5)
+    # the hall doors (the user, 2026-11-06: the hold branches hall to hall): an arch in each side wall in the middle span between its
+    # rune panels, x 11..15, sealed with rune-carved doors (hold/HallSeal, FACING the way a hall dug through it runs, out of this one)
+    seal_arch(h, 13, 0, "north")
+    seal_arch(h, 13, sz - 1, "south")
     h.stations = []
     return h
+
+
+def seal_arch(h, x, z, facing):
+    """A sealed hall door in the side wall at z: seals 3 wide and 3 high centred on x, a carved frame round them and a gold keystone over
+    (the Hold Gate's Shrine hall has the same arches, tools/gen_hold_gate.py)."""
+    for dx in range(-2, 3):
+        for y in range(1, 5):
+            h.put(x + dx, y, z, CARVE)
+    for dx in range(-1, 2):
+        for y in range(1, 4):
+            h.put(x + dx, y, z, f"khazuk:hall_seal[facing={facing}]")
+    h.put(x, 5, z, GOLD)
 
 
 def throne_room():
@@ -1056,8 +1072,10 @@ def _known(name):
         return _known_cache[name]
     ns, _, path = name.partition(":")
     f = os.path.join(BLOCKSTATES, path + ".json")
+    if ns == "khazuk":                                                   # our own blocks: their blockstate files in the mod
+        f = os.path.join(HERE, "..", "src", "main", "resources", "assets", "khazuk", "blockstates", path + ".json")
     props = None
-    if ns == "minecraft" and os.path.exists(f):
+    if ns in ("minecraft", "khazuk") and os.path.exists(f):
         with open(f, encoding="utf-8") as fh:
             j = json.load(fh)
         props = {k: set(v) for k, v in UNMODELLED.items()}

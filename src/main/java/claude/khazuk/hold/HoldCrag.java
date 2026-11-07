@@ -81,13 +81,14 @@ public final class HoldCrag {
      */
     private final it.unimi.dsi.fastutil.longs.LongOpenHashSet boxed = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
     /**
-     * Gates whose Shrine hall has its sealed hall doors (the user, 2026-11-06: "there should be a place in the room to dig into"): a gate
-     * built before its template had them gets them fitted once, each arch cell only where its wall is still the template's old deepslate
-     * brick (a wall someone changed is left as they made it).
+     * Halls whose sealed hall doors are fitted (the user, 2026-11-06: "there should be a place in the room to dig into"; the gate's Shrine
+     * hall, the Great Hall): one built before its template had them gets them once, each arch cell only where its wall is still the old
+     * wall's stone (a wall someone changed is left as they made it). Every hall of the hold is looked at once, by its door.
      */
     private final it.unimi.dsi.fastutil.longs.LongOpenHashSet sealed = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
-    /** The seal arches in the gate template's frame: x 26..30, y 3..7 (the keystone's row), in the Shrine hall's side walls at z 9 and 21. */
-    static final BoundingBox ARCHES_WEST = new BoundingBox(26, 3, 9, 30, 7, 9), ARCHES_EAST = new BoundingBox(26, 3, 21, 30, 7, 21);
+    /** What the halls' walls were where the arches now are: their dressed deepslate, cracked, and its andesite courses. */
+    static final java.util.Set<net.minecraft.world.level.block.Block> OLD_WALL = java.util.Set.of(Blocks.DEEPSLATE_BRICKS,
+            Blocks.CRACKED_DEEPSLATE_BRICKS, Blocks.POLISHED_ANDESITE);
 
     /** Cells left open because someone stood there, per gate: tried again each second once the rest is up, for {@value #RETRY_SECONDS} s. */
     private final it.unimi.dsi.fastutil.longs.Long2ObjectMap<it.unimi.dsi.fastutil.ints.IntArrayList> waiting = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
@@ -161,20 +162,42 @@ public final class HoldCrag {
      * gate already built with them sets none.
      */
     public static boolean fitSeals(ServerLevel level, PlanPlacement pl) {
-        for (claude.settlementcore.room.RoomTemplates.Entry e : claude.settlementcore.room.RoomTemplates.get(level, pl.room().id())) {
-            if (!ARCHES_WEST.isInside(e.local()) && !ARCHES_EAST.isInside(e.local())) {
-                continue;
+        List<claude.settlementcore.room.RoomTemplates.Entry> t = claude.settlementcore.room.RoomTemplates.get(level, pl.room().id());
+        List<BlockPos> seals = new ArrayList<>();
+        for (claude.settlementcore.room.RoomTemplates.Entry e : t) {
+            if (e.state().getBlock() instanceof HallSeal) {
+                seals.add(e.local());
+            }
+        }
+        if (seals.isEmpty()) {
+            return true;
+        }
+        for (claude.settlementcore.room.RoomTemplates.Entry e : t) {
+            BlockState s = e.state();
+            if (!(s.getBlock() instanceof HallSeal || s.is(Blocks.CHISELED_STONE_BRICKS) || s.is(claude.khazuk.KRegistry.GILDED_STONE.get()))
+                    || !arch(e.local(), seals)) {
+                continue;                                        // only an arch's own stone: its seals, carved frame and gold keystone
             }
             BlockPos p = pl.world(e.local());
             if (!level.isLoaded(p)) {
                 return false;
             }
-            BlockState want = e.state().rotate(pl.rotation());
-            if (!want.isAir() && level.getBlockState(p).is(Blocks.DEEPSLATE_BRICKS) && !want.is(Blocks.DEEPSLATE_BRICKS)) {
-                level.setBlock(p, want, Block.UPDATE_ALL);
+            if (OLD_WALL.contains(level.getBlockState(p).getBlock())) {
+                level.setBlock(p, s.rotate(pl.rotation()), Block.UPDATE_ALL);
             }
         }
         return true;
+    }
+
+    /** Whether template cell {@code l} is part of an arch: beside a seal (within 1 across, in its row or up to 2 over it, its keystone). */
+    static boolean arch(BlockPos l, List<BlockPos> seals) {
+        for (BlockPos s : seals) {
+            int dy = l.getY() - s.getY();
+            if (Math.abs(l.getX() - s.getX()) <= 1 && Math.abs(l.getZ() - s.getZ()) <= 1 && dy >= 0 && dy <= 2) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The mountain's cells in the gate template's own frame (the walls guard, WallsGameTests: inside the box they are the gate's walls). */
@@ -245,15 +268,15 @@ public final class HoldCrag {
         Building rising = null;
         CarvedGates carvedGates = CarvedGates.of(level);
         for (Building b : hold.buildings()) {
+            if (b.door() != null && !sealed.contains(b.door().asLong()) && level.isLoaded(b.door())) {
+                PlanPlacement gp = BuildingBook.placementOf(b);     // any hall whose template has sealed doors: fitted once (the gate, the Great Hall)
+                if (gp == null || fitSeals(level, gp)) {
+                    sealed.add(b.door().asLong());
+                    dirty = true;
+                }
+            }
             if (b.door() != null && gate(b)) {
                 gates.add(b.door().asLong());
-                if (!sealed.contains(b.door().asLong()) && level.isLoaded(b.door())) {
-                    PlanPlacement gp = BuildingBook.placementOf(b);
-                    if (gp != null && fitSeals(level, gp)) {
-                        sealed.add(b.door().asLong());
-                        dirty = true;
-                    }
-                }
                 if (carvedGates.has(b.door()) && boxed.add(b.door().asLong())) {
                     done.put(b.door().asLong(), 0);              // carved: its box's mountain, from the start (once)
                     dirty = true;
