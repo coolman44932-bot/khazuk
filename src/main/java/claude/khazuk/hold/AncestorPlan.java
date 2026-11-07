@@ -95,7 +95,7 @@ public class AncestorPlan extends Item {
             tell.accept(Component.literal("Only the Dawi's god founds a hold. Wake them first: strike a gold ingot on the deep rock.").withStyle(ChatFormatting.RED));
             return false;
         }
-        if (underRock(level, room, ground, tell)) {
+        if (underRock(level, room, p.blockPosition(), tell)) {
             return false;
         }
         PlanPlacement pl = placement(room, ground, facing);
@@ -119,20 +119,22 @@ public class AncestorPlan extends Item {
         return false;
     }
 
-    /** Rock (or anything solid) more than this far over the ground hit: the plan was used down in a cave or a mine. */
+    /** Rock (or anything solid) more than this far over the god's head: the plan was used down in a cave or a mine. */
     public static final int ROOF = 4;
 
     /**
      * A raised building (the Hold Gate) stands under the open sky: the engine sites it from the land's surface down, so used down in the deep
      * rock (where the god wakes the Dawi) it read the lakes and hills far overhead and refused with them ("the water ... stands 58 above the
-     * Hold Gate's floor"; the user's game, 2026-11-06). Told plainly instead: carry the plan up. True if refused.
+     * Hold Gate's floor"; the user's game, 2026-11-06). Told plainly instead: carry the plan up. Measured over where the god stands, not the
+     * block aimed at: aimed at a tree's trunk or the foot of a cliff in the open, the plan is not underground (the review of 7f8ce4e). True if
+     * refused.
      */
-    static boolean underRock(Level level, Rooms.Room room, BlockPos ground, java.util.function.Consumer<Component> tell) {
-        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ground.getX(), ground.getZ()) - 1;
-        if (top - ground.getY() <= ROOF || !level.getFluidState(new BlockPos(ground.getX(), top, ground.getZ())).isEmpty()) {
+    static boolean underRock(Level level, Rooms.Room room, BlockPos feet, java.util.function.Consumer<Component> tell) {
+        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 1;
+        if (top - feet.getY() <= ROOF + 1 || !level.getFluidState(new BlockPos(feet.getX(), top, feet.getZ())).isEmpty()) {
             return false;                                        // open ground, a shallow overhang, or under water (the engine says why)
         }
-        tell.accept(Component.literal("The " + room.displayName() + " is raised on open ground under the sky, and you are " + (top - ground.getY())
+        tell.accept(Component.literal("The " + room.displayName() + " is raised on open ground under the sky, and you are " + (top - feet.getY())
                 + " blocks under the surface here. Carry its plan up and set it down where the hold should stand.").withStyle(ChatFormatting.RED));
         return true;
     }
@@ -157,9 +159,6 @@ public class AncestorPlan extends Item {
      *  raise it; else begun, its gold taken by the engine. {@code free}: a creative god pays nothing. True if begun. */
     public static boolean setOut(ShrineBlockEntity hold, ServerLevel level, Rooms.Room room, BlockPos ground, Direction facing, boolean free,
                                  java.util.function.Consumer<Component> tell) {
-        if (Rooms.isRaised(room.id()) && underRock(level, room, ground, tell)) {
-            return false;
-        }
         PlanPlacement pl = placement(room, ground, facing);
         if (room.function() == HoldRooms.GATE && HoldCrag.buries(level, pl, hold.getBlockPos())) {
             tell.accept(Component.literal("The mountain round the " + room.displayName() + " would bury the Shrine: set it out further away, "

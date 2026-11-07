@@ -123,7 +123,8 @@ public class FoundingGameTests {
                 "Grungni didn't clear his gate's ground: " + told);
         h.assertTrue(!level.getBlockState(mid.above(2)).is(Blocks.COBBLESTONE) && !level.getBlockState(mid.east(2).above()).is(Blocks.OAK_FENCE),
                 "what stood on the site still stands");
-        h.assertTrue(level.getBlockState(cave).is(Blocks.STONE) && level.getBlockState(cave.below()).is(Blocks.STONE), "the cave under the site isn't filled");
+        h.assertTrue(claude.settlementcore.room.Siting.ground(level.getBlockState(cave)) && claude.settlementcore.room.Siting.ground(level.getBlockState(cave.below())),
+                "the cave under the site isn't filled: " + level.getBlockState(cave) + ", " + level.getBlockState(cave.below()));   // stone, or deepslate under y 0
         h.assertTrue(level.getFluidState(pool).isEmpty(), "the pool still stands on the site");
         h.assertTrue(!level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(mid).inflate(4),
                 e -> e.getItem().is(Blocks.COBBLESTONE.asItem())).isEmpty(), "the broken pillar didn't drop");
@@ -165,6 +166,7 @@ public class FoundingGameTests {
         for (int y = DOOR_GROUND.getY() + 3; y <= DOOR_GROUND.getY() + 3 + AncestorPlan.ROOF + 4; y++) {
             h.setBlock(DOOR_GROUND.atY(y), Blocks.STONE.defaultBlockState());   // a roof of rock over the spot
         }
+        god.setPos(net.minecraft.world.phys.Vec3.atBottomCenterOf(h.absolutePos(DOOR_GROUND.above())));   // standing under the roof
         List<String> told = new ArrayList<>();
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
         boolean begun = AncestorPlan.found(h.getLevel(), god, gate, h.absolutePos(DOOR_GROUND), Direction.EAST, c -> told.add(c.getString()));

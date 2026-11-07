@@ -126,6 +126,21 @@ public final class GrungniClears {
                 || why.startsWith("The tree at") || why.startsWith("The logs at");
     }
 
+    /**
+     * {@link #mends(String)}, knowing the land: a thing standing that has a block entity (kept) or ground falling away past what he raises is
+     * not his to mend (the held plan's outline shows those: the review of 7f8ce4e).
+     */
+    public static boolean mends(net.minecraft.world.level.Level level, Siting.Refusal no, int floor) {
+        String why = no.why();
+        if (!mends(why)) {
+            return false;
+        }
+        if (why.startsWith("Something stands at") && level.getBlockState(no.spot()).hasBlockEntity()) {
+            return false;
+        }
+        return !why.startsWith("The ground falls away") || floor - 1 - Siting.SKIRT_MAX - no.spot().getY() <= RAISE_MAX;
+    }
+
     /** One column: things off the ground, water and lava to stone, the ground raised to the plinth's reach, its hollows filled. */
     private void column(int x, int z) {
         if (!level.hasChunk(x >> 4, z >> 4)) {

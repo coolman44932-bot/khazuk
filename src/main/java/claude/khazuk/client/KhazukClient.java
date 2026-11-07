@@ -52,7 +52,7 @@ public final class KhazukClient {
                         ? claude.settlementcore.room.Siting.preview(mc.level, pl)
                         : new claude.settlementcore.room.Siting.Preview(pl, null, java.util.List.of());   // a dug hall: its box in the rock
                 if (shown.refusal() != null && claude.settlementcore.settlement.Founding.isFoundingHall(plan.room())
-                        && claude.khazuk.hold.GrungniClears.mends(shown.refusal().why())) {
+                        && claude.khazuk.hold.GrungniClears.mends(mc.level, shown.refusal(), pl.door().getY() - 1)) {
                     shown = new claude.settlementcore.room.Siting.Preview(pl, null, shown.columns());   // the gate's ground Grungni mends himself
                 }
                 claude.settlementcore.client.PlanOutline.show(shown);
