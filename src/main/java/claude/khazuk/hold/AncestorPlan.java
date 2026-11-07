@@ -109,6 +109,7 @@ public class AncestorPlan extends Item {
                     .withStyle(ChatFormatting.GOLD));
             return true;
         }
+        CarvedGates.of(level).remove(pl.door());                 // a gate once carved here and gone: this one is raised, its mountain with it
         GrungniClears cleared = GrungniClears.clear(level, pl);  // what stands on the ground broken, water dammed, hollows filled
         if (cleared.refusal() != null) {
             tell.accept(Component.literal(cleared.refusal().why()).withStyle(ChatFormatting.RED));
@@ -163,8 +164,13 @@ public class AncestorPlan extends Item {
             for (int z = box.minZ(); z <= box.maxZ(); z++) {
                 for (int x = box.minX(); x <= box.maxX(); x++) {
                     net.minecraft.world.level.block.state.BlockState s = level.getBlockState(at.set(x, y, z));
-                    if (s.isAir() || !s.getFluidState().isEmpty() || s.hasBlockEntity() || claude.settlementcore.room.DigJob.natural(s)) {
-                        continue;
+                    if (s.isAir() || !s.getFluidState().isEmpty() || s.hasBlockEntity() || s.getDestroySpeed(level, at) < 0
+                            || claude.settlementcore.room.DigJob.natural(s) || claude.settlementcore.room.Siting.ground(s)
+                            || claude.settlementcore.room.Siting.cover(s) || s.is(net.minecraft.tags.BlockTags.LOGS)
+                            || s.is(net.minecraft.tags.BlockTags.LEAVES) || s.is(net.minecraft.tags.BlockTags.ICE)
+                            || s.is(net.minecraft.tags.BlockTags.TERRACOTTA) || s.is(net.neoforged.neoforge.common.Tags.Blocks.SANDSTONE_BLOCKS)
+                            || s.is(net.minecraft.world.level.block.Blocks.SNOW_BLOCK) || s.is(net.minecraft.world.level.block.Blocks.PACKED_ICE)) {
+                        continue;                                // the land, what grows on it, bedrock: the carve's own to cut (the review of a9ef4de)
                     }
                     level.destroyBlock(at.immutable(), true);
                     n++;
