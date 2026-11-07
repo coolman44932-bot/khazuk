@@ -47,7 +47,7 @@ public final class KhazukClient {
             String key = plan.room().id() + " " + hit.getBlockPos().asLong() + " " + mc.player.getDirection() + " " + mc.player.getBlockY();
             long now = mc.level.getGameTime();
             if (!outlining || !key.equals(outlinedFor) || now - outlinedAt >= 20) {
-                var pl = claude.khazuk.hold.AncestorPlan.aimed(plan.room(), hit.getBlockPos(), mc.player.getBlockY(), mc.player.getDirection());
+                var pl = claude.khazuk.hold.AncestorPlan.aimedAt(mc.level, plan.room(), hit.getBlockPos(), mc.player.getBlockY(), mc.player.getDirection());
                 boolean carved = claude.settlementcore.settlement.Founding.isFoundingHall(plan.room())
                         && claude.khazuk.hold.AncestorPlan.underRock(mc.level, mc.player.blockPosition());   // carved out of the rock: its box only
                 var shown = claude.settlementcore.room.Rooms.isRaised(plan.room().id()) && !carved

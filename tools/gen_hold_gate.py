@@ -208,6 +208,10 @@ for z in (2, 6):
 # hold goes behind its gate, not before it): the passage opens into a hall 11 wide and 11 high, and on a dais at its far end, under Grungni's
 # rune, stands the Ancestor Shrine. The hold is founded here: its halls are dug off this hall's walls and the passage's.
 SHRINE_HALL = RAISED
+# a hall seal's FACING in the template's frame (x' = z + 14, z' = x + GH): local +x is the template's +z', south
+# its middle: z 14, so the widest hall dug through it (the Great Hall, 25 across) clears the gatehouse's back wall (z 1)
+SEAL_Z = 14
+SEAL_FACING = {True: "khazuk:hall_seal[facing=south]", False: "khazuk:hall_seal[facing=north]"}
 HEART_LOCAL = (0, DOOR_Y + 1, 14)                                # the Shrine's spot: on the dais, in the hall's middle
 if SHRINE_HALL:
     HZ0, HZ1, HX, HTOP = 9, 16, 5, DOOR_Y + 10                   # the hall: z 9..16, x -5..5, its floor at DOOR_Y - 1, its roof over HTOP
@@ -239,6 +243,17 @@ if SHRINE_HALL:
         for i, ch in enumerate(row):
             if ch == "g":                                        # set in the wall, flush: the statue's answers (the ward's dome)
                 put(i - 2, DOOR_Y + 8 - dy, HZ1 + 1, GOLD)       # reach 2.5 round the Shrine (the detail session's clearances)
+    # the hall doors (the user, 2026-11-06: "there should be a place in the room to dig into"): an arch in each side wall between the
+    # pillars, framed in carved stone under a gold keystone, sealed with rune-carved doors until a plan digs a hall through it (hold/HallSeal,
+    # its FACING the way the hall runs, written in the template's own frame: SEAL_FACING)
+    for sx in (-HX - 1, HX + 1):
+        for z in range(SEAL_Z - 2, SEAL_Z + 3):
+            for y in range(DOOR_Y, DOOR_Y + 4):
+                put(sx, y, z, CARVE)
+        for z in range(SEAL_Z - 1, SEAL_Z + 2):
+            for y in range(DOOR_Y, DOOR_Y + 3):
+                put(sx, y, z, SEAL_FACING[sx > 0])
+        put(sx, DOOR_Y + 4, SEAL_Z, GOLD)
     for x, z in ((-3, 11), (3, 11), (-3, 15), (3, 15)):         # lanterns on chains from the roof
         put(x, HTOP, z, "minecraft:iron_chain")
         put(x, HTOP - 1, z, "minecraft:lantern[hanging=true]")
@@ -380,6 +395,8 @@ CRAG_OUT = os.path.join(HERE, "..", "src", "main", "resources", "data", "khazuk"
 
 
 def turn(b):
+    if b.startswith("khazuk:hall_seal"):
+        return b                                                 # written in the template's frame already
     for k, v in FACING_TURN.items():
         if f"facing={k}" in b:
             return b.replace(f"facing={k}", f"facing={v}")
@@ -469,7 +486,7 @@ def write_template(cells, size):
     out, kept = {}, 0
     for pos, s in cells.items():
         name, props = _split(s)
-        if not name.startswith("minecraft:"):
+        if ":" not in name:
             name = "minecraft:" + name
         old = had.get(pos)
         if old and old[0] == name and all(old[1].get(k) == v for k, v in props.items()):

@@ -80,6 +80,14 @@ public final class HoldCrag {
      * into the cave round it. A carved gate risen before this (marked done with nothing raised) is raised again once, in its box.
      */
     private final it.unimi.dsi.fastutil.longs.LongOpenHashSet boxed = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+    /**
+     * Gates whose Shrine hall has its sealed hall doors (the user, 2026-11-06: "there should be a place in the room to dig into"): a gate
+     * built before its template had them gets them fitted once, each arch cell only where its wall is still the template's old deepslate
+     * brick (a wall someone changed is left as they made it).
+     */
+    private final it.unimi.dsi.fastutil.longs.LongOpenHashSet sealed = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+    /** The seal arches in the gate template's frame: x 26..30, y 3..7 (the keystone's row), in the Shrine hall's side walls at z 9 and 21. */
+    static final BoundingBox ARCHES_WEST = new BoundingBox(26, 3, 9, 30, 7, 9), ARCHES_EAST = new BoundingBox(26, 3, 21, 30, 7, 21);
 
     /** Cells left open because someone stood there, per gate: tried again each second once the rest is up, for {@value #RETRY_SECONDS} s. */
     private final it.unimi.dsi.fastutil.longs.Long2ObjectMap<it.unimi.dsi.fastutil.ints.IntArrayList> waiting = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
@@ -147,6 +155,38 @@ public final class HoldCrag {
         return CarvedGates.of(level).has(pl.door());
     }
 
+    /**
+     * Fits the gate's sealed hall doors at {@code pl}: each arch cell of the template (carved frame, seal, keystone) set where the world still
+     * has the old wall's deepslate brick. False if an arch's land isn't loaded yet (tried again later). How many were set goes nowhere: a
+     * gate already built with them sets none.
+     */
+    public static boolean fitSeals(ServerLevel level, PlanPlacement pl) {
+        for (claude.settlementcore.room.RoomTemplates.Entry e : claude.settlementcore.room.RoomTemplates.get(level, pl.room().id())) {
+            if (!ARCHES_WEST.isInside(e.local()) && !ARCHES_EAST.isInside(e.local())) {
+                continue;
+            }
+            BlockPos p = pl.world(e.local());
+            if (!level.isLoaded(p)) {
+                return false;
+            }
+            BlockState want = e.state().rotate(pl.rotation());
+            if (!want.isAir() && level.getBlockState(p).is(Blocks.DEEPSLATE_BRICKS) && !want.is(Blocks.DEEPSLATE_BRICKS)) {
+                level.setBlock(p, want, Block.UPDATE_ALL);
+            }
+        }
+        return true;
+    }
+
+    /** The mountain's cells in the gate template's own frame (the walls guard, WallsGameTests: inside the box they are the gate's walls). */
+    public static java.util.Set<BlockPos> cragCellsInFrame(ServerLevel level) {
+        Cells c = cells(level);
+        java.util.Set<BlockPos> out = new java.util.HashSet<>();
+        for (int i = 0; i < c.size(); i++) {
+            out.add(new BlockPos(c.xs[i], c.ys[i], c.zs[i]));
+        }
+        return out;
+    }
+
     /** Whether {@code b} is a Hold Gate. */
     public static boolean gate(Building b) {
         Rooms.Room r = Rooms.get(b.room());
@@ -207,6 +247,13 @@ public final class HoldCrag {
         for (Building b : hold.buildings()) {
             if (b.door() != null && gate(b)) {
                 gates.add(b.door().asLong());
+                if (!sealed.contains(b.door().asLong()) && level.isLoaded(b.door())) {
+                    PlanPlacement gp = BuildingBook.placementOf(b);
+                    if (gp != null && fitSeals(level, gp)) {
+                        sealed.add(b.door().asLong());
+                        dirty = true;
+                    }
+                }
                 if (carvedGates.has(b.door()) && boxed.add(b.door().asLong())) {
                     done.put(b.door().asLong(), 0);              // carved: its box's mountain, from the start (once)
                     dirty = true;
@@ -451,6 +498,7 @@ public final class HoldCrag {
         }
         tag.put("crag_waiting", wait);
         tag.putLongArray("crag_boxed", boxed.toLongArray());
+        tag.putLongArray("crag_sealed", sealed.toLongArray());
     }
 
     public void load(CompoundTag tag) {
@@ -463,6 +511,10 @@ public final class HoldCrag {
         boxed.clear();
         for (long d : tag.getLongArray("crag_boxed").orElse(new long[0])) {
             boxed.add(d);
+        }
+        sealed.clear();
+        for (long d : tag.getLongArray("crag_sealed").orElse(new long[0])) {
+            sealed.add(d);
         }
         waiting.clear();
         for (net.minecraft.nbt.Tag t : tag.getListOrEmpty("crag_waiting")) {

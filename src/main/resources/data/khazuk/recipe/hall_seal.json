@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    " D ",
+    "DGD",
+    " D "
+  ],
+  "key": {
+    "D": "minecraft:deepslate_bricks",
+    "G": "minecraft:gold_ingot"
+  },
+  "result": {
+    "id": "khazuk:hall_seal",
+    "count": 4
+  }
+}

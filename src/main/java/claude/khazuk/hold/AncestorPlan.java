@@ -56,6 +56,21 @@ public class AncestorPlan extends Item {
         return PlanPlacement.compute(room, new BlockPos(hit.getX(), feetY, hit.getZ()), facing);
     }
 
+    /**
+     * {@link #aimed}, knowing the world: a dug hall aimed at a rune-sealed hall door ({@link HallSeal}) is dug through it, its door in the
+     * seal's arch (the bottom middle) and running the way the seal faces, whoever aims it from wherever (the user, 2026-11-06: "there should
+     * be a place in the room to dig into").
+     */
+    public static PlanPlacement aimedAt(net.minecraft.world.level.BlockGetter level, Rooms.Room room, BlockPos hit, int feetY, Direction facing) {
+        if (!Rooms.isRaised(room.id())) {
+            BlockPos door = HallSeal.anchor(level, hit);
+            if (door != null) {
+                return PlanPlacement.compute(room, door, HallSeal.runs(level, hit));
+            }
+        }
+        return aimed(room, hit, feetY, facing);
+    }
+
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
         if (ctx.getLevel().isClientSide()) {
@@ -77,7 +92,7 @@ public class AncestorPlan extends Item {
             return InteractionResult.FAIL;
         }
         if (!Rooms.isRaised(room.id())) {
-            return dig(hold, level, aimed(room, ctx.getClickedPos(), p.getBlockY(), p.getDirection()), p.isCreative(), p::sendSystemMessage)
+            return dig(hold, level, aimedAt(level, room, ctx.getClickedPos(), p.getBlockY(), p.getDirection()), p.isCreative(), p::sendSystemMessage)
                     ? InteractionResult.SUCCESS : InteractionResult.FAIL;
         }
         return setOut(hold, level, room, ctx.getClickedPos(), p.getDirection(), p.isCreative(), p::sendSystemMessage)
@@ -191,8 +206,9 @@ public class AncestorPlan extends Item {
             tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
             return false;
         }
-        tell.accept(Component.literal("The Miners will dig out the " + pl.room().displayName() + (free ? "." : " for " + pl.room().cost() + " gold."))
-                .withStyle(ChatFormatting.GOLD));
+        boolean sealed = level.getBlockState(pl.door()).getBlock() instanceof HallSeal;
+        tell.accept(Component.literal("The Miners will dig out the " + pl.room().displayName() + (sealed ? " through the sealed door" : "")
+                + (free ? "." : " for " + pl.room().cost() + " gold.")).withStyle(ChatFormatting.GOLD));
         return true;
     }
 

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "khazuk:block/hall_seal",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "khazuk:block/hall_seal",
+      "y": 270
+    },
+    "facing=south": {
+      "model": "khazuk:block/hall_seal"
+    },
+    "facing=west": {
+      "model": "khazuk:block/hall_seal",
+      "y": 90
+    }
+  }
+}

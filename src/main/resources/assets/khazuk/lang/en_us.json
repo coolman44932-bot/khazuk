@@ -54,5 +54,6 @@
   "item.khazuk.engineer_slayer_spawn_egg": "Engineer Slayer Spawn Egg",
   "entity.khazuk.slayer_mech": "Slayer Mech",
   "item.khazuk.slayer_mech_spawn_egg": "Slayer Mech Spawn Egg",
-  "item.khazuk.plan_engineers_guild": "Ancestors' Plan: Engineers' Guild"
+  "item.khazuk.plan_engineers_guild": "Ancestors' Plan: Engineers' Guild",
+  "block.khazuk.hall_seal": "Rune-Sealed Hall Door"
 }

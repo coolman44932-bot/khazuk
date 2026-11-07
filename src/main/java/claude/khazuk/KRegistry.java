@@ -44,6 +44,12 @@ public final class KRegistry {
             p -> new net.minecraft.world.item.BlockItem(GILDED_STONE.get(), p.useBlockDescriptionPrefix()));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> HOARD_GOLD_ITEM = ITEMS.registerItem("hoard_gold",
             p -> new net.minecraft.world.item.BlockItem(HOARD_GOLD.get(), p.useBlockDescriptionPrefix()));
+    /** The rune-sealed hall door: where a hall is dug off a room (hold/HallSeal). */
+    public static final DeferredBlock<claude.khazuk.hold.HallSeal> HALL_SEAL = BLOCKS.registerBlock("hall_seal",
+            claude.khazuk.hold.HallSeal::new, p -> p.mapColor(MapColor.DEEPSLATE).strength(3.5f, 6f).sound(SoundType.DEEPSLATE_BRICKS)
+                    .requiresCorrectToolForDrops());
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> HALL_SEAL_ITEM = ITEMS.registerItem("hall_seal",
+            p -> new net.minecraft.world.item.BlockItem(HALL_SEAL.get(), p.useBlockDescriptionPrefix()));
 
     /** The Shrine's item: the statue itself in hand and in the inventory (GeckoLib's item render, client/ShrineRenderer). */
     public static final DeferredItem<ShrineItem> SHRINE_ITEM = ITEMS.registerItem("ancestor_shrine",
@@ -247,6 +253,7 @@ public final class KRegistry {
                 out.accept(THRONE_ITEM.get());
                 out.accept(GILDED_STONE_ITEM.get());
                 out.accept(HOARD_GOLD_ITEM.get());
+                out.accept(HALL_SEAL_ITEM.get());
                 out.accept(MINER_EGG.get());
                 out.accept(WARRIOR_EGG.get());
             })
