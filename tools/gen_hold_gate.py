@@ -388,7 +388,7 @@ guardian(-11, -1)
 guardian(11, 1)
 
 
-FACING_TURN = {"south": "east", "north": "west", "east": "north", "west": "south"}   # local -> template: x' = z, z' = x
+FACING_TURN = {"south": "east", "north": "west", "east": "south", "west": "north"}   # local -> template: x' = z, z' = x
 
 
 CRAG_OUT = os.path.join(HERE, "..", "src", "main", "resources", "data", "khazuk", "hold", "hold_gate_crag.json")

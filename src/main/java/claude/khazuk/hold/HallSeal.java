@@ -65,7 +65,7 @@ public class HallSeal extends HorizontalDirectionalBlock {
         while (l < 8 && same(level, p.relative(right, -(l + 1)), f)) {
             l++;
         }
-        return p.relative(right, (r - l) / 2);
+        return p.relative(right, Math.floorDiv(r - l, 2));      // an even width: always its left middle, whichever block is aimed at
     }
 
     /** The way a hall dug through the seal at {@code hit} runs. */

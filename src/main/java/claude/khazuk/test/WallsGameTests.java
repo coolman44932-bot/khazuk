@@ -64,14 +64,38 @@ public class WallsGameTests {
         h.succeed();
     }
 
-    /** Where the room's inside reaches its box's edge, or null if its walls close it. */
+    /**
+     * The guard catches what it guards against (the review of 6e0b170): a hole knocked in a hall's side wall, and the gate without its
+     * mountain's cells inside its box (the holes the user saw beside its passage), are both found.
+     */
+    @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
+    public static void theGuardFindsAHoleInAWall(GameTestHelper h) {
+        Rooms.Room barracks = HoldRooms.room("dawi_barracks");
+        List<RoomTemplates.Entry> t = new ArrayList<>(RoomTemplates.get(h.getLevel(), barracks.id()));
+        h.assertTrue(leak(h, barracks, t, true) == null, "the barracks as shipped already leaks");
+        int z = barracks.sizeZ() - 1;                            // its side wall: a hole through it at the floor's middle
+        BlockPos hole = new BlockPos(barracks.sizeX() / 2, 1, z);
+        t.replaceAll(e -> e.local().getX() == hole.getX() && e.local().getY() >= 1 && e.local().getY() <= 2 && e.local().getZ() >= z - 1
+                ? new RoomTemplates.Entry(e.local(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), null) : e);
+        h.assertTrue(leak(h, barracks, t, true) != null, "a hole through the barracks' side wall wasn't found");
+        Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
+        h.assertTrue(leak(h, gate, RoomTemplates.get(h.getLevel(), gate.id()), false) != null,
+                "the gate without its mountain's cells as walls wasn't found open (the holes beside its passage)");
+        h.succeed();
+    }
+
     static String leak(GameTestHelper h, Rooms.Room r, List<RoomTemplates.Entry> t) {
+        return leak(h, r, t, true);
+    }
+
+    /** Where the room's inside reaches its box's edge, or null if its walls close it; {@code crag}: the gate's mountain cells count as walls. */
+    static String leak(GameTestHelper h, Rooms.Room r, List<RoomTemplates.Entry> t, boolean crag) {
         Map<BlockPos, BlockState> cells = new HashMap<>();
         for (RoomTemplates.Entry e : t) {
             cells.put(e.local(), e.state());
         }
         boolean gate = r.function() == HoldRooms.GATE;
-        Set<BlockPos> walls = gate ? HoldCrag.cragCellsInFrame(h.getLevel()) : Set.of();
+        Set<BlockPos> walls = gate && crag ? HoldCrag.cragCellsInFrame(h.getLevel()) : Set.of();
         int front = gate ? GATE_FRONT : 0;
         int sx = r.sizeX(), sy = r.sizeY(), sz = r.sizeZ();
         BlockPos door = new BlockPos(r.doorX(), r.doorY(), r.doorZ());

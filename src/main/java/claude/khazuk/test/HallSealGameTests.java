@@ -60,6 +60,12 @@ public class HallSealGameTests {
             h.assertTrue(pl.door().equals(h.absolutePos(new BlockPos(10, 2, 5))) && pl.facing() == Direction.EAST,
                     "aimed at " + hit + ": the door at " + h.relativePos(pl.door()) + " facing " + pl.facing() + ", not the seal's bottom middle facing east");
         }
+        BlockState two = KRegistry.HALL_SEAL.get().defaultBlockState().setValue(HallSeal.FACING, Direction.WEST);
+        h.setBlock(new BlockPos(3, 2, 10), two);                 // two side by side: one door, whichever is aimed at (the review of 6e0b170)
+        h.setBlock(new BlockPos(3, 2, 11), two);
+        BlockPos a = AncestorPlan.aimedAt(level, mine, h.absolutePos(new BlockPos(3, 2, 10)), 0, Direction.WEST).door();
+        BlockPos b = AncestorPlan.aimedAt(level, mine, h.absolutePos(new BlockPos(3, 2, 11)), 0, Direction.WEST).door();
+        h.assertTrue(a.equals(b), "a 2-wide seal gives two doors: " + h.relativePos(a) + " and " + h.relativePos(b));
         h.setBlock(new BlockPos(12, 2, 9), KRegistry.HALL_SEAL.get().defaultBlockState().setValue(HallSeal.FACING, Direction.SOUTH));
         PlanPlacement one = AncestorPlan.aimedAt(level, mine, h.absolutePos(new BlockPos(12, 2, 9)), 0, Direction.WEST);
         h.assertTrue(one.door().equals(h.absolutePos(new BlockPos(12, 2, 9))) && one.facing() == Direction.SOUTH,
@@ -73,9 +79,19 @@ public class HallSealGameTests {
      */
     @GameTest(template = "field", timeoutTicks = 20, batch = "khazuk")
     public static void aGateBuiltBeforeItsArchesGetsThemFitted(GameTestHelper h) {
+        fitted(h, new BlockPos(4, 2, 36), Direction.EAST);
+    }
+
+    /** The same, the gate turned (running south: the seals' facings turned with it; the review of 6e0b170: east turns nothing). */
+    @GameTest(template = "field", timeoutTicks = 20, batch = "khazuk")
+    public static void aTurnedGateGetsItsArchesFittedTurned(GameTestHelper h) {
+        fitted(h, new BlockPos(36, 2, 4), Direction.SOUTH);
+    }
+
+    private static void fitted(GameTestHelper h, BlockPos ground, Direction runs) {
         var level = h.getLevel();
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
-        PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(new BlockPos(4, 2, 36)), Direction.EAST);
+        PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(ground), runs);
         for (RoomTemplates.Entry e : RoomTemplates.get(level, gate.id())) {
             if (e.local().getX() >= 26 && e.local().getX() <= 30 && e.local().getY() >= 3 && e.local().getY() <= 7
                     && (e.local().getZ() == 9 || e.local().getZ() == 21)) {

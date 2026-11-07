@@ -4,7 +4,7 @@ own face is a hole: a room standing on the rock (or the mountain) to close it, w
 Hold Gate's mountain cells inside its box count as walls (they are raised round it, carved or not: HoldCrag).
 
     python tools/check_closed.py            every template under data/khazuk/structure/room: OK, or where it leaks
-Exit 1 on a leak. KhazukAssetGameTests runs the same flood in game (closedRooms).
+Exit 1 on a leak. WallsGameTests runs the same flood in game (everyHallIsClosedByItsOwnWalls).
 """
 import json, os, re, sys
 from collections import deque
