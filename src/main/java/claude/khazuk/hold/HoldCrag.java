@@ -133,12 +133,11 @@ public final class HoldCrag {
     }
 
     /**
-     * Whether the gate at {@code pl} stands down in the rock (carved, Founding#beginCarved): rock more than {@link AncestorPlan#ROOF} over its
-     * own top. No mountain rises round it: it would fill the caves round a deep gate with stone.
+     * Whether the gate at {@code pl} was carved out of the rock (Founding#beginCarved), as decided when its plan was used and kept
+     * ({@link CarvedGates}). No mountain rises round it: it would fill the caves round it with stone.
      */
     public static boolean carved(ServerLevel level, PlanPlacement pl) {
-        BlockPos top = new BlockPos(pl.door().getX(), pl.box().maxY(), pl.door().getZ());
-        return AncestorPlan.rockOver(level, top) > AncestorPlan.ROOF;
+        return CarvedGates.of(level).has(pl.door());
     }
 
     /** Whether {@code b} is a Hold Gate. */

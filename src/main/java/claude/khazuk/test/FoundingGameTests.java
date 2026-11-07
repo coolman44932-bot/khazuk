@@ -5,6 +5,7 @@ import claude.khazuk.Khazuk;
 import claude.khazuk.ShrineBlockEntity;
 import claude.khazuk.god.Waking;
 import claude.khazuk.hold.AncestorPlan;
+import claude.khazuk.hold.CarvedGates;
 import claude.khazuk.hold.HoldCrag;
 import claude.khazuk.hold.HoldRooms;
 import claude.settlementcore.room.PlanPlacement;
@@ -165,6 +166,20 @@ public class FoundingGameTests {
      */
     @GameTest(template = "field", timeoutTicks = 100, batch = "khazuk")
     public static void aHoldGateFoundedInTheRockIsCarvedOutOfIt(GameTestHelper h) {
+        carvedIn(h, true);
+    }
+
+    /**
+     * Carved from a shallow cave (the review of 5c1b27e): rock only a few blocks over the god, the 43-tall gate cut up through it into the
+     * open air. Still carved and still no mountain round it (decided when the plan was used, CarvedGates), and a player's planks in its way
+     * break and drop.
+     */
+    @GameTest(template = "field", timeoutTicks = 100, batch = "khazuk")
+    public static void aHoldGateCarvedFromAShallowCaveRaisesNoMountain(GameTestHelper h) {
+        carvedIn(h, false);
+    }
+
+    private static void carvedIn(GameTestHelper h, boolean deep) {
         var god = h.makeMockServerPlayerInLevel();
         Waking.setGod(god, new Waking.God(true, "Karak Varn", 0, false));
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
@@ -173,9 +188,10 @@ public class FoundingGameTests {
         BlockPos ground = h.absolutePos(DOOR_GROUND);
         PlanPlacement pl = AncestorPlan.placement(gate, ground, Direction.EAST);
         net.minecraft.world.level.levelgen.structure.BoundingBox box = pl.box();
-        int roof = Math.min(box.maxY() + 8, h.absolutePos(new BlockPos(0, 58, 0)).getY());
+        int roof = deep ? Math.min(box.maxY() + 8, h.absolutePos(new BlockPos(0, 58, 0)).getY()) : ground.getY() + 12;
         net.minecraft.world.level.block.state.BlockState rock = Blocks.DEEPSLATE.defaultBlockState();
-        for (int x = box.minX() - 6; x <= box.maxX() + 2; x++) {          // the mountain's rock, over the site and the god's pocket
+        int west = h.absolutePos(BlockPos.ZERO).getX();                  // the field's own west edge: nothing of a neighbour's touched
+        for (int x = west; x <= box.maxX() + 2; x++) {                    // the mountain's rock, over the site and the god's pocket
             for (int z = box.minZ() - 2; z <= box.maxZ() + 2; z++) {
                 for (int y = ground.getY() + 1; y <= roof; y++) {
                     level.setBlock(new BlockPos(x, y, z), rock, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
@@ -183,7 +199,7 @@ public class FoundingGameTests {
             }
         }
         BlockPos outside = pl.door().relative(Direction.WEST);            // the doorway's outside, in the god's pocket
-        for (int x = outside.getX() - 3; x <= outside.getX(); x++) {
+        for (int x = Math.max(west + 1, outside.getX() - 3); x <= outside.getX(); x++) {
             for (int z = outside.getZ() - 1; z <= outside.getZ() + 1; z++) {
                 for (int y = outside.getY(); y <= outside.getY() + 2; y++) {
                     level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
@@ -191,12 +207,16 @@ public class FoundingGameTests {
             }
         }
         god.setPos(net.minecraft.world.phys.Vec3.atBottomCenterOf(outside.relative(Direction.WEST, 2)));
-        h.assertTrue(AncestorPlan.underRock(level, god.blockPosition()), "the test needs the god down in the rock: "
-                + AncestorPlan.rockOver(level, god.blockPosition()) + " over him");
+        BlockPos planks = pl.world(new BlockPos(10, 3, 15));               // a player's planks in the gate's way
+        level.setBlock(planks, Blocks.OAK_PLANKS.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+        h.assertTrue(AncestorPlan.underRock(level, god.blockPosition()), "the test needs the god down in the rock");
         List<String> told = new ArrayList<>();
         h.assertTrue(AncestorPlan.found(level, god, gate, ground, Direction.EAST, c -> told.add(c.getString())),
                 "the gate wasn't carved out of the rock: " + told);
         h.assertTrue(told.get(0).startsWith("Grungni carves") && f.carving(pl.door()), "the gate isn't being carved: " + told);
+        h.assertTrue(!level.getBlockState(planks).is(Blocks.OAK_PLANKS) && !level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                new net.minecraft.world.phys.AABB(planks).inflate(2), e -> e.getItem().is(Blocks.OAK_PLANKS.asItem())).isEmpty(),
+                "the planks in the gate's way didn't break and drop");
         for (int s = 0; s < 600 && f.rising(pl.door()); s++) {
             f.second(level, Founding.PER_SECOND);
         }
@@ -205,7 +225,7 @@ public class FoundingGameTests {
         h.assertTrue(level.getBlockState(spot).isAir() && level.getBlockState(spot.below()).is(Blocks.POLISHED_DEEPSLATE),
                 "the carved gate's dais isn't there with its spot open: " + level.getBlockState(spot) + " on " + level.getBlockState(spot.below()));
         h.assertTrue(level.getBlockState(pl.door()).isAir() && level.getBlockState(outside).isAir(), "the carved gate's doorway isn't open onto the pocket");
-        h.assertTrue(level.getBlockState(new BlockPos(pl.door().getX(), box.maxY() + 2, pl.door().getZ() + 3)).is(Blocks.DEEPSLATE),
+        h.assertTrue(!deep || level.getBlockState(new BlockPos(pl.door().getX(), box.maxY() + 2, pl.door().getZ() + 3)).is(Blocks.DEEPSLATE),
                 "the rock over the gate was cut");
         h.assertTrue(f.spot(spot, god.getUUID()), "the carved gate's spot doesn't wait for its Shrine");
         level.setBlockAndUpdate(spot, KRegistry.SHRINE.get().defaultBlockState());
@@ -216,6 +236,7 @@ public class FoundingGameTests {
         hold.crags().second(level, hold, HoldCrag.PER_SECOND);
         h.assertTrue(hold.crags().risen(level, pl.door()) && level.getBlockState(outside.relative(Direction.WEST)).isAir(),
                 "a mountain rose round a gate carved in the rock (the pocket: " + level.getBlockState(outside.relative(Direction.WEST)) + ")");
+        CarvedGates.of(level).remove(pl.door());
         h.succeed();
     }
 

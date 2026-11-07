@@ -102,8 +102,11 @@ public class AncestorPlan extends Item {
                 tell.accept(Component.literal(no).withStyle(ChatFormatting.RED));
                 return false;
             }
-            tell.accept(Component.literal("Grungni carves the " + room.displayName() + " out of the rock. When it is cut, walk its passage and "
-                    + "set the Shrine on the dais in the hall at its end: the rock round it is its mountain.").withStyle(ChatFormatting.GOLD));
+            CarvedGates.of(level).add(pl.door());               // decided now and kept: no mountain rises round it (HoldCrag)
+            int broke = clearOutOfTheWay(level, pl.box());
+            tell.accept(Component.literal("Grungni carves the " + room.displayName() + " out of the rock" + (broke > 0 ? ", breaking what was in its way" : "")
+                    + ". When it is cut, walk its passage and set the Shrine on the dais in the hall at its end: the rock round it is its mountain.")
+                    .withStyle(ChatFormatting.GOLD));
             return true;
         }
         GrungniClears cleared = GrungniClears.clear(level, pl);  // what stands on the ground broken, water dammed, hollows filled
@@ -130,23 +133,45 @@ public class AncestorPlan extends Item {
     public static final int ROOF = 4;
 
     /**
-     * Whether the god stands down in the rock (a cave, a mine), more than {@link #ROOF} under anything solid: there the Hold Gate is carved
-     * out of the rock (Settlement Core's carved founding), not raised under the sky (the user, 2026-11-06: "dwarves cant build underground?";
-     * the engine sites a raised one from the land's surface down, so down there it read the lakes far overhead). Measured over where the god
-     * stands, not the block aimed at: aimed at a tree's trunk or a cliff's foot in the open, the plan is not underground (the review of
-     * 7f8ce4e). Under water is not under rock.
+     * Whether the god stands down in the rock (a cave, a mine): more than {@link #ROOF} blocks of the land itself (rock, earth: Settlement
+     * Core's Siting#ground) over his head. There the Hold Gate is carved out of the rock (Settlement Core's carved founding), not raised under
+     * the sky (the user, 2026-11-06: "dwarves cant build underground?"; the engine sites a raised one from the land's surface down, so down
+     * there it read the lakes far overhead). Measured over where the god stands, not the block aimed at (the review of 7f8ce4e); a tree's
+     * logs, a roof or a lake over him are not the rock (the review of 5c1b27e).
      */
     public static boolean underRock(Level level, BlockPos feet) {
-        return rockOver(level, feet) > ROOF + 1;
+        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, feet.getX(), feet.getZ()) - 1;
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        int rock = 0;
+        for (int y = feet.getY() + 2; y <= top && rock <= ROOF; y++) {
+            if (claude.settlementcore.room.Siting.ground(level.getBlockState(at.set(feet.getX(), y, feet.getZ())))) {
+                rock++;
+            }
+        }
+        return rock > ROOF;
     }
 
-    /** How far the solid top of {@code p}'s column stands over it (0 or less in the open; 0 under water). */
-    public static int rockOver(Level level, BlockPos p) {
-        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, p.getX(), p.getZ()) - 1;
-        if (!level.getFluidState(new BlockPos(p.getX(), top, p.getZ())).isEmpty()) {
-            return 0;
+    /**
+     * Before the gate is carved: what a player put in its box (planks, rails, torches, bricks: anything not the land itself, its water or its
+     * air) is broken and drops where it stood, as Grungni does on the surface; the engine's carve would cut it away to nothing. Block
+     * entities never reach here (the engine refuses a carve over one). How many were broken.
+     */
+    static int clearOutOfTheWay(ServerLevel level, net.minecraft.world.level.levelgen.structure.BoundingBox box) {
+        int n = 0;
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        for (int y = box.minY(); y <= box.maxY(); y++) {
+            for (int z = box.minZ(); z <= box.maxZ(); z++) {
+                for (int x = box.minX(); x <= box.maxX(); x++) {
+                    net.minecraft.world.level.block.state.BlockState s = level.getBlockState(at.set(x, y, z));
+                    if (s.isAir() || !s.getFluidState().isEmpty() || s.hasBlockEntity() || claude.settlementcore.room.DigJob.natural(s)) {
+                        continue;
+                    }
+                    level.destroyBlock(at.immutable(), true);
+                    n++;
+                }
+            }
         }
-        return top - p.getY();
+        return n;
     }
 
     /** Begins digging the hall at {@code pl} for {@code hold}: refused (and told why) where the engine won't dig it; else begun, paid. True if begun. */
