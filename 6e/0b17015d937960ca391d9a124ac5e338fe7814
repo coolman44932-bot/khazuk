@@ -1,0 +1,1 @@
+REVIEW PASS 6e0b17015d937960ca391d9a124ac5e338fe7814: seal doors and walls guard check out; notes: anchor() for 2-wide groups, the fitSeals test never rotates, a stale docstring, no failing-case test for the guard
