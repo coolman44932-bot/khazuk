@@ -109,7 +109,6 @@ public class AncestorPlan extends Item {
                     .withStyle(ChatFormatting.GOLD));
             return true;
         }
-        CarvedGates.of(level).remove(pl.door());                 // a gate once carved here and gone: this one is raised, its mountain with it
         GrungniClears cleared = GrungniClears.clear(level, pl);  // what stands on the ground broken, water dammed, hollows filled
         if (cleared.refusal() != null) {
             tell.accept(Component.literal(cleared.refusal().why()).withStyle(ChatFormatting.RED));
@@ -120,7 +119,8 @@ public class AncestorPlan extends Item {
             cleared.putBack();
         } else {
             cleared.keep();
-        }
+            CarvedGates.of(level).remove(pl.door());             // a gate once carved here and gone: this one is raised, its mountain with it
+        }                                                        // (only once begun: a refused click leaves a carved gate's mark, the review of 5adaf65)
         if (no == null) {
             tell.accept(Component.literal("Grungni raises the " + room.displayName() + ". When it stands, walk its passage and set the Shrine on "
                     + "the dais in the hall at its end.").withStyle(ChatFormatting.GOLD));
