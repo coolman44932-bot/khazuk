@@ -1,0 +1,1 @@
+REVIEW PASS WITH NOTES 5d72f7400875bf516b247a3c0c4691028d507d51: hot_walk flag, boiler-side burst and Shrine auto-facing trace correct and keep the block entity; notes: unfaced cleared even if the hall lookup fails, blow() uses yRot not yBodyRot, the facing test bypasses the load path
