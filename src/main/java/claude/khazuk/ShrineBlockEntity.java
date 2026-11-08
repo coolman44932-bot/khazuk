@@ -189,6 +189,11 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         runes.second(level, this);
         ranks.second(level, this);
         devotion.second(level, this);
+        if (unfaced) {
+            unfaced = false;
+            faceTheDoor(level);
+            setChanged();                                        // saved with its "faced" mark: looked at once
+        }
         if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty() | devotion.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
@@ -196,6 +201,55 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     }
 
     // ------------------------------------------------------------------ the statue
+
+    /**
+     * Loaded from a save without the "faced" mark (a Shrine saved before this): looked at once, on its first second. A Shrine saved before
+     * 0.13.1 had no facing and loads facing NORTH, the default, whatever its hall (the detail session's filming, 2026-11-08: in an old Keep
+     * with its door to the south the gods turned their backs on the door and the stairs, the lit gauge 4 blocks from the back wall).
+     */
+    private boolean unfaced;
+
+    /** Tests: as if loaded from a save before the "faced" mark. */
+    public void unfacedForTests() {
+        unfaced = true;
+    }
+
+    /**
+     * A Shrine still facing NORTH (the old default) in its hold's founding hall (the Keep, a Hold Gate's Shrine hall) is turned to face that
+     * hall's door, as one set down there since 0.13.1 faces whoever came up to set it. One facing any other way was turned by its god: kept.
+     * A god can't turn it himself without breaking the hold's heart-stone.
+     */
+    void faceTheDoor(ServerLevel level) {
+        BlockState st = getBlockState();
+        if (!st.hasProperty(ShrineBlock.FACING) || st.getValue(ShrineBlock.FACING) != net.minecraft.core.Direction.NORTH) {
+            return;
+        }
+        for (claude.settlementcore.settlement.Building b : buildings()) {
+            claude.settlementcore.room.Rooms.Room room = claude.settlementcore.room.Rooms.get(b.room());
+            if (room == null || !claude.settlementcore.settlement.Founding.isFoundingHall(room) || !b.box().isInside(worldPosition)) {
+                continue;
+            }
+            PlanPlacement pl = claude.settlementcore.settlement.BuildingBook.placementOf(b);
+            if (pl == null) {
+                return;
+            }
+            net.minecraft.core.Direction d = toward(worldPosition, pl.door());
+            if (d != net.minecraft.core.Direction.NORTH) {
+                level.setBlock(worldPosition, st.setValue(ShrineBlock.FACING, d), Block.UPDATE_ALL);   // the same block: this block entity stays
+            }
+            return;
+        }
+    }
+
+    /** The way from {@code from} to {@code to} along its longer run. */
+    static net.minecraft.core.Direction toward(BlockPos from, BlockPos to) {
+        int dx = to.getX() - from.getX();
+        int dz = to.getZ() - from.getZ();
+        if (Math.abs(dx) >= Math.abs(dz)) {
+            return dx >= 0 ? net.minecraft.core.Direction.EAST : net.minecraft.core.Direction.WEST;
+        }
+        return dz >= 0 ? net.minecraft.core.Direction.SOUTH : net.minecraft.core.Direction.NORTH;
+    }
 
     /** How many of the band's runes {@code devotion} lights: one for every {@value #DEVOTION_PER_RUNE}, up to {@value #RUNES}. */
     public static int litFor(int devotion) {
@@ -289,6 +343,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         runes.save(tag);
         devotion.save(tag);
         ranks.save(tag);
+        tag.putBoolean("faced", true);                           // its facing looked at (faceTheDoor), or set by whoever placed it
         out.store("khazuk", CompoundTag.CODEC, tag);
         out.storeNullable("rune_kit", net.minecraft.world.item.ItemStack.CODEC, runes.kit().isEmpty() ? null : runes.kit());
     }
@@ -303,6 +358,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         runes.load(tag);
         devotion.load(tag);
         ranks.load(tag);
+        unfaced = !tag.getBooleanOr("faced", false);
         runes.kit(in.read("rune_kit", net.minecraft.world.item.ItemStack.CODEC).orElse(net.minecraft.world.item.ItemStack.EMPTY));
     }
 

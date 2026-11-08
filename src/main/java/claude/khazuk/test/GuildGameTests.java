@@ -171,6 +171,8 @@ public class GuildGameTests {
         m.boil(h.getLevel());
         h.assertTrue(m.runningHot() && Math.abs(m.getAttributeValue(Attributes.ATTACK_DAMAGE) - SlayerMech.DAMAGE * (1 + SlayerMech.HOT_DAMAGE)) < 1e-6,
                 "running hot: " + m.runningHot() + ", its blow " + m.getAttributeValue(Attributes.ATTACK_DAMAGE));
+        h.assertTrue(m.hotNow() && !m.overheated(), "running hot under the red line, the clients see hot " + m.hotNow() + " (its hot_walk), overheated "
+                + m.overheated());
         float hp = m.getHealth();
         m.heatForTests(SlayerMech.RED_LINE + 10);
         m.boil(h.getLevel());
@@ -179,6 +181,7 @@ public class GuildGameTests {
         m.heatForTests(0);
         m.boil(h.getLevel());
         h.assertTrue(!m.runningHot() && Math.abs(m.getAttributeValue(Attributes.ATTACK_DAMAGE) - SlayerMech.DAMAGE) < 1e-6, "cooled, it still runs hot");
+        h.assertTrue(!m.hotNow(), "cooled, the clients still see it hot");
         h.succeed();
     }
 

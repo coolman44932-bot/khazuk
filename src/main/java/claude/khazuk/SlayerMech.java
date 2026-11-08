@@ -48,6 +48,11 @@ public class SlayerMech extends Dawi {
     static final com.geckolib.animation.RawAnimation OVERHEAT = com.geckolib.animation.RawAnimation.begin().thenLoop("animation.khazuk.overheat");
     /** The user's ask: it strides on past the red line, shuddering and venting, its pilot beating on the boiler (a 0.9 s loop at its hot pace). */
     static final com.geckolib.animation.RawAnimation OVERHEAT_WALK = com.geckolib.animation.RawAnimation.begin().thenLoop("animation.khazuk.overheat_walk");
+    /** Hot, under the red line: driven at its hot pace (the detail session's hot_walk, handoffs/khazuk_filming_2026-11-08_done.md), white seams, no shudder. */
+    static final com.geckolib.animation.RawAnimation HOT_WALK = com.geckolib.animation.RawAnimation.begin().thenLoop("animation.khazuk.hot_walk");
+    /** Running hot ({@value #HOT} or more, synced: the hot walk's pace matches the hot run's speed, so its feet don't slide). */
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> DATA_HOT =
+            net.minecraft.network.syncher.SynchedEntityData.defineId(SlayerMech.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
     static final com.geckolib.animation.RawAnimation BURST_CLIP = com.geckolib.animation.RawAnimation.begin().thenPlay("animation.khazuk.burst");
     /** The burst clip's beats (its 20 ticks are vanilla's death): the boiler blows at 0.35 s, the pilot is out at 0.6 s. */
     public static final int BLOWS_AT = 7, PILOT_OUT_AT = 12;
@@ -83,6 +88,12 @@ public class SlayerMech extends Dawi {
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder b) {
         super.defineSynchedData(b);
         b.define(DATA_OVERHEATED, false);
+        b.define(DATA_HOT, false);
+    }
+
+    /** Running hot, as the clients see it. */
+    public boolean hotNow() {
+        return entityData.get(DATA_HOT);
     }
 
     public boolean overheated() {
@@ -91,7 +102,7 @@ public class SlayerMech extends Dawi {
 
     /**
      * Its clips (the detail session's showpiece, handoffs/slayer_mech_2026-11-06_done.md): past the red line it shudders and vents, striding
-     * (overheat_walk) or standing (overheat); else it walks or idles. The blow and the burst are triggered on the attack
+     * (overheat_walk) or standing (overheat); running hot it strides driven (hot_walk, the hot run's pace); else it walks or idles. The blow and the burst are triggered on the attack
      * controller, after main.
      */
     @Override
@@ -99,7 +110,7 @@ public class SlayerMech extends Dawi {
         controllers.add(new com.geckolib.animation.AnimationController<SlayerMech>("main", 4, test -> {
             SlayerMech m = test.animatable();
             if (test.isMoving()) {
-                return test.setAndContinue(m.overheated() ? OVERHEAT_WALK : WALK);
+                return test.setAndContinue(m.overheated() ? OVERHEAT_WALK : m.hotNow() ? HOT_WALK : WALK);
             }
             return test.setAndContinue(m.overheated() ? OVERHEAT : IDLE);
         }));
@@ -154,6 +165,9 @@ public class SlayerMech extends Dawi {
         }
         if (hot) {
             level.sendParticles(ParticleTypes.SMOKE, getX(), getY() + 2.6, getZ(), 3, 0.2, 0.1, 0.2, 0.01);
+        }
+        if (hotNow() != hot) {
+            entityData.set(DATA_HOT, hot);
         }
         if (overheated() != heat >= RED_LINE) {
             entityData.set(DATA_OVERHEATED, heat >= RED_LINE);
@@ -210,8 +224,12 @@ public class SlayerMech extends Dawi {
     }
 
     private void blow(ServerLevel level) {
-        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, getX(), getY() + 1.5, getZ(), 1, 0, 0, 0, 0);
-        level.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 2, getZ(), 30, 1.0, 0.6, 1.0, 0.1);
+        // one blast at the boiler, behind and up, and a little smoke drifting up from it: the burst clip (the plates blown off, the pilot's
+        // vault over the rim, the wreck sagging) shows through it (the detail session's filming, 2026-11-08: the emitter hid all of it)
+        net.minecraft.world.phys.Vec3 back = net.minecraft.world.phys.Vec3.directionFromRotation(0, getYRot()).scale(-0.6);
+        double bx = getX() + back.x, by = getY() + 1.8, bz = getZ() + back.z;
+        level.sendParticles(ParticleTypes.EXPLOSION, bx, by, bz, 1, 0, 0, 0, 0);
+        level.sendParticles(ParticleTypes.CLOUD, bx + back.x, by + 0.4, bz + back.z, 10, 0.3, 0.4, 0.3, 0.04);
         level.sendParticles(ParticleTypes.FLAME, getX(), getY() + 1, getZ(), 40, 1.2, 0.6, 1.2, 0.06);
         level.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE.value(), getSoundSource(), 1.4f, 0.8f);
         var src = level.damageSources().explosion(this, this);

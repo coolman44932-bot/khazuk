@@ -91,6 +91,21 @@ public class FoundingGameTests {
         h.assertTrue(hold.inSettlement(pl.door()), "the gate's door is outside the hold founded behind it");
         hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND);
         h.assertTrue(hold.crags().raised(pl.door()) > 0, "the mountain doesn't rise round the founded gate");
+        // a Shrine loaded from before 0.13.1 faces NORTH, the default: on its first second it turns to face its hall's door (west, down the
+        // passage: the detail session's filming, 2026-11-08); one its god turned another way is kept; and its save marks it looked at
+        var facing = claude.khazuk.ShrineBlock.FACING;
+        h.getLevel().setBlock(spot, h.getLevel().getBlockState(spot).setValue(facing, Direction.NORTH), net.minecraft.world.level.block.Block.UPDATE_ALL);
+        h.assertTrue(h.getLevel().getBlockEntity(spot) == hold, "turning the Shrine's block replaced its hold");
+        hold.unfacedForTests();
+        hold.second(h.getLevel());
+        h.assertTrue(h.getLevel().getBlockState(spot).getValue(facing) == Direction.WEST && h.getLevel().getBlockEntity(spot) == hold,
+                "the old Shrine faces " + h.getLevel().getBlockState(spot).getValue(facing) + " after its first second, not west to its hall's door");
+        h.getLevel().setBlock(spot, h.getLevel().getBlockState(spot).setValue(facing, Direction.SOUTH), net.minecraft.world.level.block.Block.UPDATE_ALL);
+        hold.unfacedForTests();
+        hold.second(h.getLevel());
+        h.assertTrue(h.getLevel().getBlockState(spot).getValue(facing) == Direction.SOUTH, "a Shrine its god turned south was turned again");
+        net.minecraft.nbt.CompoundTag saved = hold.saveWithoutMetadata(h.getLevel().registryAccess());
+        h.assertTrue(saved.getCompoundOrEmpty("khazuk").getBooleanOr("faced", false), "the Shrine's save doesn't mark its facing looked at");
         h.succeed();
     }
 
