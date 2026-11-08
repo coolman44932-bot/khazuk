@@ -189,7 +189,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         runes.second(level, this);
         ranks.second(level, this);
         devotion.second(level, this);
-        if (unfaced) {
+        if (unfaced && !buildings().isEmpty()) {                  // its buildings read first (the review of 5d72f74)
             unfaced = false;
             faceTheDoor(level);
             setChanged();                                        // saved with its "faced" mark: looked at once
@@ -413,6 +413,16 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     @Override
     protected String currencyRoad() {
         return "The hold's gold";
+    }
+
+    /**
+     * The Miners fill the hollows under what they raise (a cave, a pocket of water or lava under its ground) instead of the site being
+     * refused (the user, 2026-11-08: "wherever they are gonna build at so i dont get the message for hollow ground"): Settlement Core's
+     * fillHollows, laid in the plinth phase with the land's own stone.
+     */
+    @Override
+    public boolean fillsHollows() {
+        return true;
     }
 
     @Override

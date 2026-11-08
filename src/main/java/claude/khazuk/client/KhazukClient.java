@@ -51,7 +51,7 @@ public final class KhazukClient {
                 boolean carved = claude.settlementcore.settlement.Founding.isFoundingHall(plan.room())
                         && claude.khazuk.hold.AncestorPlan.underRock(mc.level, mc.player.blockPosition());   // carved out of the rock: its box only
                 var shown = claude.settlementcore.room.Rooms.isRaised(plan.room().id()) && !carved
-                        ? claude.settlementcore.room.Siting.preview(mc.level, pl)
+                        ? claude.settlementcore.room.Siting.preview(mc.level, pl, true, true)   // the Miners fill the hollows under it
                         : new claude.settlementcore.room.Siting.Preview(pl, null, java.util.List.of());   // a dug hall: its box in the rock
                 if (shown.refusal() != null && claude.settlementcore.settlement.Founding.isFoundingHall(plan.room())
                         && claude.khazuk.hold.GrungniClears.mends(mc.level, shown.refusal(), pl.door().getY() - 1)) {

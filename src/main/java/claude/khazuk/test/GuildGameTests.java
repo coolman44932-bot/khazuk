@@ -33,7 +33,7 @@ import java.util.List;
  * <li>the Guild raises four Engineer Slayers and builds one mech for food and gold, and nothing without it;</li>
  * <li>an Engineer's shot scatters onto the foes beside his mark; an overload bursts there, burning them, and singes him, never to death;</li>
  * <li>the mech runs hot past {@value SlayerMech#HOT} (a third harder) and scalds itself past the red line;</li>
- * <li>broken, the mech bursts and its pilot leaps out a Giant Slayer of the hold, on its roll;</li>
+ * <li>broken, the mech bursts and its pilot leaps out a Dragon Slayer of the hold, on its roll;</li>
  * <li>the floors: an Engineer Slayer beats an axe vindicator and two zombies; the mech a ravager and two axe vindicators.</li>
  * </ul>
  */
@@ -200,10 +200,10 @@ public class GuildGameTests {
                 .thenExecute(() -> {
             h.assertTrue(m.deathTime >= SlayerMech.PILOT_OUT_AT, "the pilot leapt out at death tick " + m.deathTime + ", before the clip shows him gone");
             Slayer pilot = m.pilotForTests;
-            h.assertTrue(pilot != null && pilot.isAlive() && pilot.tier() == Slayer.Tier.GIANT && pilot.settlement() == heart, "the pilot: " + pilot);
-            h.assertTrue(Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get()) == 0 && Ranks.count(h.getLevel(), heart, KRegistry.GIANT_SLAYER.get()) == 1,
-                    "the roll: mechs " + Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get()) + ", Giant Slayers "
-                            + Ranks.count(h.getLevel(), heart, KRegistry.GIANT_SLAYER.get()));
+            h.assertTrue(pilot != null && pilot.isAlive() && pilot.tier() == Slayer.Tier.DRAGON && pilot instanceof claude.khazuk.DragonSlayer && pilot.settlement() == heart, "the pilot: " + pilot);
+            h.assertTrue(Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get()) == 0 && Ranks.count(h.getLevel(), heart, KRegistry.DRAGON_SLAYER.get()) == 1,
+                    "the roll: mechs " + Ranks.count(h.getLevel(), heart, KRegistry.SLAYER_MECH.get()) + ", Dragon Slayers "
+                            + Ranks.count(h.getLevel(), heart, KRegistry.DRAGON_SLAYER.get()));
             h.assertTrue(heart.ranks().buildMech(h.getLevel(), heart), "the Guild didn't build the hold a new mech once the old one burst");
                 })
                 .thenSucceed();

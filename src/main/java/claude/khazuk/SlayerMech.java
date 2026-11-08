@@ -28,8 +28,8 @@ import net.minecraft.world.phys.AABB;
  * {@value #COOL} a second at rest. From {@value #HOT} it runs hot: a third harder ({@value #HOT_DAMAGE}) and quicker. Past the red line
  * ({@value #RED_LINE}) the boiler hurts it, {@value #SCALD} a second, venting steam.</li>
  * <li><b>Its arms:</b> heavy blows that throw foes back; each rings on the foes beside its mark ({@value #SWEEP_SHARE} of it).</li>
- * <li><b>It breaks:</b> the boiler bursts ({@value #BURST} to the foes round it, set burning) and its pilot leaps out a Giant Slayer, on
- * the hold's roll, and fights on.</li>
+ * <li><b>It breaks:</b> the boiler bursts ({@value #BURST} to the foes round it, set burning) and its pilot leaps out a Dragon Slayer
+ * (the user's pick, 2026-11-08: the showpiece's pilot wears his five-spike crest), on the hold's roll, and fights on.</li>
  * <li>Built by the hold's Engineers' Guild, one to a hold (hold/Ranks). A showpiece is commissioned (handoffs/slayer_mech_2026-11-06.md);
  * it runs on a fast stand-in till then.</li>
  * </ul>
@@ -226,7 +226,7 @@ public class SlayerMech extends Dawi {
     private void blow(ServerLevel level) {
         // one blast at the boiler, behind and up, and a little smoke drifting up from it: the burst clip (the plates blown off, the pilot's
         // vault over the rim, the wreck sagging) shows through it (the detail session's filming, 2026-11-08: the emitter hid all of it)
-        net.minecraft.world.phys.Vec3 back = net.minecraft.world.phys.Vec3.directionFromRotation(0, getYRot()).scale(-0.6);
+        net.minecraft.world.phys.Vec3 back = net.minecraft.world.phys.Vec3.directionFromRotation(0, yBodyRot).scale(-0.6);   // the body, as drawn
         double bx = getX() + back.x, by = getY() + 1.8, bz = getZ() + back.z;
         level.sendParticles(ParticleTypes.EXPLOSION, bx, by, bz, 1, 0, 0, 0, 0);
         level.sendParticles(ParticleTypes.CLOUD, bx + back.x, by + 0.4, bz + back.z, 10, 0.3, 0.4, 0.3, 0.04);
@@ -242,7 +242,7 @@ public class SlayerMech extends Dawi {
 
     private void pilotOut(ServerLevel level) {
         ShrineBlockEntity h = settlementLoading();
-        Slayer pilot = KRegistry.GIANT_SLAYER.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        Slayer pilot = KRegistry.DRAGON_SLAYER.get().create(level, EntitySpawnReason.MOB_SUMMONED);   // the one in the model (the user's pick)
         if (pilot == null) {
             return;
         }

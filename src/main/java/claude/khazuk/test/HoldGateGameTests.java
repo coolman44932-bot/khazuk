@@ -125,6 +125,47 @@ public class HoldGateGameTests {
         h.succeed();
     }
 
+    /**
+     * A Hold Gate set out over hollow ground is begun, not refused (the user, 2026-11-08: "wherever they are gonna build at so i dont get the
+     * message for hollow ground"): a cave 1 and 2 under the gate's floor, under its passage and its tower, and water 1 under it. The engine
+     * alone refuses that site for hollow ground; the hold's Miners take it, every one of those cells is a seal of their plan, and raised,
+     * each is solid ground again.
+     */
+    @GameTest(template = "field", timeoutTicks = 400, batch = "khazuk")
+    public static void aHoldGateSetOutOverACaveIsBegunAndItsMinersFillIt(GameTestHelper h) {
+        ShrineBlockEntity hold = hold(h);
+        hold.addCurrency(50, "the test");
+        Rooms.Room room = HoldRooms.room("dawi_hold_gate");
+        List<BlockPos> hollow = new ArrayList<>();
+        for (int x = 12; x <= 16; x++) {
+            for (int z = 34; z <= 38; z++) {
+                for (int y = 0; y <= 1; y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState());
+                    hollow.add(h.absolutePos(new BlockPos(x, y, z)));
+                }
+            }
+        }
+        BlockPos wet = new BlockPos(24, 1, 30);
+        h.setBlock(wet, Blocks.WATER.defaultBlockState());
+        hollow.add(h.absolutePos(wet));
+        var pl = AncestorPlan.placement(room, h.absolutePos(DOOR_GROUND), Direction.EAST);
+        var alone = claude.settlementcore.room.Siting.plan(h.getLevel(), pl, claude.settlementcore.room.RoomShoring.Warren.alone(), true);
+        h.assertTrue(alone instanceof claude.settlementcore.room.Siting.Refusal no && no.why().startsWith("The ground is hollow"),
+                "the test needs a site the engine alone refuses for hollow ground: " + alone);
+        List<String> told = new ArrayList<>();
+        h.assertTrue(AncestorPlan.setOut(hold, h.getLevel(), room, h.absolutePos(DOOR_GROUND), Direction.EAST, false, c -> told.add(c.getString())),
+                "the gate over the cave was refused: " + told);
+        h.assertTrue(hold.works().sites().size() == 1, hold.works().sites().size() + " site(s) begun");
+        var site = hold.works().sites().iterator().next();
+        h.assertTrue(site.job() instanceof claude.settlementcore.room.RaiseJob, "the gate's site is " + site.job());
+        site.job().finishAll(h.getLevel());
+        for (BlockPos c : hollow) {
+            var s = h.getLevel().getBlockState(c);
+            h.assertTrue(claude.settlementcore.room.Siting.ground(s), "the hollow at " + c.toShortString() + " is " + s + " once the gate is raised");
+        }
+        h.succeed();
+    }
+
     /** The field's solid blocks above its ground, round the gate. */
     private static int solid(GameTestHelper h) {
         int n = 0;
