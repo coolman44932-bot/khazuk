@@ -185,6 +185,14 @@ public class UndergroundRunGameTests {
                 String name = dig == mine ? "mine" : "great_hall";
                 step(h, hold, at, name + "_seal", HallSeal.arch(level, dig.door()).isEmpty(), "the " + name + "'s seal open");
                 step(h, hold, at, name + "_in", inside(h, hold, dig) > 0, "a Miner of the crew in past the " + name + "'s wall");
+                var work = hold.works().digs().stream().filter(d -> d.job().door.equals(dig.door())).findFirst().orElse(null);
+                if (work != null) {
+                    BlockPos behind = dig.door().relative(dig.facing());
+                    step(h, hold, at, name + "_done_some", work.job().finishedCount() > 0, "the " + name + "'s dig has its first cells done: "
+                            + work.job().finishedCount() + " of " + work.job().taskCount() + ", the cell behind its door " + level.getBlockState(behind).getBlock());
+                    step(h, hold, at, name + "_plug", !level.getBlockState(behind).isAir(), "the cell behind the " + name + "'s door is " + level.getBlockState(behind).getBlock()
+                            + " with " + work.job().finishedCount() + " of " + work.job().taskCount() + " cells done");
+                }
                 if (!at.containsKey(name + "_seal")) {
                     h.assertTrue(now - ordered < SEAL_BUDGET, "the " + name + "'s seal still stands " + SEAL_BUDGET + " ticks after its order");
                 }
@@ -195,7 +203,8 @@ public class UndergroundRunGameTests {
                 boolean done = at.containsKey("mine") && at.containsKey("great_hall");
                 h.assertTrue(done || now - ordered < IN_BUDGET, "no Miner of the crew walked in past a sealed door in " + IN_BUDGET + " ticks: " + at
                         + ", crew " + hold.works().crewCount() + ", digs " + hold.works().digs().stream().map(d -> d.room().id() + " "
-                        + Math.round(d.job().progress() * 100) + "%").toList());
+                        + Math.round(d.job().progress() * 100) + "%").toList() + " || mine: " + where(h, hold, mine) + " || great hall: "
+                        + where(h, hold, great));
             }
             if (now % 1200 == 0) {
                 line(h, hold, "a minute's look: digs " + hold.works().digs().stream().map(d -> d.room().id() + " " + Math.round(d.job().progress() * 100) + "%").toList());
@@ -227,6 +236,35 @@ public class UndergroundRunGameTests {
             n += along >= 2 && dig.box().isInside(p) ? 1 : 0;
         }
         return n;
+    }
+
+    /**
+     * Where the crew stands against {@code dig}, and what is in its way: each member's cell relative to the test and how far along the dig it is
+     * (door = 0, "in" inside its box), then the dig's task count against its template's, and the first cells behind its door along the way it runs.
+     */
+    private static String where(GameTestHelper h, ShrineBlockEntity hold, PlanPlacement dig) {
+        Direction runs = dig.facing();
+        StringBuilder sb = new StringBuilder("door " + h.relativePos(dig.door()).toShortString() + " running " + runs + ", crew: ");
+        for (java.util.UUID id : hold.works().crewIds()) {
+            var e = h.getLevel().getEntity(id);
+            if (e == null) {
+                continue;
+            }
+            BlockPos p = e.blockPosition();
+            int along = (p.getX() - dig.door().getX()) * runs.getStepX() + (p.getZ() - dig.door().getZ()) * runs.getStepZ();
+            sb.append(h.relativePos(p).toShortString()).append(" [").append(along).append(dig.box().isInside(p) ? " in" : "").append("] ");
+        }
+        for (var d : hold.works().digs()) {
+            if (d.job().door.equals(dig.door())) {
+                sb.append("; ").append(d.job().taskCount()).append(" tasks of the template's ")
+                        .append(claude.settlementcore.room.RoomTemplates.get(h.getLevel(), dig.room().id()).size()).append(" cells; behind the door:");
+                for (int k = 1; k <= 6; k++) {
+                    BlockPos p = dig.door().relative(runs, k);
+                    sb.append(' ').append(k).append('=').append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(h.getLevel().getBlockState(p).getBlock()).getPath());
+                }
+            }
+        }
+        return sb.toString();
     }
 
     private static void step(GameTestHelper h, ShrineBlockEntity hold, Map<String, Long> at, String key, boolean done, String what) {

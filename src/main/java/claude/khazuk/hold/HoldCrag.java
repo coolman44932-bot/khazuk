@@ -354,6 +354,11 @@ public final class HoldCrag {
                 keepOut.add(b.box());                            // the hold's other buildings keep their air
             }
         }
+        for (claude.settlementcore.work.DigWork d : hold.works().digs()) {
+            keepOut.add(d.box());                                // a hall being dug keeps its air too: the dig ticks off the cells that are open already
+                                                                 // (the gate's air behind a sealed door) and a mountain rising after that filled them
+                                                                 // with a plug no Miner digs (UndergroundRunGameTests: 4 cells thick behind each arch)
+        }
         BlockPos shrine = hold.getBlockPos();
         keepOut.add(new BoundingBox(shrine.getX() - 2, shrine.getY() - 1, shrine.getZ() - 2, shrine.getX() + 2, shrine.getY() + 3, shrine.getZ() + 2));
         // every other settlement near, of any race and any god (another of this god's holds too): its rooms and its heart keep their air
