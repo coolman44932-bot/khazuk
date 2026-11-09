@@ -1,0 +1,1 @@
+REVIEW PASS WITH NOTES 88ab9b33774a23aa5759a0782bd316bfda566065: the keepOut fix is sound (a dig box held out of the rising crag); notes: the plug probe asserts nothing, diagnostics built every tick, the alarm assertion may flake on Normal spawns, a guard not a DigJob root fix
