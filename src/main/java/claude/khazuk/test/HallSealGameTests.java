@@ -181,6 +181,11 @@ public class HallSealGameTests {
      * ordered through, template (29, 3, 26)) with rock behind it, and a Mine ordered through that seal as the god's plan does it.
      */
     private static Dug mineThroughTheGatesSeal(GameTestHelper h) {
+        return throughTheGatesSeal(h, "dawi_mine");
+    }
+
+    /** {@link #mineThroughTheGatesSeal}, the room {@code roomId} ordered through the gate's back seal. */
+    private static Dug throughTheGatesSeal(GameTestHelper h, String roomId) {
         var level = h.getLevel();
         h.setBlock(GATE_SHRINE, KRegistry.SHRINE.get().defaultBlockState());
         claude.khazuk.ShrineBlockEntity hold = (claude.khazuk.ShrineBlockEntity) level.getBlockEntity(h.absolutePos(GATE_SHRINE));
@@ -196,7 +201,7 @@ public class HallSealGameTests {
         BlockPos seal = g.world(new BlockPos(29, 3, 26));
         h.assertTrue(level.getBlockState(seal).getBlock() instanceof HallSeal, "no seal at the gate's back arch: " + level.getBlockState(seal));
         Direction runs = level.getBlockState(seal).getValue(HallSeal.FACING);
-        PlanPlacement mine = PlanPlacement.compute(HoldRooms.room("dawi_mine"), HallSeal.anchor(level, seal), runs);
+        PlanPlacement mine = PlanPlacement.compute(HoldRooms.room(roomId), HallSeal.anchor(level, seal), runs);
         h.assertTrue(HallSeal.arch(level, mine.door()).size() == 9, "the arch is " + HallSeal.arch(level, mine.door()).size() + " seals, not 9");
         for (BlockPos p : BlockPos.betweenClosed(mine.box().minX(), mine.box().minY(), mine.box().minZ(), mine.box().maxX(), mine.box().maxY(), mine.box().maxZ())) {
             int along = (p.getX() - mine.door().getX()) * runs.getStepX() + (p.getZ() - mine.door().getZ()) * runs.getStepZ();
@@ -205,8 +210,83 @@ public class HallSealGameTests {
             }
         }
         told.clear();
-        h.assertTrue(AncestorPlan.dig(hold, level, mine, true, c -> told.add(c.getString())), "the Mine through the seal was refused: " + told);
+        h.assertTrue(AncestorPlan.dig(hold, level, mine, true, c -> told.add(c.getString())), "the " + roomId + " through the seal was refused: " + told);
         return new Dug(hold, mine, seal);
+    }
+
+    /** The next room ordered through the seal at {@code seal} (an arch of the room before), the rock behind it filled, begun and dug whole. */
+    private static PlanPlacement digOnThrough(GameTestHelper h, claude.khazuk.ShrineBlockEntity hold, BlockPos seal, String roomId) {
+        var level = h.getLevel();
+        Rooms.Room room = HoldRooms.room(roomId);
+        PlanPlacement next = AncestorPlan.aimedAt(level, room, seal, 0, Direction.WEST);   // whichever way the god looks
+        Direction runs = level.getBlockState(seal).getValue(HallSeal.FACING);
+        h.assertTrue(next.door().equals(HallSeal.anchor(level, seal)) && next.facing() == runs, "the " + roomId + " aimed at the seal: its door "
+                + h.relativePos(next.door()) + " running " + next.facing() + ", not the arch's bottom middle running " + runs);
+        for (BlockPos p : BlockPos.betweenClosed(next.box().minX(), next.box().minY(), next.box().minZ(), next.box().maxX(), next.box().maxY(), next.box().maxZ())) {
+            int along = (p.getX() - next.door().getX()) * runs.getStepX() + (p.getZ() - next.door().getZ()) * runs.getStepZ();
+            if (along > 0 && level.getBlockState(p).isAir()) {
+                level.setBlock(p, Blocks.STONE.defaultBlockState(), 2);
+            }
+        }
+        java.util.List<String> told = new java.util.ArrayList<>();
+        h.assertTrue(AncestorPlan.dig(hold, level, next, true, c -> told.add(c.getString())), "the " + roomId + " through the seal was refused: " + told);
+        hold.works().digs().forEach(d -> d.job().finishAll(level));
+        hold.works().second(level, 303);
+        h.assertTrue(hold.works().digs().isEmpty() && HallSeal.arch(level, next.door()).isEmpty() && level.getBlockState(next.door()).isAir(),
+                "the " + roomId + " wasn't dug through its seal: digs " + hold.works().digs().size() + ", the door " + level.getBlockState(next.door()));
+        return next;
+    }
+
+    /**
+     * The hold's roads (the user, 2026-11-09: "why dont we have hallways like skaven do", then "yeah lets do small for now"): a Hold Road dug
+     * through the gate's back seal ends in a sealed door of its own, and a Road Crossing is dug on through it; the crossing's own three
+     * seals stand, its side ones a door the next plan runs either way through.
+     */
+    @GameTest(template = "field", timeoutTicks = 400, batch = "khazuk")
+    public static void aRoadEndsInASealedDoorTheHoldDigsOnThrough(GameTestHelper h) {
+        var level = h.getLevel();
+        Dug d = throughTheGatesSeal(h, "dawi_road");
+        d.hold().works().digs().forEach(w -> w.job().finishAll(level));
+        d.hold().works().second(level, 202);
+        h.assertTrue(d.hold().has(HoldRooms.ROAD) && HallSeal.arch(level, d.mine().door()).isEmpty(), "the road wasn't dug through the gate's seal");
+        BlockPos far = d.mine().world(new BlockPos(14, 2, 3));
+        h.assertTrue(level.getBlockState(far).getBlock() instanceof HallSeal && level.getBlockState(far).getValue(HallSeal.FACING) == d.mine().facing()
+                && HallSeal.arch(level, HallSeal.anchor(level, far)).size() == 9, "the road's far end isn't a sealed door running on: " + level.getBlockState(far));
+        PlanPlacement crossing = digOnThrough(h, d.hold(), far, "dawi_road_crossing");
+        int sides = 0;
+        for (BlockPos l : new BlockPos[]{new BlockPos(10, 2, 5), new BlockPos(5, 2, 0), new BlockPos(5, 2, 10)}) {
+            BlockPos w = crossing.world(l);
+            sides += level.getBlockState(w).getBlock() instanceof HallSeal && HallSeal.arch(level, HallSeal.anchor(level, w)).size() == 9 ? 1 : 0;
+        }
+        h.assertTrue(sides == 3, "the crossing has " + sides + " whole sealed doors, not 3 (ahead and either side)");
+        h.succeed();
+    }
+
+    /**
+     * A Road Descent dug through a sealed door: its stair goes down 8 to a landing whose far end is a sealed door, the next hall's door 8
+     * under the one it was dug from. (A sealed door set high in the open field: the gate's floor is too near the field's own for a descent.)
+     */
+    @GameTest(template = "field", timeoutTicks = 400, batch = "khazuk")
+    public static void aRoadDescentGoesDownEightToASealedDoor(GameTestHelper h) {
+        var level = h.getLevel();
+        h.setBlock(GATE_SHRINE, KRegistry.SHRINE.get().defaultBlockState());
+        claude.khazuk.ShrineBlockEntity hold = (claude.khazuk.ShrineBlockEntity) level.getBlockEntity(h.absolutePos(GATE_SHRINE));
+        BlockPos door = h.absolutePos(new BlockPos(30, 20, 36));
+        for (int dz = -2; dz <= 2; dz++) {
+            for (int dy = 0; dy <= 4; dy++) {
+                boolean seal = Math.abs(dz) <= 1 && dy <= 2;
+                level.setBlock(door.offset(0, dy, dz), seal ? KRegistry.HALL_SEAL.get().defaultBlockState().setValue(HallSeal.FACING, Direction.EAST)
+                        : Blocks.CHISELED_STONE_BRICKS.defaultBlockState(), 2);
+            }
+        }
+        PlanPlacement descent = digOnThrough(h, hold, door.above(), "dawi_road_descent");
+        BlockPos foot = descent.world(new BlockPos(16, 2, 3));
+        h.assertTrue(level.getBlockState(foot).getBlock() instanceof HallSeal && level.getBlockState(foot).getValue(HallSeal.FACING) == descent.facing()
+                && HallSeal.anchor(level, foot).getY() == descent.door().getY() - 8, "the descent's foot isn't a sealed door 8 down: "
+                + level.getBlockState(foot) + " at " + h.relativePos(foot) + ", its door at " + h.relativePos(descent.door()));
+        h.assertTrue(level.getBlockState(descent.world(new BlockPos(6, 4, 3))).getBlock() instanceof net.minecraft.world.level.block.StairBlock,
+                "the descent has no stair half way down: " + level.getBlockState(descent.world(new BlockPos(6, 4, 3))));
+        h.succeed();
     }
 
     /**

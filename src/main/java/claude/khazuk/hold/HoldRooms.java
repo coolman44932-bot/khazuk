@@ -41,6 +41,11 @@ public final class HoldRooms {
     public static final Rooms.Function ENGINEERS_GUILD = Rooms.Function.of("DAWI_ENGINEERS_GUILD");
     /** D5: the Runesmith's hall, where the hold's runes are struck (hold/Runes). */
     public static final Rooms.Function RUNIC_FORGE = Rooms.Function.of("DAWI_RUNIC_FORGE");
+    /**
+     * The hold's roads (the user, 2026-11-09: "why dont we have hallways like skaven do", then "yeah lets do small for now"): passages dug
+     * off a sealed door like the halls, each ending in sealed doors of its own, so the hold grows hall to road to hall (tools/gen_halls.py).
+     */
+    public static final Rooms.Function ROAD = Rooms.Function.of("DAWI_ROAD");
 
     public static final List<Rooms.Room> RAISED = List.of(
             new Rooms.Room("dawi_hold_gate", "Hold Gate", 40, GATE,
@@ -94,6 +99,15 @@ public final class HoldRooms {
                     "Grimnir in blackstone with an axe in each fist and a crest of fire, an oath altar between braziers, fire under iron in the floor, "
                             + "skulls and orange banners: the hold's Troll Slayers swear their oath here.",
                     17, 10, 15, 0, 1, 7, List.of(), List.of(), List.of(new Rooms.Station("oath", 9, 1, 7, Direction.EAST))),
+            new Rooms.Room("dawi_road", "Hold Road", 5, ROAD,
+                    "A road of the hold, 15 long: dressed deepslate, bronze-banded pilasters, lanterns on chains, a sealed door at its far end.",
+                    15, 8, 7, 0, 1, 3, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_road_crossing", "Road Crossing", 8, ROAD,
+                    "Where the hold's roads meet: a gold compass in the floor, a chandelier over it, sealed doors ahead and either side.",
+                    11, 8, 11, 0, 1, 5, List.of(), List.of(), List.of()),
+            new Rooms.Room("dawi_road_descent", "Road Descent", 8, ROAD,
+                    "A wide stair down 8 into the deeps, a landing top and bottom, a sealed door at its foot.",
+                    17, 16, 7, 0, 9, 3, List.of(), List.of(), List.of()),
             new Rooms.Room("dawi_engineers_guild", "Engineers' Guild", 30, ENGINEERS_GUILD,   // 0.14.2: its door 5 wide for the mech
                     "A gantry and hoist over a copper assembly bay, boilers on blast furnaces, a workbench of anvils and blueprints, forges under "
                             + "copper hoods and a firing range: the Engineer Slayers work here, and the Slayer mech is built in the bay.",

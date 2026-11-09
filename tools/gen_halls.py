@@ -1054,9 +1054,125 @@ def engineers_guild():
     return h
 
 
+# ------------------------------------------------------------------ the hold's roads (the user, 2026-11-09: "why dont we have hallways like
+# skaven do", then "yeah lets do small for now"): passages dug off a sealed door like the halls, each ending in sealed doors of its own,
+# so the hold grows hall to road to hall. Five wide and six high inside, the karak's dressed deepslate, a bronze-banded pilaster every
+# four blocks, lanterns on chains, a gold-edged runner down the floor.
+
+def seal_arch_end(h, x, z, facing, y0=1):
+    """A sealed door in an end wall at x (its face across z): seals 3 wide and 3 high centred on z, a carved frame round them and a gold
+    keystone over, its floor at y0 - 1 (seal_arch, turned)."""
+    for dz in range(-2, 3):
+        for y in range(y0, y0 + 4):
+            h.put(x, y, z + dz, CARVE)
+    for dz in range(-1, 2):
+        for y in range(y0, y0 + 3):
+            h.put(x, y, z + dz, f"khazuk:hall_seal[facing={facing}]")
+    h.put(x, y0 + 4, z, GOLD)
+
+
+def road_furnish(h, x0, x1, floor=0):
+    """A road's furnishing from x0 to x1 (inside): pilasters on both walls every four, banded in bronze, a runner down the middle, lanterns."""
+    for x in range(x0, x1 + 1):
+        h.put(x, floor, h.door_z, CHIS if x % 4 == 0 else DARK)          # the runner: polished blackstone, chiselled every four
+    for x in range(x0 + 1, x1, 4):
+        for z in (1, h.sz - 2):
+            for y in range(floor + 1, floor + 7):
+                h.put(x, y, z, CARVE if y in (floor + 1, floor + 6) else BRONZE if y == floor + 4 else POL)
+    for x in range(x0 + 3, x1, 6):
+        h.lamp(x, h.door_z, 1)
+
+
+def road_straight():
+    """The Hold Road: 15 long, a sealed door at its far end."""
+    h = Hall(15, 8, 7, 3, 3, 4, 31)
+    h.shell()
+    road_furnish(h, 1, 13)
+    seal_arch_end(h, 14, 3, "east")
+    return h
+
+
+def road_crossing():
+    """The Road Crossing: a square of 11, sealed doors ahead and either side, a gold compass in the floor and a chandelier over it."""
+    h = Hall(11, 8, 11, 5, 3, 4, 37)
+    h.shell()
+    for x in range(1, 10):                                               # the floor's two runners, crossing
+        h.put(x, 0, 5, DARK)
+    for z in range(1, 10):
+        h.put(5, 0, z, DARK)
+    for dx, dz in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):            # the compass: gold at the heart, carved round it
+        h.put(5 + dx, 0, 5 + dz, GOLD if (dx, dz) == (0, 0) else CHIS)
+    for x, z in ((1, 1), (1, 9), (9, 1), (9, 9)):                        # the corners' pilasters
+        for y in range(1, 7):
+            h.put(x, y, z, CARVE if y in (1, 6) else BRONZE if y == 4 else POL)
+    seal_arch_end(h, 10, 5, "east")
+    seal_arch(h, 5, 0, "north")
+    seal_arch(h, 5, 10, "south")
+    for i in range(2):
+        h.put(5, 6 - i, 5, CHAIN)
+    h.put(5, 4, 5, LANTERN)
+    for x, z in ((3, 3), (3, 7), (7, 3), (7, 7)):
+        h.lamp(x, z, 1)
+    return h
+
+
+def road_descent():
+    """The Road Descent: down 8 on a wide stair, a landing top and bottom, its vault stepping down with it, a sealed door at its foot."""
+    drop, sx, sz = 8, 17, 7
+    h = Hall(sx, drop + 8, sz, 3, 3, 4, 41)
+    h.door_y = drop + 1
+    top = drop                                                           # the top landing's floor
+    # every cell solid first: the stair's fill under it and the rock over its stepping vault are the hold's masonry
+    for x in range(sx):
+        for y in range(h.sy):
+            for z in range(sz):
+                h.put(x, y, z, h.wall(x, y, z) if z in (0, sz - 1) or x in (0, sx - 1) else WALL)
+    def floor_at(x):
+        if x <= 2:
+            return top
+        if x >= 3 + drop:
+            return 0
+        return top - (x - 2)
+    for x in range(1, sx - 1):
+        f = floor_at(x)
+        for z in range(1, sz - 1):
+            h.put(x, f, z, TILE if (x + z) % 2 else POL)
+            for y in range(f + 1, f + 7):
+                h.put(x, y, z, AIR)
+        if 3 <= x < 3 + drop:                                            # the step down into x: a stair block on the step above's edge
+            for z in range(1, sz - 1):
+                h.put(x, f, z, "minecraft:deepslate_brick_stairs[facing=west]")
+    # the door at the top, in the x = 0 face, as the halls' (shell's) frame
+    d, hw = h.door_z, h.door_w // 2
+    for z in range(d - hw, d + hw + 1):
+        for y in range(top + 1, top + 1 + h.door_h):
+            h.put(0, y, z, AIR)
+    for y in range(top + 1, top + h.door_h + 2):
+        h.put(1, y, d - hw - 1, CHIS if y % 3 == 0 else POL)
+        h.put(1, y, d + hw + 1, CHIS if y % 3 == 0 else POL)
+    for z in range(d - hw - 1, d + hw + 2):
+        h.put(1, top + h.door_h + 1, z, CARVE)
+    h.put(1, top + h.door_h + 1, d, GOLD)
+    for x in range(1, sx - 1):                                           # the runner, on the landings
+        if floor_at(x) in (0, top):
+            h.put(x, floor_at(x), d, DARK)
+    for x in (2, 13):                                                    # lanterns over the landings
+        f = floor_at(x)
+        h.put(x, f + 6, d, CHAIN)
+        h.put(x, f + 5, d, LANTERN)
+    for x in (4, 7, 10):                                                 # bronze-banded ribs on the walls down the stair
+        f = floor_at(x)
+        for z in (1, sz - 2):
+            for y in range(f + 1, f + 7):
+                h.put(x, y, z, CARVE if y in (f + 1, f + 6) else BRONZE if y == f + 4 else POL)
+    seal_arch_end(h, sx - 1, d, "east", 1)
+    return h
+
+
 HALLS = {"dawi_great_hall": great_hall_v1, "dawi_grand_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury,
          "dawi_runic_forge": runic_forge, "dawi_throne_room": throne_room, "dawi_slayer_shrine": slayer_shrine,
-         "dawi_engineers_guild": engineers_guild}
+         "dawi_engineers_guild": engineers_guild, "dawi_road": road_straight, "dawi_road_crossing": road_crossing,
+         "dawi_road_descent": road_descent}
 DATA_VERSION = 4790                                                      # 26.1.2's, as the bridge's structure_save writes it
 
 # 26.1.2's own blockstate files (block bench/mc-source-26.1.2): every block a hall uses must have one, and every state it sets must be one
@@ -1175,7 +1291,7 @@ def main():
     built = {k: f() for k, f in HALLS.items()}
     bad = {}
     for k, h in built.items():
-        print(f"{k}: size ({h.sx}, {h.sy}, {h.sz}), door (0, 1, {h.door_z}) {h.door_w} wide {h.door_h} high, stations {h.stations}")
+        print(f"{k}: size ({h.sx}, {h.sy}, {h.sz}), door (0, {getattr(h, 'door_y', 1)}, {h.door_z}) {h.door_w} wide {h.door_h} high, stations {h.stations}")
         bad[k] = validate(h)
         for b in bad[k]:
             print(f"  NOT A 26.1.2 STATE: {b}")

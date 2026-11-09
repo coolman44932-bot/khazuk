@@ -92,6 +92,12 @@ PLANS = {
                            ["minecraft:stone_bricks", "minecraft:iron_axe", "minecraft:gold_ingot"]),
     "plan_engineers_guild": ("Engineers' Guild", ["...gggg...", "..g....g..", ".g.gggg.g.", ".g.g..g.g.", ".g.gggg.g.", "..g....g..", "...gggg..."],
                              ["minecraft:stone_bricks", "minecraft:copper_ingot", "minecraft:gold_ingot"]),
+    "plan_road": ("Hold Road", ["..........", "gggggggggg", "..........", "g.g.g.g.gg", "..........", "gggggggggg", ".........."],
+                  ["minecraft:deepslate_bricks", "minecraft:lantern"]),
+    "plan_road_crossing": ("Road Crossing", ["...g..g...", "...g..g...", "ggggggggg.", "....gg....", "ggggggggg.", "...g..g...", "...g..g..."],
+                           ["minecraft:deepslate_bricks", "minecraft:lantern", "minecraft:compass"]),
+    "plan_road_descent": ("Road Descent", ["gg........", "..g.......", "...gg.....", ".....g....", "......gg..", "........g.", ".........g"],
+                          ["minecraft:deepslate_brick_stairs", "minecraft:lantern"]),
     "plan_treasury": ("Treasury", ["....gg....", "...gggg...", "..gggggg..", "....gg....", ".gg.gg.gg.", "gggggggggg", "gggggggggg"],
                       ["minecraft:stone_bricks", "minecraft:gold_ingot", "minecraft:iron_ingot"]),
 }

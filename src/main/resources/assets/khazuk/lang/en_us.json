@@ -55,5 +55,8 @@
   "entity.khazuk.slayer_mech": "Slayer Mech",
   "item.khazuk.slayer_mech_spawn_egg": "Slayer Mech Spawn Egg",
   "item.khazuk.plan_engineers_guild": "Ancestors' Plan: Engineers' Guild",
-  "block.khazuk.hall_seal": "Rune-Sealed Hall Door"
+  "block.khazuk.hall_seal": "Rune-Sealed Hall Door",
+  "item.khazuk.plan_road": "Ancestors' Plan: Hold Road",
+  "item.khazuk.plan_road_crossing": "Ancestors' Plan: Road Crossing",
+  "item.khazuk.plan_road_descent": "Ancestors' Plan: Road Descent"
 }

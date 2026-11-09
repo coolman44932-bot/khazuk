@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:deepslate_bricks",
+    "minecraft:lantern",
+    "minecraft:compass",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "khazuk:plan_road_crossing",
+    "count": 1
+  }
+}
