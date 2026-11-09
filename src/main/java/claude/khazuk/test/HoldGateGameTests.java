@@ -122,7 +122,9 @@ public class HoldGateGameTests {
         var pl = AncestorPlan.placement(room, h.absolutePos(DOOR_GROUND), Direction.EAST);
         h.assertTrue(HoldCrag.buries(h.getLevel(), pl, h.absolutePos(new BlockPos(30, 3, 36))), "a Shrine inside the mountain isn't buried");
         h.assertTrue(!HoldCrag.buries(h.getLevel(), pl, h.absolutePos(SHRINE)), "the Shrine 5 behind the mountain counts as buried");
-        h.assertTrue(hold.widening().wide(h.absolutePos(DOOR_GROUND.above())), "a gate raised with the great hall isn't marked wide");
+        hold.widening().second(h.getLevel(), hold);
+        h.assertTrue(hold.widening().wide(h.absolutePos(DOOR_GROUND.above())) && hold.works().digs().isEmpty(),
+                "a gate raised with the great hall isn't marked wide, or a widening was begun for it: " + hold.works().digs().size());
         h.succeed();
     }
 

@@ -50,7 +50,7 @@ public class FoundingGameTests {
             if (l.getX() == HEART.getX() && l.getZ() == HEART.getZ() && l.getY() > HEART.getY() && l.getY() <= HEART.getY() + 4) {
                 headroom &= e.state().isAir();                  // room over the Shrine for its statue
             }
-            rune |= l.getX() == HEART.getX() + 3 && e.state().is(KRegistry.GILDED_STONE.get());   // in the back wall, flush
+            rune |= l.getX() == HEART.getX() + 5 && e.state().is(KRegistry.GILDED_STONE.get());   // in the great hall's back wall, flush
         }
         h.assertTrue(spotOpen && dais && headroom && rune, "the Shrine's hall: spot open " + spotOpen + ", on the dais " + dais
                 + ", room over it " + headroom + ", Grungni's rune behind it " + rune);
@@ -248,7 +248,7 @@ public class FoundingGameTests {
         ShrineBlockEntity hold = (ShrineBlockEntity) level.getBlockEntity(spot);
         h.assertTrue(hold.has(HoldRooms.GATE) && hold.settlementName().equals("Karak Varn"), "the hold doesn't own its carved gate");
         h.assertTrue(HoldCrag.carved(level, pl), "the carved gate doesn't read as down in the rock");
-        BlockPos wall = pl.world(new BlockPos(16, 8, 4));             // round the gate's walls: open in the template, the mountain's on the surface
+        BlockPos wall = pl.world(new BlockPos(19, 8, 2));             // round the gate's walls (beside the great hall's west wall): open in the template, the mountain's on the surface
         h.assertTrue(level.getBlockState(wall).isAir(), "the test needs a cell round the gate's walls the carve left open: " + level.getBlockState(wall));
         for (int s = 0; s < 40 && !hold.crags().risen(level, pl.door()); s++) {
             hold.crags().second(level, hold, HoldCrag.PER_SECOND);

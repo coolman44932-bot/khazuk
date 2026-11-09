@@ -79,8 +79,12 @@ public class WallsGameTests {
                 ? new RoomTemplates.Entry(e.local(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), null) : e);
         h.assertTrue(leak(h, barracks, t, true) != null, "a hole through the barracks' side wall wasn't found");
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
-        h.assertTrue(leak(h, gate, RoomTemplates.get(h.getLevel(), gate.id()), false) != null,
-                "the gate without its mountain's cells as walls wasn't found open (the holes beside its passage)");
+        List<RoomTemplates.Entry> g = new ArrayList<>(RoomTemplates.get(h.getLevel(), gate.id()));
+        h.assertTrue(leak(h, gate, g, false) == null, "the great Shrine hall isn't closed by its own walls, without the mountain: "
+                + leak(h, gate, g, false));
+        g.replaceAll(e -> e.local().getX() == 24 && e.local().getZ() == 4 && e.local().getY() >= 6 && e.local().getY() <= 7
+                ? new RoomTemplates.Entry(e.local(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), null) : e);
+        h.assertTrue(leak(h, gate, g, false) != null, "a hole through the great hall's west wall wasn't found");
         h.succeed();
     }
 

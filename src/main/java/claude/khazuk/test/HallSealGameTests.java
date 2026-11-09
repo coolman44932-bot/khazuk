@@ -26,21 +26,22 @@ import net.minecraft.world.level.block.state.BlockState;
 @GameTestHolder(Khazuk.MODID)
 public class HallSealGameTests {
 
-    /** The gate's template holds two sealed arches, 3 x 3 each, facing out of the Shrine hall either side. */
+    /** The gate's template holds four sealed arches, 3 x 3 each, two facing out of the great Shrine hall either side (2026-11-09). */
     @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
     public static void theGatesShrineHallIsBuiltWithTwoSealedArches(GameTestHelper h) {
         int north = 0, south = 0;
         for (RoomTemplates.Entry e : RoomTemplates.get(h.getLevel(), "dawi_hold_gate")) {
             if (e.state().getBlock() instanceof HallSeal) {
                 Direction f = e.state().getValue(HallSeal.FACING);
-                if (f == Direction.NORTH && e.local().getZ() == 9) {
+                if (f == Direction.NORTH && e.local().getZ() == 4) {
                     north++;
-                } else if (f == Direction.SOUTH && e.local().getZ() == 21) {
+                } else if (f == Direction.SOUTH && e.local().getZ() == 26) {
                     south++;
                 }
             }
         }
-        h.assertTrue(north == 9 && south == 9, "the gate's sealed arches: " + north + " facing north in its west wall, " + south + " south in its east");
+        h.assertTrue(north == 18 && south == 18, "the gate's sealed arches: " + north + " seals facing north in its west wall, " + south
+                + " south in its east (18 each: two arches)");
         h.succeed();
     }
 
@@ -78,8 +79,8 @@ public class HallSealGameTests {
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
         PlanPlacement g = AncestorPlan.placement(gate, h.absolutePos(new BlockPos(4, 2, 36)), Direction.EAST);
         hold.addBuilding(new claude.settlementcore.settlement.Building(gate.id(), g.box(), g.door(), g.facing()), false);
-        BlockPos seal = g.world(new BlockPos(28, 3, 21));
-        Direction runs = RoomTemplates.get(level, gate.id()).stream().filter(e -> e.local().equals(new BlockPos(28, 3, 21))).findFirst()
+        BlockPos seal = g.world(new BlockPos(29, 3, 26));            // the great hall's back seal in its east wall, its bottom middle
+        Direction runs = RoomTemplates.get(level, gate.id()).stream().filter(e -> e.local().equals(new BlockPos(29, 3, 26))).findFirst()
                 .orElseThrow().state().rotate(g.rotation()).getValue(HallSeal.FACING);
         PlanPlacement through = PlanPlacement.compute(HoldRooms.room("dawi_grand_hall"), seal, runs);
         String ok = AncestorPlan.cutsInto(hold, level, through);
@@ -139,25 +140,29 @@ public class HallSealGameTests {
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
         PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(ground), runs);
         for (RoomTemplates.Entry e : RoomTemplates.get(level, gate.id())) {
-            if (e.local().getX() >= 26 && e.local().getX() <= 30 && e.local().getY() >= 3 && e.local().getY() <= 7
-                    && (e.local().getZ() == 9 || e.local().getZ() == 21)) {
-                level.setBlock(pl.world(e.local()), Blocks.DEEPSLATE_BRICKS.defaultBlockState(), 2);   // the old wall
+            for (int mid : new int[]{21, 29}) {                  // the great hall's two arches a side (their middles x' 21 and 29)
+                if (Math.abs(e.local().getX() - mid) <= 2 && e.local().getY() >= 3 && e.local().getY() <= 7
+                        && (e.local().getZ() == 4 || e.local().getZ() == 26)) {
+                    level.setBlock(pl.world(e.local()), Blocks.DEEPSLATE_BRICKS.defaultBlockState(), 2);   // the old wall
+                }
             }
         }
-        BlockPos changed = pl.world(new BlockPos(28, 4, 21));
+        BlockPos changed = pl.world(new BlockPos(29, 4, 26));
         level.setBlock(changed, Blocks.GLASS.defaultBlockState(), 2);
         h.assertTrue(HoldCrag.fitSeals(level, pl), "the arches' land wasn't loaded");
-        BlockPos hall = pl.world(new BlockPos(28, 4, 15));
-        for (int z : new int[]{9, 21}) {
-            BlockPos s = pl.world(new BlockPos(28, 3, z));
-            BlockState st = level.getBlockState(s);
-            h.assertTrue(st.getBlock() instanceof HallSeal, "no seal fitted at template (28, 3, " + z + "): " + st);
-            Direction out = Direction.getApproximateNearest(s.getX() - hall.getX(), 0, s.getZ() - hall.getZ());
-            h.assertTrue(st.getValue(HallSeal.FACING) == out, "the seal at (28, 3, " + z + ") faces " + st.getValue(HallSeal.FACING)
-                    + ", not out of the Shrine hall (" + out + ")");
+        for (int x : new int[]{21, 29}) {
+            BlockPos hall = pl.world(new BlockPos(x, 4, 15));    // the hall's middle, level with the arch
+            for (int z : new int[]{4, 26}) {
+                BlockPos s = pl.world(new BlockPos(x, 3, z));
+                BlockState st = level.getBlockState(s);
+                h.assertTrue(st.getBlock() instanceof HallSeal, "no seal fitted at template (" + x + ", 3, " + z + "): " + st);
+                Direction out = Direction.getApproximateNearest(s.getX() - hall.getX(), 0, s.getZ() - hall.getZ());
+                h.assertTrue(st.getValue(HallSeal.FACING) == out, "the seal at (" + x + ", 3, " + z + ") faces " + st.getValue(HallSeal.FACING)
+                        + ", not out of the Shrine hall (" + out + ")");
+            }
         }
         h.assertTrue(level.getBlockState(changed).is(Blocks.GLASS), "a wall cell someone changed was overwritten");
-        h.assertTrue(level.getBlockState(pl.world(new BlockPos(28, 7, 21))).is(KRegistry.GILDED_STONE.get()), "the arch's keystone isn't in");
+        h.assertTrue(level.getBlockState(pl.world(new BlockPos(29, 7, 26))).is(KRegistry.GILDED_STONE.get()), "the arch's keystone isn't in");
         h.succeed();
     }
 }
