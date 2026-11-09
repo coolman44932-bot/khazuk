@@ -1,0 +1,1 @@
+REVIEW PASS WITH NOTES 30a25b2de3ec0685dad41a15693a9c4515892b16: the risen-gate reconcile and the back-only re-rise are sound and tested; notes: the muster holds the crag's bounding box for surface gates (hill caves behind it), mountain() recomputes the footprint each second, a gate mid-rise across the crag change is unhandled, no positive alarm test
