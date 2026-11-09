@@ -25,7 +25,7 @@ OPEN_FRONT = {"dawi_hold_gate": 13}
 # Where a room's inside is flooded from, if not its door: the gate's from its Shrine's spot (its door is out on the terrace).
 START = {"dawi_hold_gate": (28, 4, 15)}
 # Rooms no plan builds any more: the old surface Keep (before 0.13.0), only known for the holds founded on one.
-LEGACY = {"dawi_keep"}
+LEGACY = {"dawi_keep", "dawi_gate_widening"}   # and the widening: a piece of the gate's great hall, closed by the gate round it
 # Openings made on purpose: the Mine's three drift mouths (1 wide, 2 high, the middle of each face but the door's), where its Miners drive
 # the galleries on into the ore (OREMINE work).
 DRIFTS = {"dawi_mine": {(7, 1, 14), (7, 2, 14), (7, 1, 0), (7, 2, 0), (14, 1, 7), (14, 2, 7)}}

@@ -204,6 +204,46 @@ public class HallGameTests {
     }
 
     /**
+     * The user's hold, 2026-11-09 ("it seems like to me nobody does it"): the Shrine set down deep in the rock, a dig ordered, and a zombie in a
+     * cave 30 blocks off, in the hold's 81-block cube of land but nowhere near a hall, the gate or the Shrine. The muster took it for a foe in
+     * the settlement: the alarm went up (the log's "The settlement is attacked! ... 4 Zombies"), stayed up (no all-clear ever follows a foe no Dawi
+     * will meet), and every Dawi that came up out of the deeps rose as a defender (Muster#rise, 3 to a foe) or was drafted off the dig, so the dig
+     * had no crew. Its save: 8 Miners, all defenders, the alarm up 3 minutes later, and the foes it still counted 38 and 47 blocks from the Shrine.
+     * The hold guards its halls, its gate and the ground about the Shrine, not its caves.
+     */
+    @GameTest(template = "digsite", timeoutTicks = 600, batch = "khazukhostile")
+    public static void aFoeInAFarCaveDoesNotTakeTheMinersFromTheirDig(GameTestHelper h) {
+        ShrineBlockEntity hold = hold(h);
+        @SuppressWarnings("removal")
+        var god = h.makeMockServerPlayerInLevel();
+        hold.claim(god, "Karak Test");
+        hold.addToReserve(3, 1);                                // the first Dawi: Waking.FIRST_MINERS, FIRST_WARRIORS
+        for (BlockPos p : BlockPos.betweenClosed(new BlockPos(34, 5, 2), new BlockPos(41, 7, 9))) {
+            h.setBlock(p, Blocks.AIR);                           // a cave of 8 x 3 x 8, shut in rock: far more than a pocket
+        }
+        net.minecraft.world.entity.monster.zombie.Zombie foe = h.spawn(net.minecraft.world.entity.EntityType.ZOMBIE, new BlockPos(37, 5, 5));
+        foe.setPersistenceRequired();
+        double far = foe.position().distanceTo(h.absoluteVec(net.minecraft.world.phys.Vec3.atCenterOf(SHRINE)));
+        h.assertTrue(far > 25 && far < 40, "the test's cave is " + far + " blocks from the Shrine");
+        Rooms.Room room = HoldRooms.room("dawi_mine");
+        PlanPlacement pl = PlanPlacement.compute(room, h.absolutePos(POCKET.offset(4, 1, 0)), Direction.EAST);
+        List<String> told = new ArrayList<>();
+        h.assertTrue(AncestorPlan.dig(hold, h.getLevel(), pl, true, c -> told.add(c.getString())), "the dig was refused: " + told);
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(hold.works().crewCount() >= 1 && !hold.muster().alarmed(),
+                        "tick " + h.getTick() + ": no Miner at the dig, with a zombie " + (int) far + " blocks off in a cave: crew " + hold.works().crewCount()
+                                + ", reserve " + hold.reserveWorkers() + "+" + hold.reserveSoldiers() + ", alarm " + hold.muster().alarmed()
+                                + ", foes counted " + hold.muster().foes() + ", defenders " + hold.muster().defenderIds().size() + " (risen "
+                                + hold.muster().risen() + "), dig " + hold.works().digs().get(0).job().finishedCount() + "/"
+                                + hold.works().digs().get(0).job().taskCount() + " cells"))
+                .thenIdle(200)
+                .thenExecute(() -> h.assertTrue(!hold.muster().alarmed() && hold.muster().defenderIds().isEmpty() && hold.works().crewCount() >= 1,
+                        "tick " + h.getTick() + ": the far cave's zombie raised the alarm later: alarm " + hold.muster().alarmed() + ", defenders "
+                                + hold.muster().defenderIds().size() + ", crew " + hold.works().crewCount()))
+                .thenSucceed();
+    }
+
+    /**
      * A dug mine is the engine's Ore Mine: handed over, the hold's works have its MineWork, its three drift mouths, and its Miners drive a
      * drift out into the rock (the review of 06cd0cf: the hold's land, a cube round the Shrine, counted as "another room" to the mine,
      * and every drift stopped at its first cell).

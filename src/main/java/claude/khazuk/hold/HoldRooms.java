@@ -46,14 +46,24 @@ public final class HoldRooms {
             new Rooms.Room("dawi_hold_gate", "Hold Gate", 40, GATE,
                     "A karak's gate cut into the mountain: ancestors carved on its towers, bronze guardians at its door, and down its passage the "
                             + "Shrine's hall, where the Shrine stands on its dais.",
-                    32, 43, 31, 0, 1, 15, List.of(), List.of(), List.of(
+                    34, 43, 31, 0, 1, 15, List.of(), List.of(), List.of(   // 34 long since 2026-11-09: the great Shrine hall
                             new Rooms.Station(claude.settlementcore.settlement.Founding.HEART, 28, 4, 15, Direction.WEST))),
             new Rooms.Room("dawi_keep", "Keep", 0, KEEP,                 // the old founding hall (before 0.13.0): known, never set out
                     "The hold's old founding: a stone keep in a walled yard, its gate shut against foes, the Shrine on the dais inside.",
                     25, 14, 25, 0, 1, 12, List.of(), List.of(), List.of(
                             new Rooms.Station(claude.settlementcore.settlement.Founding.HEART, 14, 1, 12, Direction.WEST))));
 
-    public static final List<Rooms.Room> DUG = List.of(
+    /**
+     * The Miners widening an old Hold Gate's small Shrine hall to the great one (hold/GateWidening; the user, 2026-11-09: "the hold gate is
+     * too small no space to do anything"): a dig of the great hall's cells alone, in the gate template's frame less its near corner
+     * (tools/gen_hold_gate.py's WIDEN_FROM), its door in the old hall's back wall. No plan digs it; once dug it is folded into the gate.
+     */
+    public static final Rooms.Function WIDENING = Rooms.Function.of("DAWI_GATE_WIDENING");
+    public static final Rooms.Room GATE_WIDENING = new Rooms.Room("dawi_gate_widening", "Shrine hall", 0, WIDENING,
+            "The Hold Gate's Shrine hall dug out wide: pillars, a great dais, two sealed doors in each side wall.",
+            18, 14, 23, 15, 2, 15, List.of(), List.of(), List.of());
+
+    public static final List<Rooms.Room> DUG = List.of(GATE_WIDENING,
             new Rooms.Room("dawi_great_hall", "Great Hall", 30, GREAT_HALL,     // the first Great Hall (before 0.13.0): known for the halls dug
                     "The hold's heart under the mountain: pillars banded in gold, a long hearth between the tables, the god's seat on the dais.",
                     27, 13, 21, 0, 1, 10, List.of(), List.of(), List.of()),

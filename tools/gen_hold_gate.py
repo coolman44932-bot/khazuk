@@ -92,7 +92,7 @@ BEARD, BEARD_LINE = "minecraft:calcite", "minecraft:polished_diorite"
 # ------------------------------------------------------------------ the mountain: strata, ledges, cliffs
 
 W = 26 if RAISED else 30
-DEEP = 18
+DEEP = 22          # deep enough to close over the Shrine hall's back wall (z 19)
 GH = 15           # the gatehouse's half-width
 for x in range(-W, W + 1):
     edge = abs(x) / W
@@ -205,36 +205,52 @@ for z in (2, 6):
     put(0, DOOR_Y + DH - 1, z, "minecraft:lantern[hanging=true]")
 
 # ------------------------------------------------------------------ the Shrine's hall at the passage's end (the user, 2026-11-04: the
-# hold goes behind its gate, not before it): the passage opens into a hall 11 wide and 11 high, and on a dais at its far end, under Grungni's
-# rune, stands the Ancestor Shrine. The hold is founded here: its halls are dug off this hall's walls and the passage's.
+# hold goes behind its gate, not before it). Since 2026-11-09 a great hall (the user: "the hold gate is too small no space to do anything";
+# his pick of three sizes): 21 wide, 17 deep, 12 high, opening straight off the gatehouse's back wall. Two rows of pillars banded in gold
+# and bronze; at its far end a dais under Grungni's rune, the Ancestor Shrine on it where it always stood (z 14: a hold founded on the
+# small hall keeps its Shrine where it is when the Miners widen it, hold/GateWidening); before the dais 21 by 9 of open floor for the
+# god's own chests, beds and benches; and two sealed hall doors in each side wall. The hold is founded here: its halls are dug off them.
 SHRINE_HALL = RAISED
 # a hall seal's FACING in the template's frame (x' = z + 14, z' = x + GH): local +x is the template's +z', south
-# its middle: z 14, so the widest hall dug through it (the Great Hall, 25 across) clears the gatehouse's back wall (z 1)
-SEAL_Z = 14
+# the doors' middles: z 15, so the widest hall dug through it (the Great Hall, 25 across) clears the gatehouse's back wall (z 1); and z 7,
+# for the narrower halls (a 13-wide one clears it too)
+SEAL_ZS = (7, 15)
 SEAL_FACING = {True: "khazuk:hall_seal[facing=south]", False: "khazuk:hall_seal[facing=north]"}
-HEART_LOCAL = (0, DOOR_Y + 1, 14)                                # the Shrine's spot: on the dais, in the hall's middle
+HEART_LOCAL = (0, DOOR_Y + 1, 14)                                # the Shrine's spot: on the dais (unchanged since the small hall)
+HZ0, HZ1, HX, HTOP = 2, 18, 10, DOOR_Y + 11                      # the hall: z 2..18, x -10..10, its floor at DOOR_Y - 1, its roof over HTOP
+# the old small hall's extent (before 2026-11-09), for the widening's check (hold/GateWidening): its side walls stood at x -6 and 6
+OLD_HX, OLD_HZ0, OLD_HZ1 = 5, 9, 16
 if SHRINE_HALL:
-    HZ0, HZ1, HX, HTOP = 9, 16, 5, DOOR_Y + 10                   # the hall: z 9..16, x -5..5, its floor at DOOR_Y - 1, its roof over HTOP
     box(-HX - 1, DOOR_Y - 1, HZ0, HX + 1, HTOP + 1, HZ1 + 1, "minecraft:deepslate_bricks")
     clear(-HX, DOOR_Y, HZ0, HX, HTOP, HZ1)
     box(-HX, DOOR_Y - 1, HZ0, HX, DOOR_Y - 1, HZ1,
         lambda x, y, z: "minecraft:deepslate_tiles" if (x + z) % 2 else "minecraft:polished_deepslate")
     for x in range(-1, 2):                                       # a runner of gold-edged tiles from the passage to the dais
-        for z in range(HZ0, 12):
+        for z in range(HZ0, 11):
             put(x, DOOR_Y - 1, z, "minecraft:chiseled_deepslate" if x == 0 else "minecraft:polished_blackstone")
-    for px in (-HX, HX):                                         # four pillars, banded in gold and bronze
-        for pz in (HZ0 + 1, HZ1):
+    # two rows of pillars, banded in gold and bronze, every 5 down the hall
+    for px in (-6, 6):
+        for pz in (4, 9, 14):
             for y in range(DOOR_Y, HTOP + 1):
-                band = {DOOR_Y: CARVE, DOOR_Y + 4: GOLD, DOOR_Y + 5: BRONZE, HTOP: CARVE}
+                band = {DOOR_Y: CARVE, DOOR_Y + 4: GOLD, DOOR_Y + 5: BRONZE, DOOR_Y + 8: BRONZE_CUT, HTOP: CARVE}
                 put(px, y, pz, band.get(y, "minecraft:polished_deepslate"))
-    # the dais: a step up from the hall, the Shrine on it, braziers on its front corners
-    box(-3, DOOR_Y, 13, 3, DOOR_Y, HZ1, "minecraft:polished_deepslate")
-    for x in range(-3, 4):
-        put(x, DOOR_Y, 12, "minecraft:deepslate_brick_stairs[facing=south]")
-    for x in (-3, 3):
-        put(x, DOOR_Y + 1, 13, CARVE)
-        put(x, DOOR_Y + 2, 13, BRONZE_CUT)
-        put(x, DOOR_Y + 3, 13, "minecraft:campfire[lit=true]")
+            for y in (HTOP - 1, HTOP):                           # their capitals spreading to the roof
+                for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    if y == HTOP or (dx != 0):
+                        put(px + dx, y, pz + dz, CARVE if y == HTOP else "minecraft:polished_deepslate")
+    # pilasters on the walls between the doors, the hall's ribs
+    for x in (-HX, HX):
+        for z in (HZ0, 11, HZ1):
+            for y in range(DOOR_Y, HTOP + 1):
+                put(x, y, z, CARVE if y in (DOOR_Y, HTOP) else "minecraft:polished_deepslate")
+    # the dais: a step up from the hall, 9 wide and 7 deep, the Shrine on it, braziers on its front corners
+    box(-4, DOOR_Y, 12, 4, DOOR_Y, HZ1, "minecraft:polished_deepslate")
+    for x in range(-4, 5):
+        put(x, DOOR_Y, 11, "minecraft:deepslate_brick_stairs[facing=south]")
+    for x in (-4, 4):
+        put(x, DOOR_Y + 1, 12, CARVE)
+        put(x, DOOR_Y + 2, 12, BRONZE_CUT)
+        put(x, DOOR_Y + 3, 12, "minecraft:campfire[lit=true]")
     put(*HEART_LOCAL, "minecraft:air")
     # Grungni's rune on the wall behind the Shrine: a tuff panel framed in chiselled stone, the hammer in gold standing out of it
     box(-3, DOOR_Y + 3, HZ1 + 1, 3, DOOR_Y + 9, HZ1 + 1, CARVE)
@@ -243,20 +259,22 @@ if SHRINE_HALL:
         for i, ch in enumerate(row):
             if ch == "g":                                        # set in the wall, flush: the statue's answers (the ward's dome)
                 put(i - 2, DOOR_Y + 8 - dy, HZ1 + 1, GOLD)       # reach 2.5 round the Shrine (the detail session's clearances)
-    # the hall doors (the user, 2026-11-06: "there should be a place in the room to dig into"): an arch in each side wall between the
-    # pillars, framed in carved stone under a gold keystone, sealed with rune-carved doors until a plan digs a hall through it (hold/HallSeal,
-    # its FACING the way the hall runs, written in the template's own frame: SEAL_FACING)
+    # the hall doors (the user, 2026-11-06: "there should be a place in the room to dig into"): two arches in each side wall, framed in
+    # carved stone under a gold keystone, sealed with rune-carved doors until a plan digs a hall through one (hold/HallSeal, its FACING the
+    # way the hall runs, written in the template's own frame: SEAL_FACING)
     for sx in (-HX - 1, HX + 1):
-        for z in range(SEAL_Z - 2, SEAL_Z + 3):
-            for y in range(DOOR_Y, DOOR_Y + 4):
-                put(sx, y, z, CARVE)
-        for z in range(SEAL_Z - 1, SEAL_Z + 2):
-            for y in range(DOOR_Y, DOOR_Y + 3):
-                put(sx, y, z, SEAL_FACING[sx > 0])
-        put(sx, DOOR_Y + 4, SEAL_Z, GOLD)
-    for x, z in ((-3, 11), (3, 11), (-3, 15), (3, 15)):         # lanterns on chains from the roof
-        put(x, HTOP, z, "minecraft:iron_chain")
-        put(x, HTOP - 1, z, "minecraft:lantern[hanging=true]")
+        for sz in SEAL_ZS:
+            for z in range(sz - 2, sz + 3):
+                for y in range(DOOR_Y, DOOR_Y + 4):
+                    put(sx, y, z, CARVE)
+            for z in range(sz - 1, sz + 2):
+                for y in range(DOOR_Y, DOOR_Y + 3):
+                    put(sx, y, z, SEAL_FACING[sx > 0])
+            put(sx, DOOR_Y + 4, sz, GOLD)
+    for x, z in ((-3, 5), (3, 5), (-3, 10), (3, 10), (-8, 7), (8, 7), (-8, 15), (8, 15), (-2, 16), (2, 16)):
+        put(x, HTOP, z, "minecraft:iron_chain")                  # lanterns on chains from the roof
+        put(x, HTOP - 1, z, "minecraft:iron_chain")
+        put(x, HTOP - 2, z, "minecraft:lantern[hanging=true]")
 
 # ------------------------------------------------------------------ the ancestor faces, carved deep high on the towers
 
@@ -403,12 +421,15 @@ def turn(b):
     return b
 
 
+ZMAX = 19         # the template's last row: the Shrine hall's back wall (HZ1 + 1)
+
+
 def template_cells():
     """The Miners' building, turned as the engine's templates are (x' = z + 14, z' = x + GH, y' = y + 1): the gatehouse, its terrace,
     the guardians and the passage, every cell of its box (air too) but the mountain's rock, which the god raises round it once it stands
     (crag_cells). The ground layer (y' 0) is paving before the gate, plain stone under it. The door at (0, 1, GH). Returns (cells, size)."""
     z0 = -14
-    sx = 17 - z0 + 1
+    sx = ZMAX - z0 + 1
     sz = 2 * GH + 1
     sy = max(y for (x, y, z), b in B.items() if (x, y, z) not in ROCK and abs(x) <= GH) + 2
     cells = {}
@@ -418,7 +439,7 @@ def template_cells():
             for y in range(1, sy):
                 cells[(x, y, z)] = "minecraft:air"
     for (x, y, z), b in B.items():
-        if y < -1 or (x, y, z) in ROCK or abs(x) > GH or z < z0 or z > 17:
+        if y < -1 or (x, y, z) in ROCK or abs(x) > GH or z < z0 or z > ZMAX:
             continue
         cells[(z - z0, y + 1, x + GH)] = turn(b)
     return cells, (sx, sy, sz)
@@ -462,7 +483,30 @@ def _split(s):
 GILDING = {"minecraft:gold_block": "khazuk:gilded_stone", "minecraft:raw_gold_block": "khazuk:hoard_gold"}
 
 
-def write_template(cells, size):
+WIDENING_OUT = os.path.join(HERE, "..", "src", "main", "resources", "data", "khazuk", "structure", "room", "dawi_gate_widening.nbt")
+
+
+def widening_cells(cells):
+    """The widening's template (hold/GateWidening, the Miners digging an old small Shrine hall out to the great one): the gate template's
+    cells of the great hall, its floor to its roof and wall to wall (local x -HX-1..HX+1, y DOOR_Y-1..HTOP+1, z HZ0..HZ1+1), in a frame
+    of their own: the gate template's minus WIDEN_FROM. Returns (cells, size)."""
+    x0, y0, z0 = WIDEN_FROM
+    x1, y1, z1 = HZ1 + 1 + 14, HTOP + 1 + 1, HX + 1 + GH
+    out = {}
+    for (x, y, z), b in cells.items():
+        if x0 <= x <= x1 and y0 <= y <= y1 and z0 <= z <= z1:
+            out[(x - x0, y - y0, z - z0)] = b
+    return out, (x1 - x0 + 1, y1 - y0 + 1, z1 - z0 + 1)
+
+
+# the widening's frame in the gate template's: the great hall's near corner (its front row z HZ0, its floor, its west wall)
+WIDEN_FROM = (HZ0 + 14, DOOR_Y - 1 + 1, -HX - 1 + GH)
+# the widening dig's door, in the gate template's frame: the old small hall's back wall, beside the dais at standing height (x 4, z 17):
+# solid in an old hold, with the old hall's open floor before it, as the engine's dig asks (Works#dig)
+WIDEN_DOOR = (OLD_HZ1 + 1 + 14, DOOR_Y + 1 + 1, 4 + GH)
+
+
+def write_template(cells, size, out_path=None):
     """The gatehouse's template straight to its .nbt (no game needed), every cell of its box. A cell whose block the shipped template
     already has, its properties the game's full set of what this script names, keeps the shipped state (the game's own wall and stair
     shapes), so a change here rewrites only what it changes."""
@@ -472,9 +516,10 @@ def write_template(cells, size):
     def val(t):
         return t.value if hasattr(t, "value") else t
 
+    out_path = out_path or TEMPLATE_OUT
     had = {}
-    if os.path.exists(TEMPLATE_OUT):
-        root = val(nbtio.read(TEMPLATE_OUT))
+    if os.path.exists(out_path):
+        root = val(nbtio.read(out_path))
         pal = []
         for e in val(root["palette"]):
             e = val(e)
@@ -513,8 +558,8 @@ def write_template(cells, size):
         "blocks": nbtio.List(blocks, nbtio.COMPOUND),
         "entities": nbtio.List([], nbtio.COMPOUND),
     })
-    nbtio.write(TEMPLATE_OUT, root)
-    print(f"template -> {os.path.relpath(TEMPLATE_OUT)}: {len(out)} cells, {kept} kept as shipped, {len(out) - kept} new")
+    nbtio.write(out_path, root)
+    print(f"template -> {os.path.relpath(out_path)}: {len(out)} cells, {kept} kept as shipped, {len(out) - kept} new")
 
 
 def ops(origin):
@@ -535,8 +580,12 @@ def main():
         hx, hy, hz = HEART_LOCAL
         print(f"template {size}, door at (0, 1, {GH}), heart station at ({hz + 14}, {hy + 1}, {hx + GH})")
         write_crag()
+        wcells, wsize = widening_cells(cells)
+        wd = tuple(WIDEN_DOOR[i] - WIDEN_FROM[i] for i in range(3))
+        print(f"widening {wsize}, its door at {wd} (the gate template's {WIDEN_DOOR}), from {WIDEN_FROM}; door cell {cells.get(WIDEN_DOOR)}")
         if "--write" in sys.argv:
             write_template(cells, size)
+            write_template(wcells, wsize, WIDENING_OUT)
         if "--at" in sys.argv:
             i = sys.argv.index("--at")
             o = [int(v) for v in sys.argv[i + 1:i + 4]]

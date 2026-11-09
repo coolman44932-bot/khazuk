@@ -34,6 +34,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -93,6 +94,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     public int rounds;
     /** The mountains the god raises round the hold's gates. */
     private final HoldCrag crags = new HoldCrag();
+    /** The Miners widening an old Hold Gate's small Shrine hall to the great one (the user, 2026-11-09). */
+    private final claude.khazuk.hold.GateWidening widening = new claude.khazuk.hold.GateWidening();
     /** D3: the hold's malt, ale and hoard. */
     private final claude.khazuk.hold.Brewhouse brew = new claude.khazuk.hold.Brewhouse();
     /** D4: the Dammaz Kron, the hold's Book of Grudges. */
@@ -140,6 +143,10 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         return ownedAt(p, p.blockPosition());
     }
 
+    public claude.khazuk.hold.GateWidening widening() {
+        return widening;
+    }
+
     public HoldCrag crags() {
         return crags;
     }
@@ -184,6 +191,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     @Override
     public void second(ServerLevel level) {
         super.second(level);
+        widening.second(level, this);                            // before the mountain: a widened gate's rock rises again this second
         crags.second(level, this, HoldCrag.PER_SECOND);
         brew.second(level, this);
         runes.second(level, this);
@@ -194,7 +202,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
             faceTheDoor(level);
             setChanged();                                        // saved with its "faced" mark: looked at once
         }
-        if (crags.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty() | devotion.takeDirty()) {
+        if (crags.takeDirty() | widening.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty() | devotion.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
         syncRunes();
@@ -338,6 +346,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         super.saveAdditional(out);
         CompoundTag tag = new CompoundTag();
         crags.save(tag);
+        widening.save(tag);
         brew.save(tag);
         grudges.save(tag);
         runes.save(tag);
@@ -353,6 +362,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         super.loadAdditional(in);
         CompoundTag tag = in.read("khazuk", CompoundTag.CODEC).orElseGet(CompoundTag::new);
         crags.load(tag);
+        widening.load(tag);
         brew.load(tag);
         grudges.load(tag);
         runes.load(tag);
@@ -462,6 +472,44 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         return Math.abs(p.getX() - c.getX()) <= RADIUS && Math.abs(p.getZ() - c.getZ()) <= RADIUS && Math.abs(p.getY() - c.getY()) <= RADIUS;
     }
 
+    /**
+     * What the muster guards: the halls and gate the hold has, built or being dug, and (with the engine's ring about the Shrine) no more. Not the
+     * whole 81-block cube of the hold's land: deep in the rock that is caves to the corners, and a zombie 38 blocks off in the dark kept the alarm
+     * up for ever (the user's hold, 2026-11-09): every Miner a defender, no one at the dig. (The engine's hook,
+     * Settlement#musterBoxes: Settlement Core 0.5.7 from 7905bbd.)
+     */
+    @Override
+    public List<BoundingBox> musterBoxes() {
+        List<BoundingBox> out = new ArrayList<>();
+        for (claude.settlementcore.settlement.Building b : buildings()) {
+            out.add(b.box());
+        }
+        for (claude.settlementcore.work.DigWork d : works().digs()) {
+            out.add(d.box());
+        }
+        for (claude.settlementcore.work.SiteWork s : works().sites()) {
+            out.add(s.box());
+        }
+        return out;
+    }
+
+    /** Whether {@code p} is in a hall, gate, dig or site of the hold (see {@link #musterBoxes}). */
+    @Override
+    public boolean musterHolds(BlockPos p) {
+        for (BoundingBox b : musterBoxes()) {
+            if (b.isInside(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** A foe of the alarm stays one only on the hold's own ground (the review of 7905bbd: one gone back into a far cave kept it up). */
+    @Override
+    public boolean musterFollows(BlockPos p) {
+        return musterHolds(p);
+    }
+
     @Override
     public List<BoundingBox> settlementBoxes() {
         BlockPos c = getBlockPos();
@@ -482,6 +530,9 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
             PlanPlacement other = claude.settlementcore.settlement.BuildingBook.placementOf(b);
             if (other == null || b.box().equals(area) || !b.box().intersects(area)) {
                 continue;
+            }
+            if (pl.room() == claude.khazuk.hold.HoldRooms.GATE_WIDENING && claude.khazuk.hold.HoldCrag.gate(b)) {
+                continue;                                        // the widening is the gate's own hall rebuilt: its old walls and air give way
             }
             for (claude.settlementcore.room.RoomTemplates.Entry e : claude.settlementcore.room.RoomTemplates.get(level, other.room().id())) {
                 BlockPos w = other.world(e.local());

@@ -39,7 +39,7 @@ public class WallsGameTests {
     static final Map<String, BlockPos> START = Map.of("dawi_hold_gate", new BlockPos(28, 4, 15));
     static final Map<String, Set<BlockPos>> DRIFTS = Map.of("dawi_mine", Set.of(new BlockPos(7, 1, 14), new BlockPos(7, 2, 14),
             new BlockPos(7, 1, 0), new BlockPos(7, 2, 0), new BlockPos(14, 1, 7), new BlockPos(14, 2, 7)));
-    static final Set<String> LEGACY = Set.of("dawi_keep");
+    static final Set<String> LEGACY = Set.of("dawi_keep", "dawi_gate_widening");   // the widening: a piece of the gate's hall, closed by the gate
 
     @GameTest(template = "arena", timeoutTicks = 20, batch = "khazuk")
     public static void everyHallIsClosedByItsOwnWalls(GameTestHelper h) {

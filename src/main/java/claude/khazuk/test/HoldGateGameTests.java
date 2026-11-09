@@ -30,7 +30,7 @@ import java.util.List;
 public class HoldGateGameTests {
 
     /** The Shrine behind where the gate goes, inside the land it needs. */
-    private static final BlockPos SHRINE = new BlockPos(40, 3, 36);
+    private static final BlockPos SHRINE = new BlockPos(44, 3, 36);   // 44 since the great Shrine hall's deeper mountain (it ends at x 39)
     /** The gate's door ground: it runs east from here, its door toward the west. */
     private static final BlockPos DOOR_GROUND = new BlockPos(4, 2, 36);
 
@@ -122,6 +122,7 @@ public class HoldGateGameTests {
         var pl = AncestorPlan.placement(room, h.absolutePos(DOOR_GROUND), Direction.EAST);
         h.assertTrue(HoldCrag.buries(h.getLevel(), pl, h.absolutePos(new BlockPos(30, 3, 36))), "a Shrine inside the mountain isn't buried");
         h.assertTrue(!HoldCrag.buries(h.getLevel(), pl, h.absolutePos(SHRINE)), "the Shrine 5 behind the mountain counts as buried");
+        h.assertTrue(hold.widening().wide(h.absolutePos(DOOR_GROUND.above())), "a gate raised with the great hall isn't marked wide");
         h.succeed();
     }
 
@@ -164,6 +165,81 @@ public class HoldGateGameTests {
             h.assertTrue(claude.settlementcore.room.Siting.ground(s), "the hollow at " + c.toShortString() + " is " + s + " once the gate is raised");
         }
         h.succeed();
+    }
+
+    /**
+     * The Miners widen an old Hold Gate's small Shrine hall (the user, 2026-11-09: "the hold gate is too small no space to do anything"; his
+     * pick: "Miners widen it"). A gate raised with the great hall, then made old: the great hall's every cell stone but the old small hall
+     * (11 by 8 at the passage's end) and the passage. In a second the hold begins the widening dig (free), its door in the old hall's back
+     * wall; the gate isn't marked wide yet. Dug and handed over, the next second folds it into the gate: no widening room is left, the gate is
+     * marked wide, its mountain rises again from the bottom, and the great hall is there: its open floor where the old wall's rock stood, a
+     * pillar's gold band, its four sealed doors, the dais round the Shrine's spot. A gate marked wide begins no dig.
+     */
+    @GameTest(template = "field", timeoutTicks = 400, batch = "khazuk")
+    public static void anOldGatesShrineHallIsWidenedByItsMiners(GameTestHelper h) {
+        ShrineBlockEntity hold = hold(h);
+        hold.addCurrency(50, "the test");
+        Rooms.Room room = HoldRooms.room("dawi_hold_gate");
+        List<String> told = new ArrayList<>();
+        h.assertTrue(AncestorPlan.setOut(hold, h.getLevel(), room, h.absolutePos(DOOR_GROUND), Direction.EAST, true, c -> told.add(c.getString())),
+                "the gate was refused: " + told);
+        hold.works().sites().forEach(site -> site.job().finishAll(h.getLevel()));
+        hold.works().second(h.getLevel(), 101);
+        var gate = AncestorPlan.placement(room, h.absolutePos(DOOR_GROUND), Direction.EAST);
+        h.assertTrue(hold.has(HoldRooms.GATE), "the gate wasn't handed over");
+        // made old: the great hall stone, but for the old small hall (x -5..5, z 9..16, up to 10 over its floor) and the passage (x -2..2)
+        var level = h.getLevel();
+        for (int x = -11; x <= 11; x++) {
+            for (int z = 2; z <= 19; z++) {
+                for (int y = 1; y <= 14; y++) {                   // local y: the hall's floor (DOOR_Y - 1 = 1) to its roof (HTOP + 1 = 14)
+                    boolean oldHall = Math.abs(x) <= 5 && z >= 9 && z <= 16 && y >= 2 && y <= 12;
+                    boolean passage = Math.abs(x) <= 2 && z <= 8 && y >= 2 && y <= 10;
+                    BlockPos w = gate.world(local(x, y, z));
+                    if (w.equals(hold.getBlockPos())) {
+                        continue;
+                    }
+                    level.setBlock(w, oldHall || passage ? Blocks.AIR.defaultBlockState() : Blocks.STONE.defaultBlockState(),
+                            net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
+                }
+            }
+        }
+        BlockPos gateDoor = h.absolutePos(DOOR_GROUND.above());
+        var widening = new claude.khazuk.hold.GateWidening();
+        widening.second(level, hold);
+        h.assertTrue(!widening.wide(gateDoor) && hold.works().digs().size() == 1
+                        && hold.works().digs().get(0).room() == HoldRooms.GATE_WIDENING,
+                "the old gate's widening wasn't begun: wide " + widening.wide(gateDoor) + ", digs " + hold.works().digs().size());
+        widening.second(level, hold);
+        h.assertTrue(hold.works().digs().size() == 1, "a second second began another widening: " + hold.works().digs().size());
+        hold.works().digs().get(0).job().finishAll(level);
+        hold.works().second(level, 202);
+        h.assertTrue(hold.works().digs().isEmpty() && hold.has(HoldRooms.WIDENING), "the widening wasn't handed over: digs " + hold.works().digs().size());
+        widening.second(level, hold);
+        h.assertTrue(!hold.has(HoldRooms.WIDENING) && widening.wide(gateDoor) && hold.crags().raised(gateDoor) == 0 && hold.has(HoldRooms.GATE),
+                "folded: a widening room " + hold.has(HoldRooms.WIDENING) + ", wide " + widening.wide(gateDoor) + ", the mountain at "
+                        + hold.crags().raised(gateDoor) + " (not 0), the gate " + hold.has(HoldRooms.GATE));
+        h.assertTrue(level.getBlockState(gate.world(local(8, 3, 5))).isAir() && level.getBlockState(gate.world(local(-8, 3, 15))).isAir(),
+                "the great hall's open floor is still the old wall's rock");
+        h.assertTrue(level.getBlockState(gate.world(local(6, 6, 9))).is(KRegistry.GILDED_STONE.get()), "the pillar's gold band is "
+                + level.getBlockState(gate.world(local(6, 6, 9))));
+        int seals = 0;
+        for (int sx : new int[]{-11, 11}) {
+            for (int sz : new int[]{7, 15}) {
+                seals += level.getBlockState(gate.world(local(sx, 2, sz))).getBlock() instanceof claude.khazuk.hold.HallSeal ? 1 : 0;
+            }
+        }
+        h.assertTrue(seals == 4, "the great hall has " + seals + " sealed doors, not 4");
+        h.assertTrue(level.getBlockState(gate.world(local(4, 2, 17))).is(Blocks.POLISHED_DEEPSLATE), "the dais where the old back wall stood is "
+                + level.getBlockState(gate.world(local(4, 2, 17))));
+        int digs = hold.works().digs().size();
+        widening.second(level, hold);
+        h.assertTrue(hold.works().digs().size() == digs, "a widened gate began another dig");
+        h.succeed();
+    }
+
+    /** The gate template's cell for gen_hold_gate.py's local (x across, y up, z into the mountain): x' = z + 14, y' = y + 1, z' = x + 15. */
+    private static BlockPos local(int x, int y, int z) {
+        return new BlockPos(z + 14, y + 1, x + 15);
     }
 
     /** The field's solid blocks above its ground, round the gate. */

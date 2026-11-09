@@ -221,6 +221,17 @@ public final class HoldCrag {
         return done.getOrDefault(door.asLong(), 0);
     }
 
+    /**
+     * The gate at {@code door} rises again from the bottom (GateWidening: its Shrine hall dug out wide, the mountain closes over the great
+     * hall's deeper back). Its rock already standing is passed over (only air and the land are taken), and a built room's air is never filled.
+     */
+    public void riseAgain(BlockPos door) {
+        done.put(door.asLong(), 0);
+        waiting.remove(door.asLong());
+        retried.remove(door.asLong());
+        dirty = true;
+    }
+
     /** True once if the rise moved since the last call: the hold saves then. */
     public boolean takeDirty() {
         boolean d = dirty;
