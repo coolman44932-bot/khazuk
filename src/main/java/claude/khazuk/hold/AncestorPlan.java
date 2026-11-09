@@ -205,12 +205,9 @@ public class AncestorPlan extends Item {
         net.minecraft.world.level.levelgen.structure.BoundingBox box = pl.box();
         Direction f = pl.facing();
         for (claude.settlementcore.settlement.Building b : hold.buildings()) {
-            if (!b.box().intersects(box)) {
-                continue;
-            }
             PlanPlacement bp = claude.settlementcore.settlement.BuildingBook.placementOf(b);
-            if (bp == null) {
-                continue;
+            if (bp == null || !bp.box().intersects(box)) {
+                continue;                                        // the room as it stands now (a widened gate is 34 long, its building 32)
             }
             for (claude.settlementcore.room.RoomTemplates.Entry e : claude.settlementcore.room.RoomTemplates.get(level, b.room())) {
                 if (e.state().isAir()) {

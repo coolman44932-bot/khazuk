@@ -31,6 +31,12 @@ public final class GateWidening {
     /** The widening dig's door in the gate template's frame: the old hall's back wall beside the dais, at standing height (WIDEN_DOOR). */
     public static final BlockPos DOOR = new BlockPos(31, 4, 19);
 
+    /** The old mountain ran to template x' 31 (the small hall's crag, 18 deep): the great hall's mountain adds the rows from here. */
+    public static final int BACK_X = 32;
+
+    /** Gates whose widening the engine refused, told once (a bench before the old back wall, another dig in the way). */
+    private final it.unimi.dsi.fastutil.longs.LongOpenHashSet toldNo = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+
     /** Gates (by door) marked wide: built with the great hall, or widened. */
     private final it.unimi.dsi.fastutil.longs.LongOpenHashSet wide = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
     private boolean dirty;
@@ -63,6 +69,10 @@ public final class GateWidening {
                 continue;
             }
             String no = hold.works().dig(level, placement(gate), true);
+            if (no != null && toldNo.add(b.door().asLong())) {
+                hold.tellOwner(hold.settlementName() + ": the Miners can't dig the Hold Gate's Shrine hall out wide yet: " + no
+                        + " (by the old back wall, beside the dais). They try again when it's clear.", ChatFormatting.YELLOW);
+            }
             if (no == null) {
                 hold.tellOwner(hold.settlementName() + ": the Miners dig the Hold Gate's Shrine hall out wide: room for the hold's god, two doors"
                         + " in each wall, the Shrine where it stands.", ChatFormatting.GOLD);
@@ -91,7 +101,7 @@ public final class GateWidening {
         Building gate = gateOf(hold, widening);
         if (gate != null) {
             wide.add(gate.door().asLong());
-            hold.crags().riseAgain(gate.door());
+            hold.crags().riseAgain(gate.door(), BACK_X);
             hold.tellOwner(hold.settlementName() + ": the Hold Gate's Shrine hall is dug out wide.", ChatFormatting.GOLD);
         }
         dirty = true;

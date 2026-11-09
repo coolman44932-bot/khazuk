@@ -229,6 +229,10 @@ public class HallGameTests {
         PlanPlacement pl = PlanPlacement.compute(room, h.absolutePos(POCKET.offset(4, 1, 0)), Direction.EAST);
         List<String> told = new ArrayList<>();
         h.assertTrue(AncestorPlan.dig(hold, h.getLevel(), pl, true, c -> told.add(c.getString())), "the dig was refused: " + told);
+        BlockPos digging = hold.works().digs().get(0).box().getCenter();
+        h.assertTrue(hold.musterHolds(digging) && !hold.musterHolds(foe.blockPosition()),
+                "the muster's ground: the dig's middle " + hold.musterHolds(digging) + " (held), the far cave " + hold.musterHolds(foe.blockPosition())
+                        + " (not)");
         h.startSequence()
                 .thenWaitUntil(() -> h.assertTrue(hold.works().crewCount() >= 1 && !hold.muster().alarmed(),
                         "tick " + h.getTick() + ": no Miner at the dig, with a zombie " + (int) far + " blocks off in a cave: crew " + hold.works().crewCount()

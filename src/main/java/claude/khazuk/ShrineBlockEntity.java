@@ -480,18 +480,34 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
      */
     @Override
     public List<BoundingBox> musterBoxes() {
+        if (level != null && musterBoxesAt == level.getGameTime() && musterBoxesNow != null) {
+            return musterBoxesNow;                               // asked per foe each scan (the review of 2a947cf): once a tick
+        }
         List<BoundingBox> out = new ArrayList<>();
         for (claude.settlementcore.settlement.Building b : buildings()) {
-            out.add(b.box());
+            PlanPlacement bp = claude.settlementcore.settlement.BuildingBook.placementOf(b);
+            out.add(bp != null ? bp.box() : b.box());            // the room as it stands now (a widened gate is 34 long)
+            if (bp != null && claude.khazuk.hold.HoldCrag.gate(b) && level instanceof ServerLevel sl
+                    && !claude.khazuk.hold.HoldCrag.carved(sl, bp)) {
+                out.add(claude.khazuk.hold.HoldCrag.mountain(sl, bp));   // its mountain, flanks and summit (a carved gate's is its box)
+            }
         }
+        out.addAll(works().reach());                             // the mine's drifts and winze, where its Miners are
         for (claude.settlementcore.work.DigWork d : works().digs()) {
             out.add(d.box());
         }
         for (claude.settlementcore.work.SiteWork s : works().sites()) {
             out.add(s.box());
         }
+        if (level != null) {
+            musterBoxesAt = level.getGameTime();
+            musterBoxesNow = List.copyOf(out);
+        }
         return out;
     }
+
+    private long musterBoxesAt = Long.MIN_VALUE;
+    private @Nullable List<BoundingBox> musterBoxesNow;
 
     /** Whether {@code p} is in a hall, gate, dig or site of the hold (see {@link #musterBoxes}). */
     @Override
@@ -528,7 +544,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         BoundingBox area = pl.box();
         for (claude.settlementcore.settlement.Building b : buildings()) {
             PlanPlacement other = claude.settlementcore.settlement.BuildingBook.placementOf(b);
-            if (other == null || b.box().equals(area) || !b.box().intersects(area)) {
+            if (other == null || other.box().equals(area) || !other.box().intersects(area)) {   // the room as it stands now (a widened gate is 34 long)
                 continue;
             }
             if (pl.room() == claude.khazuk.hold.HoldRooms.GATE_WIDENING && claude.khazuk.hold.HoldCrag.gate(b)) {

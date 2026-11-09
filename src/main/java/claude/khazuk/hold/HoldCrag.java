@@ -72,6 +72,15 @@ public final class HoldCrag {
 
     /** Cells raised so far, per gate (its door's position). */
     private final Long2IntMap done = new Long2IntOpenHashMap();
+    /**
+     * The crag's size the counts in {@link #done} were raised against (0: a save from before it was kept, when the crag had
+     * {@value #OLD_CRAG_SIZE} cells). The great Shrine hall (2026-11-09) changed the crag: a gate risen whole stays risen, never re-raised
+     * from a count that now points into the middle of another list (the review of 2a947cf: a floating summit).
+     */
+    private int cragSize;
+    public static final int OLD_CRAG_SIZE = 33574;
+    /** Gates rising again (GateWidening) over their cells from this template x' on only, the rest of their mountain left as it stands. */
+    private final Long2IntMap from = new Long2IntOpenHashMap();
     /** Whether {@link #done} changed since the hold last saved. */
     private boolean dirty;
     /**
@@ -222,11 +231,13 @@ public final class HoldCrag {
     }
 
     /**
-     * The gate at {@code door} rises again from the bottom (GateWidening: its Shrine hall dug out wide, the mountain closes over the great
-     * hall's deeper back). Its rock already standing is passed over (only air and the land are taken), and a built room's air is never filled.
+     * The gate at {@code door} rises again from the bottom over its cells from template x' {@code fromX} on (GateWidening: its Shrine hall
+     * dug out wide, the mountain closes over the great hall's deeper back). The rest of its mountain is left as it stands: a tunnel its god
+     * dug into the old flanks since is never filled (the review of 2a947cf). A built room's air is never filled.
      */
-    public void riseAgain(BlockPos door) {
+    public void riseAgain(BlockPos door, int fromX) {
         done.put(door.asLong(), 0);
+        from.put(door.asLong(), fromX);
         waiting.remove(door.asLong());
         retried.remove(door.asLong());
         dirty = true;
@@ -237,6 +248,12 @@ public final class HoldCrag {
         boolean d = dirty;
         dirty = false;
         return d;
+    }
+
+    /** The mountain's box in the world for {@code pl} (a gate's placement), its feet left out: the ground a hold defends round its gate. */
+    public static BoundingBox mountain(ServerLevel level, PlanPlacement pl) {
+        BoundingBox f = footprint(level, pl);
+        return new BoundingBox(f.minX(), f.minY() + FOOTING, f.minZ(), f.maxX(), f.maxY(), f.maxZ());
     }
 
     /** The whole mountain's box in the world for {@code pl} (a gate's placement), its feet included. */
@@ -275,6 +292,16 @@ public final class HoldCrag {
      */
     public boolean second(ServerLevel level, SettlementBlockEntity hold, int budget) {
         Cells c = cells(level);
+        if (cragSize != c.size() && c.size() > 0) {
+            int was = cragSize == 0 ? OLD_CRAG_SIZE : cragSize;
+            for (var e : done.long2IntEntrySet()) {
+                if (e.getIntValue() >= was) {
+                    e.setValue(c.size());                        // risen whole against the old crag: risen
+                }
+            }
+            cragSize = c.size();
+            dirty = true;
+        }
         LongSet gates = new LongOpenHashSet();
         Building rising = null;
         CarvedGates carvedGates = CarvedGates.of(level);
@@ -313,8 +340,10 @@ public final class HoldCrag {
         long key = rising.door().asLong();
         int i = done.getOrDefault(key, 0);
         boolean inRock = carved(level, pl);
+        int fromX = from.getOrDefault(key, Integer.MIN_VALUE);
         if (i == 0) {
-            hold.tellOwner(inRock ? "Grungni fills the rock back round the " + pl.room().displayName() + "'s walls."
+            hold.tellOwner(fromX != Integer.MIN_VALUE ? "Grungni closes the mountain over the " + pl.room().displayName() + "'s great hall."
+                    : inRock ? "Grungni fills the rock back round the " + pl.room().displayName() + "'s walls."
                     : "Grungni raises the mountain round the " + pl.room().displayName() + "!", ChatFormatting.GOLD);
         }
         List<LivingEntity> near = level.getEntitiesOfClass(LivingEntity.class, new AABB(pl.box().minX() - 16, pl.box().minY() - 2 - FOOTING,
@@ -344,6 +373,9 @@ public final class HoldCrag {
         BlockPos last = null;
         it.unimi.dsi.fastutil.ints.IntArrayList held = waiting.get(key);
         for (; i < end; i++) {
+            if (c.xs[i] < fromX) {
+                continue;                                        // rising again: the old mountain stands as it is
+            }
             BlockPos p = pl.world(new BlockPos(c.xs[i], c.ys[i], c.zs[i]));
             if (inRock && !pl.box().isInside(p)) {
                 continue;                                        // carved: the cave round it keeps its air
@@ -387,6 +419,11 @@ public final class HoldCrag {
         }
         if (last != null) {
             level.playSound(null, last, SoundEvents.DEEPSLATE_BREAK, SoundSource.BLOCKS, 2.0f, 0.5f);
+        }
+        if (i >= c.size() && !waiting.containsKey(key) && from.containsKey(key)) {
+            from.remove(key);                                    // risen again: nothing more to say
+            dirty = true;
+            return false;
         }
         if (i >= c.size() && !waiting.containsKey(key)) {
             hold.tellOwner("The " + pl.room().displayName() + " stands in its mountain.", ChatFormatting.GOLD);
@@ -533,10 +570,20 @@ public final class HoldCrag {
         tag.put("crag_waiting", wait);
         tag.putLongArray("crag_boxed", boxed.toLongArray());
         tag.putLongArray("crag_sealed", sealed.toLongArray());
+        tag.putInt("crag_size", cragSize);
+        tag.putLongArray("crag_from_doors", from.keySet().toLongArray());
+        tag.putIntArray("crag_from_x", from.values().toIntArray());
     }
 
     public void load(CompoundTag tag) {
         done.clear();
+        cragSize = tag.getIntOr("crag_size", 0);
+        from.clear();
+        long[] fd = tag.getLongArray("crag_from_doors").orElse(new long[0]);
+        int[] fx = tag.getIntArray("crag_from_x").orElse(new int[0]);
+        for (int k = 0; k < Math.min(fd.length, fx.length); k++) {
+            from.put(fd[k], fx[k]);
+        }
         long[] doors = tag.getLongArray("crag_doors").orElse(new long[0]);
         int[] counts = tag.getIntArray("crag_done").orElse(new int[0]);
         for (int k = 0; k < Math.min(doors.length, counts.length); k++) {

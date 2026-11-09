@@ -118,6 +118,16 @@ public class HoldGateGameTests {
         h.assertBlockPresent(Blocks.AIR, DOOR_GROUND.above(3).east(24));   // 10 into the passage, through the mountain
         h.assertTrue(!hold.crags().second(h.getLevel(), hold, HoldCrag.PER_SECOND) && !hold.crags().takeDirty(),
                 "a risen mountain rose again, or a second with nothing to do was marked for saving");
+        // a save from before the great Shrine hall: its gate risen whole against the old crag's 33574 cells (no size kept) stays risen, never
+        // re-raised from a count that points into the middle of the new list (the review of 2a947cf: a floating summit)
+        CompoundTag old = new CompoundTag();
+        old.putLongArray("crag_doors", new long[]{door.asLong()});
+        old.putIntArray("crag_done", new int[]{HoldCrag.OLD_CRAG_SIZE});
+        HoldCrag legacy = new HoldCrag();
+        legacy.load(old);
+        int beforeLegacy = solid(h);
+        h.assertTrue(!legacy.second(h.getLevel(), hold, HoldCrag.PER_SECOND) && legacy.risen(h.getLevel(), door) && solid(h) == beforeLegacy,
+                "an old save's risen gate rose again: risen " + legacy.risen(h.getLevel(), door) + ", " + (solid(h) - beforeLegacy) + " cells set");
         // a gate whose mountain would cover the Shrine is refused: the Shrine just behind the gatehouse
         var pl = AncestorPlan.placement(room, h.absolutePos(DOOR_GROUND), Direction.EAST);
         h.assertTrue(HoldCrag.buries(h.getLevel(), pl, h.absolutePos(new BlockPos(30, 3, 36))), "a Shrine inside the mountain isn't buried");
@@ -236,6 +246,16 @@ public class HoldGateGameTests {
         int digs = hold.works().digs().size();
         widening.second(level, hold);
         h.assertTrue(hold.works().digs().size() == digs, "a widened gate began another dig");
+        // its mountain rises again over the great hall's deeper back only: a flank cell of the old mountain (here open: as a tunnel the god dug
+        // there would be) stays open, the rock behind the hall's back wall goes in (the review of 2a947cf)
+        BlockPos flank = gate.world(new BlockPos(19, 6, 1));
+        BlockPos back = gate.world(new BlockPos(35, 10, 15));
+        h.assertTrue(level.getBlockState(flank).isAir() && level.getBlockState(back).isAir(), "the test needs the flank and the back open first");
+        for (int s = 0; s < 60 && hold.crags().second(level, hold, HoldCrag.PER_SECOND); s++) {
+        }
+        h.assertTrue(hold.crags().risen(level, gateDoor) && level.getBlockState(flank).isAir() && !level.getBlockState(back).isAir(),
+                "risen again: whole " + hold.crags().risen(level, gateDoor) + ", the old flank " + level.getBlockState(flank) + " (open), behind the hall "
+                        + level.getBlockState(back) + " (rock)");
         h.succeed();
     }
 
