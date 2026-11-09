@@ -192,6 +192,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     public void second(ServerLevel level) {
         super.second(level);
         widening.second(level, this);                            // before the mountain: a widened gate's rock rises again this second
+        openSealedDoors(level);
         crags.second(level, this, HoldCrag.PER_SECOND);
         brew.second(level, this);
         runes.second(level, this);
@@ -206,6 +207,25 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
         syncRunes();
+    }
+
+    /**
+     * A dig under way whose door is still a rune-sealed arch has the arch cut away: a hall begun before {@link #keepOutCells} let the seals
+     * go (its saved keep-out holds the arch's cells, so its tasks never touch them) was dug on beyond a whole seal, its Miners bunched against
+     * it unable to follow. The arch's cells are the dig's own (its template's doorway), cut as the dig itself would have. How many blocks.
+     */
+    public int openSealedDoors(ServerLevel level) {
+        int n = 0;
+        for (claude.settlementcore.work.DigWork d : works().digs()) {
+            BlockPos door = d.job().door;
+            if (d.job().finishedCount() > 0 && level.isLoaded(door)) {
+                for (BlockPos p : claude.khazuk.hold.HallSeal.arch(level, door)) {
+                    level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), net.minecraft.world.level.block.Block.UPDATE_ALL);
+                    n++;
+                }
+            }
+        }
+        return n;
     }
 
     // ------------------------------------------------------------------ the statue
@@ -542,6 +562,13 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     public long[] keepOutCells(ServerLevel level, PlanPlacement pl) {
         it.unimi.dsi.fastutil.longs.LongOpenHashSet keep = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         BoundingBox area = pl.box();
+        // a hall dug through a rune-sealed door cuts the arch it is dug through: the seals are masonry of the room it leaves (a template cell
+        // that is no air), and kept as such they stood whole for ever, the Mine dug on beyond them and its Miners shut out (the user's save,
+        // 2026-11-09: 10 Dawi bunched at a whole seal, the Mine 55% dug without them)
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet opening = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        for (BlockPos p : claude.khazuk.hold.HallSeal.arch(level, pl.door())) {
+            opening.add(p.asLong());
+        }
         for (claude.settlementcore.settlement.Building b : buildings()) {
             PlanPlacement other = claude.settlementcore.settlement.BuildingBook.placementOf(b);
             if (other == null || other.box().equals(area) || !other.box().intersects(area)) {   // the room as it stands now (a widened gate is 34 long)
@@ -552,7 +579,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
             }
             for (claude.settlementcore.room.RoomTemplates.Entry e : claude.settlementcore.room.RoomTemplates.get(level, other.room().id())) {
                 BlockPos w = other.world(e.local());
-                if (area.isInside(w) && (!e.state().isAir() || level.getBlockState(w).isAir())) {
+                if (area.isInside(w) && (!e.state().isAir() || level.getBlockState(w).isAir()) && !opening.contains(w.asLong())) {
                     keep.add(w.asLong());
                 }
             }

@@ -165,4 +165,141 @@ public class HallSealGameTests {
         h.assertTrue(level.getBlockState(pl.world(new BlockPos(29, 7, 26))).is(KRegistry.GILDED_STONE.get()), "the arch's keystone isn't in");
         h.succeed();
     }
+
+    // ------------------------------------------------------------------ a hall dug through a seal (the user's save, 2026-11-09)
+
+    /** The gate's door ground (running east from here), and the Shrine behind it: as HoldGateGameTests has them. */
+    private static final BlockPos GATE_GROUND = new BlockPos(4, 2, 36);
+    private static final BlockPos GATE_SHRINE = new BlockPos(44, 3, 36);
+
+    /** What a built gate and a Mine ordered through its back seal give a test: the hold, the Mine's placement, the seal's bottom middle. */
+    private record Dug(claude.khazuk.ShrineBlockEntity hold, PlanPlacement mine, BlockPos seal) {
+    }
+
+    /**
+     * A Hold Gate raised in the field (free, all at once, handed over), the great Shrine hall's back seal on its east wall (the one the user's Mine was
+     * ordered through, template (29, 3, 26)) with rock behind it, and a Mine ordered through that seal as the god's plan does it.
+     */
+    private static Dug mineThroughTheGatesSeal(GameTestHelper h) {
+        var level = h.getLevel();
+        h.setBlock(GATE_SHRINE, KRegistry.SHRINE.get().defaultBlockState());
+        claude.khazuk.ShrineBlockEntity hold = (claude.khazuk.ShrineBlockEntity) level.getBlockEntity(h.absolutePos(GATE_SHRINE));
+        hold.addFood(400, claude.settlementcore.food.Fare.COOKED, "the test");
+        Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
+        java.util.List<String> told = new java.util.ArrayList<>();
+        h.assertTrue(AncestorPlan.setOut(hold, level, gate, h.absolutePos(GATE_GROUND), Direction.EAST, true, c -> told.add(c.getString())),
+                "the gate was refused: " + told);
+        hold.works().sites().forEach(site -> site.job().finishAll(level));
+        hold.works().second(level, 101);
+        h.assertTrue(hold.has(HoldRooms.GATE), "the gate wasn't handed over");
+        PlanPlacement g = AncestorPlan.placement(gate, h.absolutePos(GATE_GROUND), Direction.EAST);
+        BlockPos seal = g.world(new BlockPos(29, 3, 26));
+        h.assertTrue(level.getBlockState(seal).getBlock() instanceof HallSeal, "no seal at the gate's back arch: " + level.getBlockState(seal));
+        Direction runs = level.getBlockState(seal).getValue(HallSeal.FACING);
+        PlanPlacement mine = PlanPlacement.compute(HoldRooms.room("dawi_mine"), HallSeal.anchor(level, seal), runs);
+        h.assertTrue(HallSeal.arch(level, mine.door()).size() == 9, "the arch is " + HallSeal.arch(level, mine.door()).size() + " seals, not 9");
+        for (BlockPos p : BlockPos.betweenClosed(mine.box().minX(), mine.box().minY(), mine.box().minZ(), mine.box().maxX(), mine.box().maxY(), mine.box().maxZ())) {
+            int along = (p.getX() - mine.door().getX()) * runs.getStepX() + (p.getZ() - mine.door().getZ()) * runs.getStepZ();
+            if (along > 0 && level.getBlockState(p).isAir()) {
+                level.setBlock(p, Blocks.STONE.defaultBlockState(), 2);   // the mountain behind the wall
+            }
+        }
+        told.clear();
+        h.assertTrue(AncestorPlan.dig(hold, level, mine, true, c -> told.add(c.getString())), "the Mine through the seal was refused: " + told);
+        return new Dug(hold, mine, seal);
+    }
+
+    /**
+     * The user's save (2026-11-09, the hold at -448 -31 4, the Mine ordered through the gate's seal at -449 -32 15): the dig was 55% done and the
+     * seal still whole, ten Dawi bunched against it in the hall. The hold's keep-out for a dig (ShrineBlockEntity#keepOutCells) keeps every
+     * other building's masonry, and the seals are masonry of the gate (a template cell that is no air): the arch the Mine is dug through was
+     * left out of its own dig, so the Mine's doorway cells were never tasks and nobody could cut them. Dug whole, the arch must be gone and
+     * the gate's other arch beside it (the Mine's face is wider than its door) must stand.
+     */
+    @GameTest(template = "field", timeoutTicks = 400, batch = "khazuk")
+    public static void aMineDugThroughTheGatesSealCutsTheSeal(GameTestHelper h) {
+        var level = h.getLevel();
+        Dug d = mineThroughTheGatesSeal(h);
+        BlockPos otherSeal = AncestorPlan.placement(HoldRooms.room("dawi_hold_gate"), h.absolutePos(GATE_GROUND), Direction.EAST).world(new BlockPos(21, 3, 26));
+        h.assertTrue(level.getBlockState(otherSeal).getBlock() instanceof HallSeal, "the gate's other arch isn't built");
+        java.util.List<BlockPos> arch = HallSeal.arch(level, d.mine().door());
+        var job = d.hold().works().digs().get(0).job();
+        job.finishAll(level);
+        int standing = 0;
+        StringBuilder left = new StringBuilder();
+        for (BlockPos p : arch) {
+            if (level.getBlockState(p).getBlock() instanceof HallSeal) {
+                standing++;
+                left.append(h.relativePos(p).toShortString()).append(' ');
+            }
+        }
+        h.assertTrue(standing == 0, "the Mine was dug whole (" + job.finishedCount() + " of " + job.taskCount() + " cells) and " + standing + " of "
+                + arch.size() + " seal blocks of its doorway still stand: " + left + "(the door at " + h.relativePos(d.mine().door()) + ", running "
+                + d.mine().facing() + ")");
+        h.assertTrue(level.getBlockState(otherSeal).getBlock() instanceof HallSeal, "the Mine cut the gate's other arch beside its door: "
+                + level.getBlockState(otherSeal));
+        h.succeed();
+    }
+
+    /**
+     * What the user saw: the Mine's Miners follow the dig in through the opened door, not bunch in the hall against the seal while the settlement
+     * digs the Mine on its own (its crew's chores shelved as unreachable: DigWork#shelve). A Miner must stand beyond the wall plane, in the Mine.
+     */
+    @GameTest(template = "field", timeoutTicks = 2400, batch = "khazuk")
+    public static void theMinersFollowTheirDigThroughTheGatesSeal(GameTestHelper h) {
+        var level = h.getLevel();
+        Dug d = mineThroughTheGatesSeal(h);
+        d.hold().addToReserve(4, 0);
+        Direction runs = d.mine().facing();
+        var job = d.hold().works().digs().get(0).job();
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    int inside = 0;
+                    StringBuilder where = new StringBuilder();
+                    for (java.util.UUID id : d.hold().works().crewIds()) {
+                        var e = level.getEntity(id);
+                        if (e == null) {
+                            continue;
+                        }
+                        BlockPos p = e.blockPosition();
+                        int along = (p.getX() - d.mine().door().getX()) * runs.getStepX() + (p.getZ() - d.mine().door().getZ()) * runs.getStepZ();
+                        inside += along >= 2 && d.mine().box().isInside(p) ? 1 : 0;
+                        where.append(h.relativePos(p).toShortString()).append(" (").append(along).append(" along) ");
+                    }
+                    h.assertTrue(inside > 0, "tick " + h.getTick() + ": no Miner of the crew has followed the dig through the seal: crew " + where
+                            + ", dig " + job.finishedCount() + "/" + job.taskCount() + " cells, the door is " + level.getBlockState(d.mine().door()).getBlock()
+                            + " at " + h.relativePos(d.mine().door()));
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * A dig begun before the keep-out let the seals go (a save from the jar of 2026-11-09 00:31 and before) has its doorway's cells in its saved
+     * keep-out for good, and was dug on beyond a whole seal: its hold cuts the arch once the dig has begun.
+     */
+    @GameTest(template = "field", timeoutTicks = 400, batch = "khazuk")
+    public static void aSealStandingAtAnOldDigsDoorIsCut(GameTestHelper h) {
+        var level = h.getLevel();
+        h.setBlock(GATE_SHRINE, KRegistry.SHRINE.get().defaultBlockState());
+        claude.khazuk.ShrineBlockEntity hold = (claude.khazuk.ShrineBlockEntity) level.getBlockEntity(h.absolutePos(GATE_SHRINE));
+        BlockState seal = KRegistry.HALL_SEAL.get().defaultBlockState().setValue(HallSeal.FACING, Direction.EAST);
+        BlockPos door = h.absolutePos(new BlockPos(10, 3, 20));
+        PlanPlacement pl = PlanPlacement.compute(HoldRooms.room("dawi_mine"), door, Direction.EAST);
+        for (BlockPos p : BlockPos.betweenClosed(pl.box().minX(), pl.box().minY(), pl.box().minZ(), pl.box().maxX(), pl.box().maxY(), pl.box().maxZ())) {
+            level.setBlock(p, Blocks.STONE.defaultBlockState(), 2);
+        }
+        java.util.List<String> told = new java.util.ArrayList<>();
+        h.assertTrue(AncestorPlan.dig(hold, level, pl, true, c -> told.add(c.getString())), "the dig was refused: " + told);
+        hold.works().digs().get(0).job().finishAll(level);       // dug whole, then the old jar's whole arch put back
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dy = 0; dy <= 2; dy++) {
+                level.setBlock(door.offset(0, dy, dz), seal, 2);
+            }
+        }
+        h.assertTrue(HallSeal.arch(level, door).size() == 9, "the arch isn't back");
+        int cut = hold.openSealedDoors(level);
+        h.assertTrue(cut == 9 && level.getBlockState(door).isAir() && level.getBlockState(door.above(2).north()).isAir(),
+                "the old dig's seal: " + cut + " blocks cut (not 9), the door is " + level.getBlockState(door));
+        h.succeed();
+    }
 }

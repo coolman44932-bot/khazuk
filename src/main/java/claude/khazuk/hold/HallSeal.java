@@ -68,6 +68,29 @@ public class HallSeal extends HorizontalDirectionalBlock {
         return p.relative(right, Math.floorDiv(r - l, 2));      // an even width: always its left middle, whichever block is aimed at
     }
 
+    /**
+     * The blocks of the arch whose bottom middle is {@code door} ({@link #anchor}): its seals facing the same way, in the wall's plane, which
+     * a hall dug through the arch cuts away. Empty if {@code door} is no seal.
+     */
+    public static java.util.List<BlockPos> arch(BlockGetter level, BlockPos door) {
+        BlockState s = level.getBlockState(door);
+        if (!(s.getBlock() instanceof HallSeal)) {
+            return java.util.List.of();
+        }
+        Direction f = s.getValue(FACING);
+        Direction right = f.getClockWise();
+        java.util.List<BlockPos> out = new java.util.ArrayList<>();
+        for (int across = -8; across <= 8; across++) {
+            for (int up = 0; up <= 8; up++) {
+                BlockPos p = door.relative(right, across).above(up);
+                if (same(level, p, f) && door.equals(anchor(level, p))) {
+                    out.add(p);
+                }
+            }
+        }
+        return out;
+    }
+
     /** The way a hall dug through the seal at {@code hit} runs. */
     public static Direction runs(BlockGetter level, BlockPos hit) {
         return level.getBlockState(hit).getValue(FACING);
