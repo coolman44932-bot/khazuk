@@ -189,7 +189,6 @@ public final class KRegistry {
             p -> new SpawnEggItem(p.spawnEgg(ENGINEER_SLAYER.get())));
     public static final DeferredItem<SpawnEggItem> SLAYER_MECH_EGG = ITEMS.registerItem("slayer_mech_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(SLAYER_MECH.get())));
-    /** 0.14.2: the Ancestors' Plan of the Engineers' Guild, where the Engineer Slayers work and the Slayer mech is built. */
     /** The hold's roads (the user, 2026-11-09): a straight road, a crossing and a descent, dug off a sealed door like the halls. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_ROAD = ITEMS.registerItem("plan_road",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_road"));
@@ -197,6 +196,7 @@ public final class KRegistry {
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_road_crossing"));
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_ROAD_DESCENT = ITEMS.registerItem("plan_road_descent",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_road_descent"));
+    /** 0.14.2: the Ancestors' Plan of the Engineers' Guild, where the Engineer Slayers work and the Slayer mech is built. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_ENGINEERS_GUILD = ITEMS.registerItem("plan_engineers_guild",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_engineers_guild"));
     /** 0.14.2: the Ancestors' Plan of the Shrine of Grimnir, where the Slayers take their oath. */

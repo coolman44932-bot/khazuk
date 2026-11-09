@@ -284,9 +284,64 @@ public class HallSealGameTests {
         h.assertTrue(level.getBlockState(foot).getBlock() instanceof HallSeal && level.getBlockState(foot).getValue(HallSeal.FACING) == descent.facing()
                 && HallSeal.anchor(level, foot).getY() == descent.door().getY() - 8, "the descent's foot isn't a sealed door 8 down: "
                 + level.getBlockState(foot) + " at " + h.relativePos(foot) + ", its door at " + h.relativePos(descent.door()));
-        h.assertTrue(level.getBlockState(descent.world(new BlockPos(6, 4, 3))).getBlock() instanceof net.minecraft.world.level.block.StairBlock,
-                "the descent has no stair half way down: " + level.getBlockState(descent.world(new BlockPos(6, 4, 3))));
+        h.assertTrue(level.getBlockState(descent.world(new BlockPos(6, 5, 3))).getBlock() instanceof net.minecraft.world.level.block.StairBlock,
+                "the descent has no stair half way down: " + level.getBlockState(descent.world(new BlockPos(6, 5, 3))));
         h.succeed();
+    }
+
+    /**
+     * The Miners dig a Road Descent themselves and walk down its stair (the review of 74d740d: the dug-whole test proves the blocks, not the
+     * crew): four Miners in the hold's deeps, the descent ordered through a sealed door high in the field; a Miner of the crew reaches the
+     * bottom landing, 6 or more down and 12 or more along.
+     */
+    @GameTest(template = "field", timeoutTicks = 6000, batch = "khazuk")
+    public static void theMinersDigADescentAndWalkDownItsStair(GameTestHelper h) {
+        var level = h.getLevel();
+        h.setBlock(GATE_SHRINE, KRegistry.SHRINE.get().defaultBlockState());
+        claude.khazuk.ShrineBlockEntity hold = (claude.khazuk.ShrineBlockEntity) level.getBlockEntity(h.absolutePos(GATE_SHRINE));
+        hold.addFood(400, claude.settlementcore.food.Fare.COOKED, "the test");
+        hold.addToReserve(4, 0);
+        BlockPos door = h.absolutePos(new BlockPos(30, 20, 36));
+        for (int dz = -2; dz <= 2; dz++) {
+            for (int dy = -1; dy <= 4; dy++) {
+                boolean seal = Math.abs(dz) <= 1 && dy >= 0 && dy <= 2;
+                level.setBlock(door.offset(0, dy, dz), seal ? KRegistry.HALL_SEAL.get().defaultBlockState().setValue(HallSeal.FACING, Direction.EAST)
+                        : Blocks.CHISELED_STONE_BRICKS.defaultBlockState(), 2);
+            }
+        }
+        for (int dx = -4; dx <= -1; dx++) {                      // a ledge before the seal for the crew to stand on
+            for (int dz = -2; dz <= 2; dz++) {
+                level.setBlock(door.offset(dx, -1, dz), Blocks.STONE.defaultBlockState(), 2);
+            }
+        }
+        Rooms.Room room = HoldRooms.room("dawi_road_descent");
+        PlanPlacement descent = AncestorPlan.aimedAt(level, room, door.above(), 0, Direction.WEST);
+        for (BlockPos p : BlockPos.betweenClosed(descent.box().minX(), descent.box().minY(), descent.box().minZ(), descent.box().maxX(),
+                descent.box().maxY(), descent.box().maxZ())) {
+            if (p.getX() > door.getX() && level.getBlockState(p).isAir()) {
+                level.setBlock(p, Blocks.STONE.defaultBlockState(), 2);
+            }
+        }
+        java.util.List<String> told = new java.util.ArrayList<>();
+        h.assertTrue(AncestorPlan.dig(hold, level, descent, true, c -> told.add(c.getString())), "the descent was refused: " + told);
+        var job = hold.works().digs().get(0).job();
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    StringBuilder where = new StringBuilder();
+                    boolean down = false;
+                    for (java.util.UUID id : hold.works().crewIds()) {
+                        var e = level.getEntity(id);
+                        if (e == null) {
+                            continue;
+                        }
+                        BlockPos p = e.blockPosition();
+                        down |= p.getX() - door.getX() >= 12 && door.getY() - p.getY() >= 6;
+                        where.append(h.relativePos(p).toShortString()).append(' ');
+                    }
+                    h.assertTrue(down, "tick " + h.getTick() + ": no Miner of the crew has come down the descent's stair: crew " + where + ", dig "
+                            + job.finishedCount() + "/" + job.taskCount());
+                })
+                .thenSucceed();
     }
 
     /**

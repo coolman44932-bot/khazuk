@@ -1139,9 +1139,9 @@ def road_descent():
             h.put(x, f, z, TILE if (x + z) % 2 else POL)
             for y in range(f + 1, f + 7):
                 h.put(x, y, z, AIR)
-        if 3 <= x < 3 + drop:                                            # the step down into x: a stair block on the step above's edge
-            for z in range(1, sz - 1):
-                h.put(x, f, z, "minecraft:deepslate_brick_stairs[facing=west]")
+        if 3 <= x < 3 + drop:                                            # the step down into x: a stair on its floor, its high side level
+            for z in range(1, sz - 1):                                   # with the step above, its low side half down (the review of 74d740d:
+                h.put(x, f + 1, z, "minecraft:deepslate_brick_stairs[facing=west]")   # on the floor itself the first drop was a block, the last a dip)
     # the door at the top, in the x = 0 face, as the halls' (shell's) frame
     d, hw = h.door_z, h.door_w // 2
     for z in range(d - hw, d + hw + 1):
