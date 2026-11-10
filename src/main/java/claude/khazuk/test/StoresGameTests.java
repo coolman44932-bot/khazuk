@@ -205,8 +205,10 @@ public class StoresGameTests {
     }
 
     /**
-     * Goods are never thrown on the floor: with no Storeroom and the pile at the Shrine full the stores keep nothing more, and with a
-     * Storeroom they go straight into its barrels past the full pile.
+     * Goods are never thrown on the floor (the review of 14bf2c9, then of 74c45ef: the case that dropped them is a part fit). With no
+     * Storeroom and the pile at the Shrine full, the stores keep nothing more. With a Storeroom whose every slot is full but one stack of
+     * 61 black powder, and the pile still full, 10 more powder fill that stack (3 kept) and the other 7 are not kept: none lies on the
+     * floor at the Shrine, where Works#stow drops what neither the Hoard nor the pile takes.
      */
     @GameTest(template = "field", timeoutTicks = 200, batch = "khazuk")
     public static void aFullPileDropsNothingOnTheFloor(GameTestHelper h) {
@@ -220,12 +222,21 @@ public class StoresGameTests {
         h.assertTrue(!Stores.put(level, hold, new ItemStack(Items.GUNPOWDER, 10), "the test"), "a full pile and no Storeroom, and the stores "
                 + "said they kept the powder");
         PlanPlacement pl = storeroom(h, hold);
-        h.assertTrue(Stores.put(level, hold, new ItemStack(Items.GUNPOWDER, 10), "the test"), "a Storeroom with room refused the powder past a full pile");
+        h.assertTrue(hold.spoils().size() == pile, "the pile is no longer full after the Storeroom's dig: " + hold.spoils().size());
         List<BlockPos> all = hold.works().all(HoardWork.class).get(0).barrels(level);
-        h.assertTrue(in(h, all, Items.GUNPOWDER) == 10, "the powder in the Storeroom: " + in(h, all, Items.GUNPOWDER) + " of 10");
-        var box = new net.minecraft.world.phys.AABB(h.absolutePos(SHRINE)).inflate(48);
-        int dropped = level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box).size();
-        h.assertTrue(dropped == 0, dropped + " stacks lie on the floor round the Shrine");
+        for (BlockPos p : all) {
+            net.minecraft.world.Container c = Bins.at(level, p);
+            for (int i = 0; i < c.getContainerSize(); i++) {
+                c.setItem(i, new ItemStack(Items.STICK, 64));
+            }
+        }
+        Bins.at(level, bay(h, pl, "Spoils").get(0)).setItem(0, new ItemStack(Items.GUNPOWDER, 61));
+        h.assertTrue(Stores.put(level, hold, new ItemStack(Items.GUNPOWDER, 10), "the test"), "the 3 powder that fit were not kept");
+        h.assertTrue(in(h, all, Items.GUNPOWDER) == 64, "the powder in the Storeroom: " + in(h, all, Items.GUNPOWDER) + ", not the stack of 61 filled to 64");
+        var near = new net.minecraft.world.phys.AABB(h.absolutePos(SHRINE)).inflate(6);   // this test's own Shrine: where a stow drops
+        int dropped = level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, near).size();
+        h.assertTrue(dropped == 0, dropped + " stacks lie on the floor at the Shrine");
+        h.assertTrue(hold.spoils().size() == pile, "the pile changed: " + hold.spoils().size());
         h.succeed();
     }
 
