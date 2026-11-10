@@ -30,6 +30,7 @@ public class HoldLedgerGameTests {
         ServerLevel level = h.getLevel();
         ShrineBlockEntity hold = StoresGameTests.hold(h);
         ServerPlayer god = h.makeMockServerPlayerInLevel(), stranger = h.makeMockServerPlayerInLevel();
+        h.assertTrue(!god.getUUID().equals(stranger.getUUID()), "the test's two players are one: its stranger proves nothing");
         hold.claim(god, "Karak Tally");
         PlanPlacement pl = StoresGameTests.storeroom(h, hold);
         // a few ticks on: a Shrine just set down is among the level's loaded holds from its first tick (SettlementSpawns), and the lectern

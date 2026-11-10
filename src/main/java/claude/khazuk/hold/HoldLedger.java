@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * into. Its god opens it two ways:
  * <ul>
  * <li><b>The Storeroom's lectern</b> (the storekeeper's ledger the hall is dug with, or any lectern he sets in a Storeroom): used, it
- * opens the hold's ledger, and stays open while he stands by it.</li>
+ * opens the hold's ledger, and stays open while he stands by it. Sneaking, it is a plain lectern.</li>
  * <li><b>The Hold Ledger</b>, a book he carries (this item): used anywhere, it opens the ledger of the hold whose land he stands in,
  * else his nearest, and stays open while it is in his hand. The Dawi carry what he takes through the hold's roads (the engine wakes
  * the stores' chunks).</li>
@@ -52,7 +52,11 @@ public class HoldLedger extends Item {
         }
         ShrineBlockEntity hold = ShrineBlockEntity.ownedAt(sp, sp.blockPosition());
         if (hold == null) {
-            sp.sendSystemMessage(Component.literal("The Hold Ledger's pages are blank: you have no hold to keep its stores.").withStyle(ChatFormatting.GRAY));
+            // only a loaded hold answers (ShrineBlockEntity#ownedAt): a god far from his hold, or in another realm, has one all the same
+            // (the review of e2b33f6: "you have no hold" was said to him too)
+            boolean has = claude.khazuk.god.Waking.god(sp).holds() > 0;
+            sp.sendSystemMessage(Component.literal(has ? "The Hold Ledger's pages are blank here: your hold is too far off to answer. Open it in the hold's land."
+                    : "The Hold Ledger's pages are blank: you have no hold to keep its stores.").withStyle(ChatFormatting.GRAY));
             return InteractionResult.SUCCESS;
         }
         LedgerMenu.open(sp, hold, p -> p.getMainHandItem().getItem() instanceof HoldLedger || p.getOffhandItem().getItem() instanceof HoldLedger);
@@ -91,8 +95,8 @@ public class HoldLedger extends Item {
             }
             BlockPos at = e.getPos().immutable();
             ShrineBlockEntity hold = storeroomOf(level, p, at);
-            if (hold == null) {
-                return;
+            if (hold == null || p.isSecondaryUseActive()) {
+                return;                                          // sneaking, it is a lectern: a book set on it or taken off (the review of e2b33f6)
             }
             e.setCanceled(true);
             e.setCancellationResult(InteractionResult.SUCCESS);
