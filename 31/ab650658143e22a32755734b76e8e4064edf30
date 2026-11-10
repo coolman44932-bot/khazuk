@@ -1,0 +1,1 @@
+REVIEW PASS 31ab6506: the vent bug is fixed and tested, and refused is now cleared when the key is let go and when the rider leaves; no blocking findings remain. 31ab650658143e22a32755734b76e8e4064edf30
