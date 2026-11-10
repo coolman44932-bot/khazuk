@@ -59,5 +59,9 @@
   "item.khazuk.plan_road": "Ancestors' Plan: Hold Road",
   "item.khazuk.plan_road_crossing": "Ancestors' Plan: Road Crossing",
   "item.khazuk.plan_road_descent": "Ancestors' Plan: Road Descent",
-  "item.khazuk.plan_storeroom": "Ancestors' Plan: Storeroom"
+  "item.khazuk.plan_storeroom": "Ancestors' Plan: Storeroom",
+  "entity.khazuk.ancestor_engine": "Ancestor Engine",
+  "item.khazuk.ancestor_engine": "Ancestor Engine",
+  "key.category.khazuk.khazuk": "Khazuk!",
+  "key.khazuk.vent": "Vent the Ancestor Engine's Boiler"
 }

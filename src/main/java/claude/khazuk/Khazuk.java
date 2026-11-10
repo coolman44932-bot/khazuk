@@ -32,6 +32,7 @@ public final class Khazuk {
     public Khazuk(IEventBus modBus, ModContainer container) {
         KRegistry.register(modBus);
         claude.khazuk.god.Waking.register(modBus);
+        claude.khazuk.engine.EngineKeys.register(modBus);
         Currencies.register(() -> Items.GOLD_INGOT, () -> Items.GOLD_BLOCK, null, () -> Blocks.GOLD_ORE, () -> Blocks.DEEPSLATE_GOLD_ORE);
         Settlements.ownedBy(ShrineBlockEntity::ownedBy);
         claude.khazuk.hold.HoldRooms.register();

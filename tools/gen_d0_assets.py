@@ -57,6 +57,7 @@ def main():
     anvil_items()
     god_items()
     elite_eggs()
+    engine_item()
     print("ok")
 
 
@@ -403,6 +404,61 @@ def god_items():
     d["entity.khazuk.grungnis_hammer"] = "Grungni's Hammer"
     d["death.attack.khazuk.grungnis_hammer"] = "%1$s was struck down by Grungni's Hammer"
     d["death.attack.khazuk.grungnis_hammer.player"] = "%1$s was struck down by %2$s's Hammer of Grungni"
+    out("assets/khazuk/lang/en_us.json", d)
+
+
+ENGINE_ICON = [
+    # the Ancestor Engine from the front: twin gold-crowned stacks, the copper boiler behind the hull, Grungni's mask as the
+    # breastplate (rune-lit eyes, a gold beard), the axe at the left, the claw at the right, the firebox, two legs on gold-toed boots
+    "....GG..GG......",
+    "....ii..ii......",
+    "....ii..ii.cc...",
+    "...GGGGGGGGccc..",
+    "..dssssssssdcc..",
+    "s.dsrssssrsdc...",
+    "ssdssGGGGssd.i..",
+    "ssdsgGggGgsdiii.",
+    ".sdsggggggsd.i..",
+    ".s.dggffggd.ii..",
+    "....dddddd......",
+    "....ss..ss......",
+    "....ss..ss......",
+    "....ii..ii......",
+    "...iii..iii.....",
+    "...ggg..ggg.....",
+]
+
+
+def engine_item():
+    """The Ancestor Engine as its god carries it: an icon, the item files, a shaped recipe of what lies underground (copper, gold, iron
+    and redstone blocks round a cauldron for the boiler and an anvil for the frame: no wood, paper, leather or Nether), and the names
+    (the item, the entity, the vent key and its category)."""
+    import json
+    assert len(ENGINE_ICON) == 16 and all(len(row) == 16 for row in ENGINE_ICON)
+    pal = {"g": GOLD, "G": GOLD_L, "d": GOLD_D, "s": (150, 170, 186), "i": (58, 62, 70), "c": (196, 112, 70), "r": (150, 236, 255),
+           "f": (255, 150, 40)}
+    r = random.Random(53)
+    im = Image.new("RGBA", (16, 16))
+    for y, row in enumerate(ENGINE_ICON):
+        for x, ch in enumerate(row):
+            if ch in pal:
+                f = 1.0 if ch in "rf" else 0.92 + 0.16 * r.random()
+                im.putpixel((x, y), tuple(min(255, int(v * f)) for v in pal[ch]) + (255,))
+    im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "ancestor_engine.png"))
+    out("assets/khazuk/items/ancestor_engine.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/ancestor_engine"}})
+    out("assets/khazuk/models/item/ancestor_engine.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/ancestor_engine"}})
+    out("data/khazuk/recipe/ancestor_engine.json", {"type": "minecraft:crafting_shaped", "category": "misc",
+                                                    "pattern": ["CKC", "GAG", "IRI"],
+                                                    "key": {"C": "minecraft:copper_block", "K": "minecraft:cauldron", "G": "minecraft:gold_block",
+                                                            "A": "minecraft:anvil", "I": "minecraft:iron_block", "R": "minecraft:redstone_block"},
+                                                    "result": {"id": "khazuk:ancestor_engine", "count": 1}})
+    lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
+    with open(lang, encoding="utf-8") as f:
+        d = json.load(f)
+    d["entity.khazuk.ancestor_engine"] = "Ancestor Engine"
+    d["item.khazuk.ancestor_engine"] = "Ancestor Engine"
+    d["key.category.khazuk.khazuk"] = "Khazuk!"
+    d["key.khazuk.vent"] = "Vent the Ancestor Engine's Boiler"
     out("assets/khazuk/lang/en_us.json", d)
 
 

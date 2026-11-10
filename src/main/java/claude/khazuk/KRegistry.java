@@ -218,6 +218,18 @@ public final class KRegistry {
     public static final DeferredItem<claude.khazuk.throne.ThroneItem> THRONE_ITEM = ITEMS.registerItem("throne_of_power",
             p -> new claude.khazuk.throne.ThroneItem(p.stacksTo(1).fireResistant()));
 
+    /**
+     * The Ancestor Engine, the god's own walking steam engine (engine/AncestorEngine): 2.3 across and 3.1 to its stacks, its rider's hips
+     * 1.625 up in the open tub (the detail session's passenger point, handoffs/ancestor_engine_2026-11-10_done.md).
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<claude.khazuk.engine.AncestorEngine>> ANCESTOR_ENGINE = ENTITIES.register("ancestor_engine",
+            () -> EntityType.Builder.of(claude.khazuk.engine.AncestorEngine::new, MobCategory.MISC).sized(2.0f, 3.0f).eyeHeight(2.4f)
+                    .passengerAttachments(new net.minecraft.world.phys.Vec3(0.0, 1.475, -0.25)).fireImmune().clientTrackingRange(10)
+                    .build(key("ancestor_engine")));
+    /** The Ancestor Engine as its god carries it: set it down on the ground, facing the way you face. */
+    public static final DeferredItem<claude.khazuk.engine.AncestorEngineItem> ANCESTOR_ENGINE_ITEM = ITEMS.registerItem("ancestor_engine",
+            p -> new claude.khazuk.engine.AncestorEngineItem(p.stacksTo(1).fireResistant()));
+
     public static final DeferredItem<SpawnEggItem> MINER_EGG = ITEMS.registerItem("miner_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(MINER.get())));
     public static final DeferredItem<SpawnEggItem> WARRIOR_EGG = ITEMS.registerItem("dwarf_warrior_spawn_egg",
@@ -265,6 +277,7 @@ public final class KRegistry {
                 out.accept(GRIMNIRS_FURY.get());
                 out.accept(PLAN_MINE.get());
                 out.accept(THRONE_ITEM.get());
+                out.accept(ANCESTOR_ENGINE_ITEM.get());
                 out.accept(GILDED_STONE_ITEM.get());
                 out.accept(HOARD_GOLD_ITEM.get());
                 out.accept(HALL_SEAL_ITEM.get());
@@ -307,5 +320,6 @@ public final class KRegistry {
         e.put(SLAYER_MECH.get(), SlayerMech.createAttributes().build());
         e.put(ANVIL_OF_DOOM.get(), claude.khazuk.hold.AnvilOfDoom.createAttributes().build());
         e.put(THRONE.get(), claude.khazuk.throne.ThroneOfPower.createAttributes().build());
+        e.put(ANCESTOR_ENGINE.get(), claude.khazuk.engine.AncestorEngine.createAttributes().build());
     }
 }

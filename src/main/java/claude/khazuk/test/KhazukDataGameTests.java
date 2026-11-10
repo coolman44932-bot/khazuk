@@ -34,7 +34,7 @@ public class KhazukDataGameTests {
         h.setBlock(at, shrine);
         List<ItemStack> drops = Block.getDrops(shrine, h.getLevel(), h.absolutePos(at), h.getLevel().getBlockEntity(h.absolutePos(at)));
         h.assertTrue(drops.size() == 1 && drops.get(0).is(KRegistry.SHRINE_ITEM.get()), "a broken Shrine drops " + drops + ", not itself");
-        for (String id : List.of("ancestor_shrine", "plan_hold_gate", "throne_of_power")) {
+        for (String id : List.of("ancestor_shrine", "plan_hold_gate", "throne_of_power", "ancestor_engine")) {
             var key = ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(Khazuk.MODID, id));
             h.assertTrue(h.getLevel().getServer().getRecipeManager().byKey(key).isPresent(), "no recipe " + key.identifier());
         }
@@ -78,6 +78,7 @@ public class KhazukDataGameTests {
         var R = net.minecraft.world.item.Items.CHISELED_DEEPSLATE;     // the rune stone, for a book
         var GB = net.minecraft.world.item.Items.GOLD_BLOCK;
         var IB = net.minecraft.world.item.Items.IRON_BLOCK;
+        var CB = net.minecraft.world.item.Items.COPPER_BLOCK;
         List<Way> ways = List.of(
                 // underground: nothing of the surface
                 new Way("plan_keep", S, I, G, T), new Way("plan_hold_gate", S, G, T), new Way("plan_great_hall", D, G, T),
@@ -91,6 +92,9 @@ public class KhazukDataGameTests {
                 new Way("dammaz_kron", R, G, I),
                 new Way("ancestor_shrine", S, G, S, G, R, G, S, S, S),
                 new Way("throne_of_power", GB, R, GB, GB, GB, GB, IB, null, IB),
+                // the Ancestor Engine: copper, a cauldron for its boiler, gold, an anvil for its frame, iron, redstone
+                new Way("ancestor_engine", CB, net.minecraft.world.item.Items.CAULDRON, CB, GB, net.minecraft.world.item.Items.ANVIL, GB,
+                        IB, net.minecraft.world.item.Items.REDSTONE_BLOCK, IB),
                 new Way("grungnis_hammer", GB, IB, GB, null, I, null, null, I, null),
                 new Way("valayas_ward", G, I, G, I, IB, I, G, I, G),
                 // the old ways, with paper, wood and stone bricks

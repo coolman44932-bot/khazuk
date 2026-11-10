@@ -73,6 +73,7 @@ public final class KhazukClient {
         e.registerEntityRenderer(KRegistry.MINER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.MINER, 0.35f));
         e.registerEntityRenderer(KRegistry.WARRIOR.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.WARRIOR, 0.45f));
         e.registerEntityRenderer(KRegistry.THRONE.get(), ThroneRenderer::new);
+        e.registerEntityRenderer(KRegistry.ANCESTOR_ENGINE.get(), AncestorEngineRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNESMITH.get(), RunesmithRenderer::new);
         e.registerEntityRenderer(KRegistry.RUNELORD.get(), RunelordRenderer::new);
         e.registerEntityRenderer(KRegistry.QUARRELLER.get(), ctx -> new UnitRenderer<>(ctx, claude.khazuk.Looks.QUARRELLER));

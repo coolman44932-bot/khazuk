@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CKC",
+    "GAG",
+    "IRI"
+  ],
+  "key": {
+    "C": "minecraft:copper_block",
+    "K": "minecraft:cauldron",
+    "G": "minecraft:gold_block",
+    "A": "minecraft:anvil",
+    "I": "minecraft:iron_block",
+    "R": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "khazuk:ancestor_engine",
+    "count": 1
+  }
+}
