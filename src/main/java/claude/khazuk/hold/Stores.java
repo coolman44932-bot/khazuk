@@ -42,7 +42,8 @@ import java.util.Map;
  * or gold in the Storeroom into ingots; a Great Hall's hearth lays a feast, {@value #HALL_BREAD} bread and {@value #HALL_MEAT} roast
  * beef, into the Storeroom's Food bay while it has room (the user, 2026-11-10: "and what about food for me?": a god in a hold under
  * the rock had nothing to eat but what he carried down, and neither had the hold): there the Dawi eat it (the engine's larder) and
- * their god takes what he wants; with no Storeroom it is eaten at the tables, the hold's food kept up to {@value #FEAST_KEEP}.</li>
+ * their god takes what he wants; where none can be laid (no Storeroom, or none loaded) it is eaten at the tables, the hold's food
+ * kept up to {@value #FEAST_KEEP}.</li>
  * </ul>
  * Goods go into the Storeroom (their own bay, then Spoils, then anywhere), and with no Storeroom yet onto the pile at the Shrine (the
  * engine's spoils, {@value Settlement#MAX_SPOIL_STACKS} stacks), which the haul carries to the first Storeroom dug. With nowhere left
@@ -151,19 +152,12 @@ public final class Stores {
 
     /**
      * A Great Hall's feast: bread and roast into the Food bay, as much as it has room for (a full bay: the tables are laid already), where
-     * the hold eats it and its god helps himself; with no Storeroom, straight to the hold's food while that is under {@value #FEAST_KEEP}.
+     * the hold eats it and its god helps himself. Where none of it could be laid (no Storeroom; a Storeroom whose chunk is not loaded,
+     * or whose Food barrels its god took away: the review of 8c7e6ac, the feast was lost) it is eaten at the tables: straight to the
+     * hold's food, while that is under {@value #FEAST_KEEP} (a full bay holds far more than that, so a full bay adds nothing).
      */
     private static void feast(ServerLevel level, ShrineBlockEntity hold, String name) {
         ItemStack[] dishes = {new ItemStack(Items.BREAD, HALL_BREAD), new ItemStack(Items.COOKED_BEEF, HALL_MEAT)};
-        if (hold.works().all(HoardWork.class).isEmpty()) {
-            for (ItemStack dish : dishes) {
-                if (hold.food() < FEAST_KEEP) {
-                    hold.addFood(hold.foodValue(claude.settlementcore.food.Fare.nutrition(dish)) * dish.getCount(),
-                            claude.settlementcore.food.Fare.grade(dish), name);
-                }
-            }
-            return;
-        }
         List<BlockPos> food = bay(level, hold, FOOD_BAY);
         boolean laid = false;
         for (ItemStack dish : dishes) {
@@ -171,6 +165,13 @@ public final class Stores {
         }
         if (laid) {
             hold.larderStores().changed();                       // counted at the hold's next look, not a recount later
+            return;
+        }
+        for (ItemStack dish : dishes) {
+            if (hold.food() < FEAST_KEEP) {
+                hold.addFood(hold.foodValue(claude.settlementcore.food.Fare.nutrition(dish)) * dish.getCount(),
+                        claude.settlementcore.food.Fare.grade(dish), name);
+            }
         }
     }
 

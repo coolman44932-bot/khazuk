@@ -262,6 +262,16 @@ public class StoresGameTests {
         h.assertTrue(in(h, food, Items.BREAD) == Stores.HALL_BREAD && in(h, food, Items.COOKED_BEEF) == Stores.HALL_MEAT, "the feast in the Food bay: "
                 + in(h, food, Items.BREAD) + " bread and " + in(h, food, Items.COOKED_BEEF) + " roast, not " + Stores.HALL_BREAD + " and " + Stores.HALL_MEAT);
         h.assertTrue(hold.food() > f1, "the feast in the Food bay is not the hold's food: " + f1 + " then " + hold.food());
+        // a Storeroom with no Food barrels left (its god took them away; or its chunk is not loaded): the feast is not lost (the review of 8c7e6ac)
+        for (BlockPos p : food) {
+            Bins.at(level, p).clearContent();
+            level.setBlock(p, Blocks.AIR.defaultBlockState(), 2);
+        }
+        hold.larderStores().changed();
+        int f2 = hold.food();
+        hold.stores().produce(level, hold);
+        h.assertTrue(f2 < Stores.FEAST_KEEP && hold.food() > f2, "a Storeroom with no Food barrels: the feast was lost, the hold's food " + f2
+                + " then " + hold.food());
         h.succeed();
     }
 
