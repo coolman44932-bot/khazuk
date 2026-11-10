@@ -189,6 +189,9 @@ public final class KRegistry {
             p -> new SpawnEggItem(p.spawnEgg(ENGINEER_SLAYER.get())));
     public static final DeferredItem<SpawnEggItem> SLAYER_MECH_EGG = ITEMS.registerItem("slayer_mech_spawn_egg",
             p -> new SpawnEggItem(p.spawnEgg(SLAYER_MECH.get())));
+    /** The Storeroom (the user, 2026-11-09): the hold's stores, the engine's Hoard (hold/Stores). */
+    public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_STOREROOM = ITEMS.registerItem("plan_storeroom",
+            p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_storeroom"));
     /** The hold's roads (the user, 2026-11-09): a straight road, a crossing and a descent, dug off a sealed door like the halls. */
     public static final DeferredItem<claude.khazuk.hold.AncestorPlan> PLAN_ROAD = ITEMS.registerItem("plan_road",
             p -> new claude.khazuk.hold.AncestorPlan(p.stacksTo(1), "dawi_road"));
@@ -250,6 +253,7 @@ public final class KRegistry {
                 out.accept(GIANT_SLAYER_EGG.get());
                 out.accept(DRAGON_SLAYER_EGG.get());
                 out.accept(PLAN_ENGINEERS_GUILD.get());
+                out.accept(PLAN_STOREROOM.get());
                 out.accept(PLAN_ROAD.get());
                 out.accept(PLAN_ROAD_CROSSING.get());
                 out.accept(PLAN_ROAD_DESCENT.get());

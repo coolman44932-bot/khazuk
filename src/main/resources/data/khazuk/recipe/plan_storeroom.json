@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:barrel",
+    "minecraft:chest",
+    "minecraft:paper"
+  ],
+  "result": {
+    "id": "khazuk:plan_storeroom",
+    "count": 1
+  }
+}

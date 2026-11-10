@@ -1169,10 +1169,57 @@ def road_descent():
     return h
 
 
+def storeroom():
+    """The Storeroom (the user, 2026-11-09: "is there a storage room", then "yeah but also make the buildings passively add ore and whatever
+    they produce"), 17 long, 8 high, 15 wide: the hold's stores, the engine's Hoard (work/HoardWork). Racks of barrels three high along both
+    walls and across the far end, in five bays named for what they hold (the names are the engine's sections): Metals & Gems and Stone on
+    the left, Food and Timber on the right, Spoils across the end; a banner over each bay, timber posts between them, a shelf over the
+    racks, the storekeeper's ledger on a lectern, crates and sacks by the door, lanterns on chains. 99 barrels."""
+    sx, sy, sz, C = 17, 8, 15, 7
+    h = Hall(sx, sy, sz, C, 3, 4, 43)
+    h.shell()
+
+    def barrel(x, y, z, facing, name):
+        h.put(x, y, z, 'minecraft:barrel[facing=' + facing + ']{CustomName:"' + name + '"}')
+
+    for z, facing, near, far, c_near, c_far in ((1, "south", "Metals & Gems", "Stone", "yellow", "light_gray"),
+                                                (sz - 2, "north", "Food", "Timber", "red", "brown")):
+        for x in range(2, 15):
+            if x == 8:                                                   # the post between the two bays
+                for y in range(1, 5):
+                    h.put(x, y, z, "minecraft:stripped_spruce_log[axis=y]")
+                continue
+            for y in range(1, 4):
+                barrel(x, y, z, facing, near if x < 8 else far)
+            h.put(x, 4, z, "minecraft:spruce_slab[type=bottom]")         # the shelf over the rack
+        for x, colour in ((4, c_near), (5, c_near), (11, c_far), (12, c_far)):   # each bay's banner on the wall over it
+            h.put(x, 6, z, f"minecraft:{colour}_wall_banner[facing={facing}]")
+    for z in range(3, 12):                                               # the far end: Spoils, whatever fits no bay
+        for y in range(1, 4):
+            barrel(15, y, z, "west", "Spoils")
+        h.put(15, 4, z, "minecraft:spruce_slab[type=bottom]")
+    for z in (2, 12):                                                    # posts closing the far rack
+        for y in range(1, 5):
+            h.put(15, y, z, "minecraft:stripped_spruce_log[axis=y]")
+    for z in (6, 8):
+        h.put(15, 6, z, "minecraft:white_wall_banner[facing=west]")
+    for x in range(1, 15):                                               # the runner down the aisle
+        h.put(x, 0, C, CHIS if x % 4 == 0 else DARK)
+    h.put(12, 1, C, "minecraft:lectern[facing=west]")                    # the storekeeper's ledger, before the Spoils
+    for (x, z) in ((2, 4), (2, 10), (3, 4)):                             # sacks and crates by the door, waiting to be put away
+        h.put(x, 1, z, "minecraft:hay_block[axis=y]")
+    h.put(2, 2, 4, "minecraft:hay_block[axis=x]")
+    h.put(3, 1, 10, "minecraft:dark_oak_planks")
+    h.put(2, 2, 10, "minecraft:lantern")
+    h.lamp(5, C, 1)
+    h.lamp(10, C, 1)
+    return h
+
+
 HALLS = {"dawi_great_hall": great_hall_v1, "dawi_grand_hall": great_hall, "dawi_barracks": barracks, "dawi_mine": mine, "dawi_brewery": brewery, "dawi_treasury": treasury,
          "dawi_runic_forge": runic_forge, "dawi_throne_room": throne_room, "dawi_slayer_shrine": slayer_shrine,
          "dawi_engineers_guild": engineers_guild, "dawi_road": road_straight, "dawi_road_crossing": road_crossing,
-         "dawi_road_descent": road_descent}
+         "dawi_road_descent": road_descent, "dawi_storeroom": storeroom}
 DATA_VERSION = 4790                                                      # 26.1.2's, as the bridge's structure_save writes it
 
 # 26.1.2's own blockstate files (block bench/mc-source-26.1.2): every block a hall uses must have one, and every state it sets must be one
@@ -1264,7 +1311,8 @@ def write(h, path):
     import nbtio
     cells = sorted(h.b.items(), key=lambda kv: (kv[0][1], kv[0][2], kv[0][0]))
     palette, index, blocks = [], {}, []
-    for (x, y, z), st in cells:
+    for (x, y, z), full in cells:
+        st, _, data = full.partition("{")                               # a block's own data: {CustomName:"..."} (a named barrel)
         if st not in index:
             index[st] = len(palette)
             name, props = st, {}
@@ -1275,7 +1323,13 @@ def write(h, path):
             if props:
                 entry["Properties"] = nbtio.Compound({k: nbtio.String(v) for k, v in props.items()})
             palette.append(nbtio.Compound(entry))
-        blocks.append(nbtio.Compound({"pos": nbtio.List([nbtio.Int(x), nbtio.Int(y), nbtio.Int(z)]), "state": nbtio.Int(index[st])}))
+        entry = {"pos": nbtio.List([nbtio.Int(x), nbtio.Int(y), nbtio.Int(z)]), "state": nbtio.Int(index[st])}
+        if data:
+            if not (data.startswith('CustomName:"') and data.endswith('"}')):
+                raise ValueError(f"only a CustomName is written as a block's data: {full}")
+            entry["nbt"] = nbtio.Compound({"id": nbtio.String(st.split("[", 1)[0]), "CustomName": nbtio.String(data[len('CustomName:"'):-2]),
+                                           "Items": nbtio.List([], nbtio.COMPOUND), "components": nbtio.Compound({})})
+        blocks.append(nbtio.Compound(entry))
     root = nbtio.Compound({
         "DataVersion": nbtio.Int(DATA_VERSION),
         "size": nbtio.List([nbtio.Int(h.sx), nbtio.Int(h.sy), nbtio.Int(h.sz)]),

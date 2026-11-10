@@ -20,6 +20,10 @@ its gold, brew its ale, keep the Book of Grudges and fight for it.
   treasury and the Runic Forge, all dug off the gate's halls by the Miners. The halls make room for more Dawi up at once.
 - **Gold, ale and runes:** gold is mined and paid for plans and units, ale brewed from wheat makes the hold hit harder, walk faster
   and work faster, a Treasury makes gold draw gold, and the Runesmith strikes runes into its kit.
+- **The stores:** a Storeroom of barrels in five bays (metals and gems, stone, food, timber, spoils). What the Miners cut out of the
+  rock is carried there, and every hall adds its own goods each minute with nobody at work in it: a mine its ore, a brewery its ale, a
+  treasury its gold, the Engineers' Guild its black powder, and the Runic Forge smelts the raw ore into ingots. Food in its barrels
+  feeds the hold.
 - **The Book of Grudges (Dammaz Kron):** what kills a Dwarf, breaks the hold or steals its gold is written down. Settle a grudge for
   gold, ale and runes, and the hold hits that foe harder from then on.
 - **The units:** Miners, Dwarf Warriors, Quarrellers, Thunderers, Longbeards (with great weapons too), the Runesmith and the Runelord

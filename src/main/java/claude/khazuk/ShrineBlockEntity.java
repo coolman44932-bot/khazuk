@@ -98,6 +98,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
     private final claude.khazuk.hold.GateWidening widening = new claude.khazuk.hold.GateWidening();
     /** D3: the hold's malt, ale and hoard. */
     private final claude.khazuk.hold.Brewhouse brew = new claude.khazuk.hold.Brewhouse();
+    /** The hold's stores: what its digs cut and its halls make, put away in the Storeroom (hold/Stores). */
+    private final claude.khazuk.hold.Stores stores = new claude.khazuk.hold.Stores();
     /** D4: the Dammaz Kron, the hold's Book of Grudges. */
     private final claude.khazuk.hold.Grudges grudges = new claude.khazuk.hold.Grudges();
     /** D5: the hold's runes, and the Runesmith's work at its anvil. */
@@ -151,6 +153,10 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         return crags;
     }
 
+    public claude.khazuk.hold.Stores stores() {
+        return stores;
+    }
+
     public claude.khazuk.hold.Brewhouse brew() {
         return brew;
     }
@@ -195,6 +201,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         openSealedDoors(level);
         crags.second(level, this, HoldCrag.PER_SECOND);
         brew.second(level, this);
+        stores.second(level, this);
         runes.second(level, this);
         ranks.second(level, this);
         devotion.second(level, this);
@@ -203,7 +210,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
             faceTheDoor(level);
             setChanged();                                        // saved with its "faced" mark: looked at once
         }
-        if (crags.takeDirty() | widening.takeDirty() | brew.takeDirty() | grudges.takeDirty() | runes.takeDirty() | devotion.takeDirty()) {
+        if (crags.takeDirty() | widening.takeDirty() | brew.takeDirty() | stores.takeDirty() | grudges.takeDirty() | runes.takeDirty()
+                | devotion.takeDirty()) {
             setChanged();                                        // the last step too, so a restart never raises the summit twice
         }
         syncRunes();
@@ -368,6 +376,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         crags.save(tag);
         widening.save(tag);
         brew.save(tag);
+        stores.save(tag);
         grudges.save(tag);
         runes.save(tag);
         devotion.save(tag);
@@ -384,6 +393,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         crags.load(tag);
         widening.load(tag);
         brew.load(tag);
+        stores.load(tag);
         grudges.load(tag);
         runes.load(tag);
         devotion.load(tag);
@@ -595,7 +605,8 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
 
     /**
      * Gold ore a dig cuts through goes to the hold's gold, two to the ore (a dwarf gets more out of it than a player's pick), three with a
-     * Treasury dug (D3). A container
+     * Treasury dug (D3). Every other ore's drops, and the rock itself while the Storeroom's Stone bay has room, go to the hold's stores
+     * (hold/Stores#cut; they were lost before the Storeroom). A container
      * it cuts (one set down in the way after the dig began: the ones there before are left standing, keepOutCells) spills what it held
      * where it stood, before the dig empties it.
      */
@@ -604,6 +615,7 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         if (was.is(net.minecraft.tags.BlockTags.GOLD_ORES)) {
             addCurrency(GOLD_PER_ORE + (has(claude.khazuk.hold.HoldRooms.TREASURY) ? TREASURY_BONUS : 0), "Gold dug out");
         }
+        stores.cut(level, pos, was);
         if (be instanceof net.minecraft.world.Container c && !c.isEmpty()) {
             net.minecraft.world.Containers.dropContents(level, pos, c);
         }

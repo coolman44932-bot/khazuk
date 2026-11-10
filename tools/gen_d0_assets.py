@@ -98,6 +98,8 @@ PLANS = {
                            ["minecraft:deepslate_bricks", "minecraft:lantern", "minecraft:compass"]),
     "plan_road_descent": ("Road Descent", ["gg........", "..g.......", "...gg.....", ".....g....", "......gg..", "........g.", ".........g"],
                           ["minecraft:deepslate_brick_stairs", "minecraft:lantern"]),
+    "plan_storeroom": ("Storeroom", [".gggggggg.", "g........g", "gggggggggg", "g.gg..gg.g", "g.gg..gg.g", "g........g", ".gggggggg."],
+                       ["minecraft:barrel", "minecraft:chest"]),
     "plan_treasury": ("Treasury", ["....gg....", "...gggg...", "..gggggg..", "....gg....", ".gg.gg.gg.", "gggggggggg", "gggggggggg"],
                       ["minecraft:stone_bricks", "minecraft:gold_ingot", "minecraft:iron_ingot"]),
 }

@@ -99,6 +99,10 @@ public final class HoldRooms {
                     "Grimnir in blackstone with an axe in each fist and a crest of fire, an oath altar between braziers, fire under iron in the floor, "
                             + "skulls and orange banners: the hold's Troll Slayers swear their oath here.",
                     17, 10, 15, 0, 1, 7, List.of(), List.of(), List.of(new Rooms.Station("oath", 9, 1, 7, Direction.EAST))),
+            new Rooms.Room("dawi_storeroom", "Storeroom", 15, Rooms.Function.HOARD,   // the engine's Hoard (hold/Stores)
+                    "The hold's stores: racks of barrels in five bays, for metals and gems, stone, food, timber and spoils. What the "
+                            + "Miners cut and what the halls make is carried here, and the food in its barrels feeds the hold.",
+                    17, 8, 15, 0, 1, 7, List.of(), List.of(), List.of()),
             new Rooms.Room("dawi_road", "Hold Road", 5, ROAD,
                     "A road of the hold, 15 long: dressed deepslate, bronze-banded pilasters, lanterns on chains, a sealed door at its far end.",
                     15, 8, 7, 0, 1, 3, List.of(), List.of(), List.of()),
