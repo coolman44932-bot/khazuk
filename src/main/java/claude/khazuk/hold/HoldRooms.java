@@ -107,7 +107,8 @@ public final class HoldRooms {
                     17, 10, 15, 0, 1, 7, List.of(), List.of(), List.of(new Rooms.Station("oath", 9, 1, 7, Direction.EAST))),
             new Rooms.Room("dawi_storeroom", "Storeroom", 15, STORES,                 // the engine's Hoard (hold/Stores, StoreWork)
                     "The hold's stores: racks of barrels in five bays, for metals and gems, stone, food, timber and spoils. What the "
-                            + "Miners cut and what the halls make is carried here, and the food in its barrels feeds the hold.",
+                            + "Miners cut and what the halls make is carried here, and the food in its barrels feeds the hold. Its "
+                            + "lectern is the hold's ledger: everything in every chest of the hold, to take from where you stand.",
                     17, 8, 15, 0, 1, 7, List.of(), List.of(), List.of()),
             new Rooms.Room("dawi_road", "Hold Road", 5, ROAD,
                     "A road of the hold, 15 long: dressed deepslate, bronze-banded pilasters, lanterns on chains, a sealed door at its far end.",

@@ -89,7 +89,7 @@ public class KhazukDataGameTests {
                 new Way("plan_road", D, C, T), new Way("plan_road_crossing", D, C, net.minecraft.world.item.Items.COMPASS, T),
                 new Way("plan_road_descent", net.minecraft.world.item.Items.DEEPSLATE_BRICK_STAIRS, C, T),
                 new Way("plan_storeroom", I, D, T), new Way("plan_treasury", S, G, G, T),
-                new Way("dammaz_kron", R, G, I),
+                new Way("dammaz_kron", R, G, I), new Way("hold_ledger", R, G, net.minecraft.world.item.Items.REDSTONE),
                 new Way("ancestor_shrine", S, G, S, G, R, G, S, S, S),
                 new Way("throne_of_power", GB, R, GB, GB, GB, GB, IB, null, IB),
                 // the Ancestor Engine: copper, a cauldron for its boiler, gold, an anvil for its frame, iron, redstone
@@ -108,6 +108,7 @@ public class KhazukDataGameTests {
                 new Way("plan_storeroom", net.minecraft.world.item.Items.BARREL, net.minecraft.world.item.Items.CHEST, P),
                 new Way("plan_treasury", B, G, G, P),
                 new Way("dammaz_kron", net.minecraft.world.item.Items.BOOK, G, I),
+                new Way("hold_ledger", net.minecraft.world.item.Items.BOOK, G, net.minecraft.world.item.Items.REDSTONE),
                 new Way("ancestor_shrine", B, G, B, G, net.minecraft.world.item.Items.BOOK, G, B, B, B));
         for (Way w : ways) {
             String got = crafted(h, w.grid());

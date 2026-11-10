@@ -36,6 +36,11 @@ public final class Khazuk {
         Currencies.register(() -> Items.GOLD_INGOT, () -> Items.GOLD_BLOCK, null, () -> Blocks.GOLD_ORE, () -> Blocks.DEEPSLATE_GOLD_ORE);
         Settlements.ownedBy(ShrineBlockEntity::ownedBy);
         claude.khazuk.hold.HoldRooms.register();
+        // the hold's ledger (hold/HoldLedger): the engine's screen in deepslate and gold (tools/gen_ledger_skin.py draws its sheet)
+        claude.settlementcore.client.LedgerLooks.register(MODID, claude.settlementcore.client.LedgerLook.ENGINE
+                .withTexture(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "textures/gui/ledger.png"))
+                .withColours(0xEADFC4, 0x9A927F, 0xF2C744, 0xE8A33A, 0xD8453A, 0x17191D)
+                .withWords("Stores of %s", "Stores", "Roads", "Search the stores...", "Search the hold's roads..."));
         GameTests.register(container, modBus);
     }
 }

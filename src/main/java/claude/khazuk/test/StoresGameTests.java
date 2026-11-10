@@ -39,7 +39,7 @@ public class StoresGameTests {
     /** A sealed door standing in the open field, the Storeroom dug east through it (as HallSealGameTests' descent). */
     private static final BlockPos DOOR = new BlockPos(30, 20, 36);
 
-    private static ShrineBlockEntity hold(GameTestHelper h) {
+    static ShrineBlockEntity hold(GameTestHelper h) {
         h.setBlock(SHRINE, KRegistry.SHRINE.get().defaultBlockState());
         if (!(h.getLevel().getBlockEntity(h.absolutePos(SHRINE)) instanceof ShrineBlockEntity hold)) {
             throw h.assertionException("no Shrine's block entity at " + h.absolutePos(SHRINE));
@@ -48,7 +48,7 @@ public class StoresGameTests {
     }
 
     /** The Storeroom ordered through a sealed door in the field, rock where it goes, begun and dug whole: the hold's building. */
-    private static PlanPlacement storeroom(GameTestHelper h, ShrineBlockEntity hold) {
+    static PlanPlacement storeroom(GameTestHelper h, ShrineBlockEntity hold) {
         ServerLevel level = h.getLevel();
         BlockPos door = h.absolutePos(DOOR);
         for (int dz = -2; dz <= 2; dz++) {

@@ -157,6 +157,12 @@ public class ShrineBlockEntity extends SettlementBlockEntity implements GeoBlock
         return stores;
     }
 
+    /** The hold's ledger in the Dawi's own look: deepslate and gold (Khazuk's constructor registers it; hold/HoldLedger opens it). */
+    @Override
+    public String ledgerLook() {
+        return Khazuk.MODID;
+    }
+
     public claude.khazuk.hold.Brewhouse brew() {
         return brew;
     }
