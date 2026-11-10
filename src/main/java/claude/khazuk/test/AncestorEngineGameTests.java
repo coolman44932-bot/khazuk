@@ -296,6 +296,58 @@ public class AncestorEngineGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * The tunnel (the user, 2026-11-10: "Yes, a tunnel"): a wall of stone 5 wide, 5 high and 2 thick before the engine, the attack key
+     * held, its rider looking level. One bite clears the face it can walk through, 3 wide and 3 high, the wall's first layer; the stone
+     * to either side, over it and behind it stands; the nine cobblestone are in his pack. Looking down the face takes the floor before
+     * it too, and looking up it leaves the block at its feet as a step. Before: one block a blow, the one under his eye.
+     */
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
+    public static void oneBlowHewsAFaceItsEngineCanWalkThrough(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        var god = h.makeMockServerPlayerInLevel();
+        AncestorEngine e = engine(h, god);
+        for (int x = -2; x <= 2; x++) {
+            for (int y = 0; y <= 4; y++) {
+                for (int z = 2; z <= 3; z++) {
+                    h.setBlock(AT.offset(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+        h.setBlock(AT.offset(0, -1, 2), Blocks.STONE);           // the floor before it: a face tilted down takes it
+        BlockPos floor = h.absolutePos(AT.offset(0, -1, 2)), foot = h.absolutePos(AT.offset(0, 0, 2)), over = h.absolutePos(AT.offset(0, 3, 2));
+        god.setXRot(0f);
+        var level0 = e.face(level, god);
+        h.assertTrue(level0.size() == 9 && !level0.contains(floor) && level0.contains(foot) && !level0.contains(over),
+                "looking level the face is " + level0.size() + " blocks, not the 9 of its own height: " + level0);
+        god.setXRot(40f);
+        h.assertTrue(e.face(level, god).contains(floor) && !e.face(level, god).contains(h.absolutePos(AT.offset(0, 2, 2))),
+                "looking down the face doesn't take the floor before it and leave the top row: " + e.face(level, god));
+        god.setXRot(-40f);
+        h.assertTrue(!e.face(level, god).contains(foot) && e.face(level, god).contains(over),
+                "looking up the face doesn't leave the block at its feet as a step and take the row over its head: " + e.face(level, god));
+        god.setXRot(0f);
+        h.startSequence()
+                .thenIdle(AncestorEngine.RISE_TICKS + 2)         // it heaves up first
+                .thenExecute(() -> AncestorEngine.keysFrom(god, keys(true, false, false)))
+                .thenExecuteAfter(AncestorEngine.BITE_AT + 3, () -> {
+                    int left = 0, sides = 0;
+                    for (int x = -2; x <= 2; x++) {
+                        for (int y = 0; y <= 4; y++) {
+                            boolean inFace = Math.abs(x) <= 1 && y <= 2;
+                            boolean stone = level.getBlockState(h.absolutePos(AT.offset(x, y, 2))).is(Blocks.STONE);
+                            left += inFace && stone ? 1 : 0;
+                            sides += !inFace && stone ? 1 : 0;
+                        }
+                    }
+                    h.assertTrue(left == 0 && sides == 16, "one bite left " + left + " of the face's 9 standing and " + sides + " of the 16 round it");
+                    h.assertTrue(level.getBlockState(h.absolutePos(AT.offset(0, 1, 3))).is(Blocks.STONE), "the bite went through to the layer behind");
+                    h.assertTrue(god.getInventory().countItem(Items.COBBLESTONE) == 9, "his pack holds " + god.getInventory().countItem(Items.COBBLESTONE)
+                            + " cobblestone of the face's 9");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "arena", timeoutTicks = 140, batch = "khazuk")
     public static void theAxeDigsStoneAndNotBedrockAChestOrAHoldsHall(GameTestHelper h) {
         ServerLevel level = h.getLevel();
@@ -322,14 +374,14 @@ public class AncestorEngineGameTests {
         h.setBlock(open, Blocks.AIR);
 
         AncestorEngine e = engine(h, god);
-        BlockPos face = AT.offset(0, 1, 3);                      // ahead of it and a block up: where the work clip bites
+        BlockPos face = AT.offset(0, 1, 2);                      // ahead of it and a block up: where the work clip bites, in its face
         BlockPos abs = h.absolutePos(face);
         h.setBlock(face, Blocks.STONE);
         h.startSequence()
                 .thenIdle(AncestorEngine.RISE_TICKS + 2)         // it heaves up first
                 .thenExecute(() -> {
                     e.positionRider(god);
-                    god.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(abs));
+                    god.setXRot(0f);                             // looking level: the face is the three blocks of its own height
                     AncestorEngine.keysFrom(god, keys(true, false, false));
                 })
                 .thenExecuteAfter(8, () -> h.assertTrue(e.working() && e.blow() == null && level.getBlockState(abs).is(Blocks.STONE),
@@ -337,13 +389,14 @@ public class AncestorEngineGameTests {
                                 + " (the bite is " + AncestorEngine.BITE_AT + " ticks into the loop)"))
                 .thenExecuteAfter(8, () -> {
                     h.assertTrue(level.getBlockState(abs).isAir(), "the axe's bite left " + level.getBlockState(abs));
-                    int cobble = 0;
+                    int cobble = god.getInventory().countItem(Items.COBBLESTONE), lying = 0;
                     for (ItemEntity i : level.getEntitiesOfClass(ItemEntity.class, new AABB(abs).inflate(3))) {
                         if (i.getItem().is(Items.COBBLESTONE)) {
-                            cobble += i.getItem().getCount();
+                            lying += i.getItem().getCount();
                         }
                     }
-                    h.assertTrue(cobble == 1, "the dug stone dropped " + cobble + " cobblestone, not its one");
+                    h.assertTrue(cobble == 1 && lying == 0, "the dug stone left " + cobble + " cobblestone in his pack and " + lying
+                            + " on the floor, not its one in his pack");
                     h.setBlock(face, Blocks.BEDROCK);
                 })
                 .thenExecuteAfter(20, () -> {

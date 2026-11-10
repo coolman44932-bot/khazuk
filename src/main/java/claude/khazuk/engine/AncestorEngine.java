@@ -63,7 +63,9 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -553,8 +555,10 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
     }
 
     /**
-     * The attack key: a foe in the axe's reach, or anything he looks at that isn't his own, is chopped; else, held, the block he looks at
-     * is dug, a bite each loop of the work clip; else a fresh press chops the air, and held on nothing the axe waits for a foe.
+     * The attack key: a foe in the axe's reach, or anything he looks at that isn't his own, is chopped; else, held with rock before the
+     * engine, it hews a tunnel (the user, 2026-11-10, asked whether each blow should clear a whole walk-through face: "Yes, a tunnel";
+     * it dug the one block under his eye, a block a blow): each loop of the work clip its bite clears every block of the face before it
+     * ({@link #face}); else a fresh press chops the air, and held on nothing the axe waits for a foe.
      */
     private void chopOrDig(ServerLevel level, ServerPlayer rider) {
         // a foe the axe can reach: one out past it (looked at across the cave) doesn't keep the axe from the rock in front of him
@@ -562,11 +566,9 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         if (!attackDown) {
             refused = null;
         }
-        BlockPos face = foe || !attackDown ? null : digFace(level, rider);
-        if (face != null && face.equals(refused)) {
-            face = null;                                         // it would not bite here: not hewn at again until he lets the key go
-        }
-        if (face == null) {
+        // (where the face would not be bitten, it is not hewn at again until he lets the key go or moves on)
+        List<BlockPos> face = foe || !attackDown || blockPosition().equals(refused) ? List.of() : face(level, rider);
+        if (face.isEmpty()) {
             setWorking(false);
             if (attackFresh || foe) {
                 begin(Blow.CHOP);
@@ -578,16 +580,59 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
             setWorking(true);
         }
         digTick++;
-        if (digTick == BITE_AT && !bite(level, rider, face)) {
-            // a claim or a rule refused it (the review of 3fe3e69: the engine stood rooted, hewing for ever at a block that never broke)
-            refused = face.immutable();
-            setWorking(false);
-            rider.sendOverlayMessage(Component.literal("The axe will not bite here.").withStyle(ChatFormatting.GRAY));
-            return;
+        if (digTick == BITE_AT) {
+            int bitten = 0;
+            for (BlockPos p : face) {
+                bitten += bite(level, rider, p) ? 1 : 0;
+            }
+            if (bitten == 0) {
+                // a claim or a rule refused all of it (the review of 3fe3e69: the engine stood rooted, hewing for ever at rock that never broke)
+                refused = blockPosition();
+                setWorking(false);
+                rider.sendOverlayMessage(Component.literal("The axe will not bite here.").withStyle(ChatFormatting.GRAY));
+                return;
+            }
         }
         if (digTick >= WORK_LOOP) {
             digTick = 0;
         }
+    }
+
+    /** The face's depth before the engine's middle, its half width, its height in blocks, and the look up or down that tilts it. */
+    public static final double FACE_FROM = 0.5, FACE_TO = 2.6, FACE_HALF = 1.5;
+    public static final int FACE_HIGH = 3;
+    public static final float FACE_TILT = 25f;
+
+    /**
+     * The face the axe hews: every block that {@link #digs} in a slab before the engine, as wide as it is (every block its 2-block hull
+     * would touch walking on) and {@value #FACE_HIGH} high from its feet, from its own front to {@value #FACE_TO} blocks out (the axe's
+     * bite lands 1.9 ahead): a tunnel it walks through as it hews. Looking more than {@value #FACE_TILT} degrees down, the face is a
+     * block lower (it takes the floor before it too, and the tunnel goes down a block a step); up, a block higher (the floor before it
+     * is left as a step, which it climbs). Empty: nothing before it to hew.
+     */
+    public List<BlockPos> face(ServerLevel level, Player rider) {
+        Vec3 ahead = ahead();
+        float pitch = rider.getXRot();
+        int y0 = blockPosition().getY() + (pitch > FACE_TILT ? -1 : pitch < -FACE_TILT ? 1 : 0);
+        int bx = net.minecraft.util.Mth.floor(getX()), bz = net.minecraft.util.Mth.floor(getZ()), r = (int) Math.ceil(FACE_TO) + 1;
+        List<BlockPos> out = new ArrayList<>();
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                double cx = bx + dx + 0.5 - getX(), cz = bz + dz + 0.5 - getZ();
+                double out1 = cx * ahead.x + cz * ahead.z, side = cz * ahead.x - cx * ahead.z;
+                if (out1 < FACE_FROM || out1 > FACE_TO || Math.abs(side) > FACE_HALF - 1e-4) {
+                    continue;
+                }
+                for (int dy = 0; dy < FACE_HIGH; dy++) {
+                    p.set(bx + dx, y0 + dy, bz + dz);
+                    if (digs(level, p, level.getBlockState(p))) {
+                        out.add(p.immutable());
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     private boolean foeInReach(ServerLevel level, ServerPlayer rider) {
@@ -603,20 +648,6 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         var hit = ProjectileUtil.getEntityHitResult(rider, from, to, new AABB(from, to).inflate(1.0),
                 e -> e instanceof LivingEntity l && !spares(rider, l), max);
         return hit != null && hit.getEntity() instanceof LivingEntity l ? l : null;
-    }
-
-    /** The block the axe would dig now: the one the rider looks at within {@value #DIG_REACH}, if it {@link #digs}. */
-    @Nullable
-    private BlockPos digFace(ServerLevel level, ServerPlayer rider) {
-        Vec3 from = rider.getEyePosition(), to = from.add(rider.getLookAngle().scale(DIG_REACH));
-        BlockHitResult hit = level.clip(new ClipContext(from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, rider));
-        if (hit.getType() != HitResult.Type.BLOCK) {
-            return null;
-        }
-        BlockPos pos = hit.getBlockPos();
-        // (the detail session's filming, 2026-11-10: from eyes 2.7 blocks up, the block that breaks can be one beyond and above where
-        // the axe falls. Left as it is: a shorter reach would be the engine made weaker, and how it digs is its god's to say first.)
-        return digs(level, pos, level.getBlockState(pos)) ? pos : null;
     }
 
     /**
@@ -668,7 +699,10 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         return false;
     }
 
-    /** The work clip's bite: the block is broken as its rider's own, its drops as a diamond tool's. A claim or a rule may refuse it. */
+    /**
+     * The work clip's bite on one block of the face: broken as its rider's own, its drops a diamond tool's and straight into his pack (a
+     * face is nine blocks a blow: what his pack has no room for falls where the block was). A claim or a rule may refuse it.
+     */
     private boolean bite(ServerLevel level, ServerPlayer rider, BlockPos pos) {
         BlockState s = level.getBlockState(pos);
         if (!digs(level, pos, s) || !level.mayInteract(rider, pos)) {
@@ -682,12 +716,17 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         ItemStack tool = new ItemStack(s.is(BlockTags.MINEABLE_WITH_AXE) ? Items.DIAMOND_AXE
                 : s.is(BlockTags.MINEABLE_WITH_SHOVEL) ? Items.DIAMOND_SHOVEL : Items.DIAMOND_PICKAXE);
         if (level.destroyBlock(pos, false, rider)) {
-            Block.dropResources(s, level, pos, null, rider, tool);
+            for (ItemStack drop : Block.getDrops(s, level, pos, null, rider, tool)) {
+                if (!rider.getInventory().add(drop) || !drop.isEmpty()) {
+                    Block.popResource(level, pos, drop);
+                }
+            }
+            s.spawnAfterBreak(level, pos, tool, true);           // an ore's experience
         }
         return true;
     }
 
-    /** The block that last refused the axe: left alone until the attack key is let go. */
+    /** Where the engine stood when the face before it last refused the axe: not hewn at again from there until the key is let go. */
     @Nullable private BlockPos refused;
 
     /**
