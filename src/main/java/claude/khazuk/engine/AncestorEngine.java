@@ -480,6 +480,7 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
                 chopOrDig(level, rider);
             } else {
                 setWorking(false);
+                refused = null;                                  // the key is up: the block that refused the axe may be tried again
             }
         }
         tellHeat(rider);
@@ -488,6 +489,7 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
     /** No one in it: its keys are up, nothing is under way, and parked in its god's hold it mends. */
     private void unmanned(ServerLevel level) {
         attackDown = useDown = ventAsked = attackFresh = useFresh = false;
+        refused = null;
         blow = null;
         manned = 0;
         toldHeat = -1;
