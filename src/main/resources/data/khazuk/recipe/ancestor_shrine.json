@@ -7,9 +7,15 @@
     "SSS"
   ],
   "key": {
-    "S": "minecraft:stone_bricks",
+    "S": [
+      "minecraft:stone_bricks",
+      "minecraft:polished_deepslate"
+    ],
     "G": "minecraft:gold_ingot",
-    "B": "minecraft:book"
+    "B": [
+      "minecraft:book",
+      "minecraft:chiseled_deepslate"
+    ]
   },
   "result": {
     "id": "khazuk:ancestor_shrine",

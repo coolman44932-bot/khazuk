@@ -4,7 +4,11 @@
   "ingredients": [
     "minecraft:deepslate_bricks",
     "minecraft:gold_ingot",
-    "minecraft:paper"
+    [
+      "minecraft:paper",
+      "minecraft:cobblestone",
+      "minecraft:cobbled_deepslate"
+    ]
   ],
   "result": {
     "id": "khazuk:plan_great_hall",

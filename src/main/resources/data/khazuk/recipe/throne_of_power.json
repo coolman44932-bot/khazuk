@@ -8,7 +8,10 @@
   ],
   "key": {
     "G": "minecraft:gold_block",
-    "B": "minecraft:book",
+    "B": [
+      "minecraft:book",
+      "minecraft:chiseled_deepslate"
+    ],
     "I": "minecraft:iron_block"
   },
   "result": {

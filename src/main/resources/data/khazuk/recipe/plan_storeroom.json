@@ -2,9 +2,19 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:barrel",
-    "minecraft:chest",
-    "minecraft:paper"
+    [
+      "minecraft:barrel",
+      "minecraft:iron_ingot"
+    ],
+    [
+      "minecraft:chest",
+      "minecraft:deepslate_bricks"
+    ],
+    [
+      "minecraft:paper",
+      "minecraft:cobblestone",
+      "minecraft:cobbled_deepslate"
+    ]
   ],
   "result": {
     "id": "khazuk:plan_storeroom",

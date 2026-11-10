@@ -2,9 +2,16 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:stone_bricks",
+    [
+      "minecraft:stone_bricks",
+      "minecraft:polished_deepslate"
+    ],
     "minecraft:anvil",
-    "minecraft:paper"
+    [
+      "minecraft:paper",
+      "minecraft:cobblestone",
+      "minecraft:cobbled_deepslate"
+    ]
   ],
   "result": {
     "id": "khazuk:plan_runic_forge",

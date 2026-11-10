@@ -9,7 +9,10 @@
   "key": {
     "G": "minecraft:gold_ingot",
     "I": "minecraft:iron_ingot",
-    "S": "minecraft:shield"
+    "S": [
+      "minecraft:shield",
+      "minecraft:iron_block"
+    ]
   },
   "result": {
     "id": "khazuk:valayas_ward",

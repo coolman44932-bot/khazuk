@@ -72,36 +72,44 @@ def out(rel, obj):
         f.write(chr(10))
 
 
+# Every plan (and the hold's other recipes) can be made from what lies underground (the user, 2026-11-10: "tell me, how am i gonna get
+# paper underground?"): a hold cut into the rock has no sugar cane, no wood and no leather. A slot that took paper, a book or
+# something of wood takes its old item or a thing of stone or metal; a list is one slot's choices (26.1's ingredient: an id, or ids).
+ANY_TABLET = ["minecraft:paper", "minecraft:cobblestone", "minecraft:cobbled_deepslate"]   # what a plan is carved on (it is drawn as a stone tablet)
+ANY_STONE = ["minecraft:stone_bricks", "minecraft:polished_deepslate"]                    # dressed stone: stone bricks, or the deeps' own
+ANY_LAMP = ["minecraft:lantern", "minecraft:coal"]
+ANY_BOOK = ["minecraft:book", "minecraft:chiseled_deepslate"]                             # a book, or a rune stone
+
 PLANS = {
     # id: (name, the gold drawing (10 wide, 7 tall at 3,5), the shapeless recipe beside the paper)
     "plan_keep": ("King's Throne Room", ["g.g.gg.g.g", "gggggggggg", "g.g....g.g", "g.g.gg.g.g", "g.g.gg.g.g", "g.g....g.g", "gggggggggg"],
-                  ["minecraft:stone_bricks", "minecraft:iron_ingot", "minecraft:gold_ingot"]),
+                  [ANY_STONE, "minecraft:iron_ingot", "minecraft:gold_ingot"]),
     "plan_hold_gate": ("Hold Gate", ["..gggggg..", ".g......g.", ".g.gggg.g.", ".g.g..g.g.", ".g.g..g.g.", ".g.g..g.g.", "gg.g..g.gg"],
-                       ["minecraft:stone_bricks", "minecraft:gold_ingot"]),
+                       [ANY_STONE, "minecraft:gold_ingot"]),
     "plan_great_hall": ("Great Hall", ["gggggggggg", "g.g....g.g", "g.g.gg.g.g", "g.g....g.g", "g.g....g.g", "g.g.gg.g.g", "gggggggggg"],
                         ["minecraft:deepslate_bricks", "minecraft:gold_ingot"]),
     "plan_barracks": ("Barracks", ["gggggggggg", "g........g", "g.gg..gg.g", "g........g", "g.gg..gg.g", "g........g", "gggggggggg"],
-                      ["minecraft:stone_bricks", "minecraft:iron_ingot"]),
+                      [ANY_STONE, "minecraft:iron_ingot"]),
     "plan_mine": ("Mine", ["...gggg...", "..g....g..", ".g..gg..g.", "....gg....", "....gg....", "....gg....", "....gg...."],
-                  ["minecraft:stone_bricks", "minecraft:rail"]),
+                  [ANY_STONE, ["minecraft:rail", "minecraft:raw_iron"]]),
     "plan_brewery": ("Brewery", ["..gggggg..", ".g......g.", ".gggggggg.", ".g......g.", ".gggggggg.", ".g......g.", "..gggggg.."],
-                     ["minecraft:stone_bricks", "minecraft:barrel"]),
+                     [ANY_STONE, ["minecraft:barrel", "minecraft:cauldron"]]),
     "plan_runic_forge": ("Runic Forge", ["...gg.....", "..g..g....", ".gggggggg.", "...gggg...", "...gggg...", "..gg..gg..", ".gggggggg."],
-                         ["minecraft:stone_bricks", "minecraft:anvil"]),
+                         [ANY_STONE, "minecraft:anvil"]),
     "plan_slayer_shrine": ("Shrine of Grimnir", ["g........g", ".g..gg..g.", "..g.gg.g..", "...gggg...", "..g.gg.g..", ".g..gg..g.", "g...gg...g"],
-                           ["minecraft:stone_bricks", "minecraft:iron_axe", "minecraft:gold_ingot"]),
+                           [ANY_STONE, ["minecraft:iron_axe", "minecraft:redstone"], "minecraft:gold_ingot"]),
     "plan_engineers_guild": ("Engineers' Guild", ["...gggg...", "..g....g..", ".g.gggg.g.", ".g.g..g.g.", ".g.gggg.g.", "..g....g..", "...gggg..."],
-                             ["minecraft:stone_bricks", "minecraft:copper_ingot", "minecraft:gold_ingot"]),
+                             [ANY_STONE, "minecraft:copper_ingot", "minecraft:gold_ingot"]),
     "plan_road": ("Hold Road", ["..........", "gggggggggg", "..........", "g.g.g.g.gg", "..........", "gggggggggg", ".........."],
-                  ["minecraft:deepslate_bricks", "minecraft:lantern"]),
+                  ["minecraft:deepslate_bricks", ANY_LAMP]),
     "plan_road_crossing": ("Road Crossing", ["...g..g...", "...g..g...", "ggggggggg.", "....gg....", "ggggggggg.", "...g..g...", "...g..g..."],
-                           ["minecraft:deepslate_bricks", "minecraft:lantern", "minecraft:compass"]),
+                           ["minecraft:deepslate_bricks", ANY_LAMP, "minecraft:compass"]),
     "plan_road_descent": ("Road Descent", ["gg........", "..g.......", "...gg.....", ".....g....", "......gg..", "........g.", ".........g"],
-                          ["minecraft:deepslate_brick_stairs", "minecraft:lantern"]),
+                          ["minecraft:deepslate_brick_stairs", ANY_LAMP]),
     "plan_storeroom": ("Storeroom", [".gggggggg.", "g........g", "gggggggggg", "g.gg..gg.g", "g.gg..gg.g", "g........g", ".gggggggg."],
-                       ["minecraft:barrel", "minecraft:chest"]),
+                       [["minecraft:barrel", "minecraft:iron_ingot"], ["minecraft:chest", "minecraft:deepslate_bricks"]]),
     "plan_treasury": ("Treasury", ["....gg....", "...gggg...", "..gggggg..", "....gg....", ".gg.gg.gg.", "gggggggggg", "gggggggggg"],
-                      ["minecraft:stone_bricks", "minecraft:gold_ingot", "minecraft:iron_ingot"]),
+                      [ANY_STONE, "minecraft:gold_ingot", "minecraft:gold_ingot"]),   # two gold: with iron it was the Throne Room's recipe, and one of the two could never be made
 }
 
 
@@ -131,7 +139,7 @@ def plan_item():
         out(f"assets/khazuk/items/{pid}.json", {"model": {"type": "minecraft:model", "model": f"khazuk:item/{pid}"}})
         out(f"assets/khazuk/models/item/{pid}.json", {"parent": "minecraft:item/generated", "textures": {"layer0": f"khazuk:item/{pid}"}})
         out(f"data/khazuk/recipe/{pid}.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
-                                              "ingredients": needs + ["minecraft:paper"],
+                                              "ingredients": needs + [ANY_TABLET],
                                               "result": {"id": f"khazuk:{pid}", "count": 1}})
         d[f"item.khazuk.{pid}"] = "Ancestors' Plan: " + name
     out("assets/khazuk/lang/en_us.json", d)
@@ -165,7 +173,7 @@ def book_item():
     out("assets/khazuk/items/dammaz_kron.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/dammaz_kron"}})
     out("assets/khazuk/models/item/dammaz_kron.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/dammaz_kron"}})
     out("data/khazuk/recipe/dammaz_kron.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
-                                               "ingredients": ["minecraft:book", "minecraft:gold_ingot", "minecraft:iron_ingot"],
+                                               "ingredients": [ANY_BOOK, "minecraft:gold_ingot", "minecraft:iron_ingot"],
                                                "result": {"id": "khazuk:dammaz_kron", "count": 1}})
     lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
     with open(lang, encoding="utf-8") as f:
@@ -296,7 +304,7 @@ def throne_item():
     out("assets/khazuk/models/item/throne_of_power.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/throne_of_power"}})
     out("data/khazuk/recipe/throne_of_power.json", {"type": "minecraft:crafting_shaped", "category": "misc",
                                                     "pattern": ["GBG", "GGG", "I I"],
-                                                    "key": {"G": "minecraft:gold_block", "B": "minecraft:book", "I": "minecraft:iron_block"},
+                                                    "key": {"G": "minecraft:gold_block", "B": ANY_BOOK, "I": "minecraft:iron_block"},
                                                     "result": {"id": "khazuk:throne_of_power", "count": 1}})
     import json
     lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
@@ -328,7 +336,7 @@ GOD_ITEMS = {
         "..........wW....",
         "...........wW...",
         "............dd..",
-        "................"], ["GIG", " S ", " S "], {"G": "minecraft:gold_block", "I": "minecraft:iron_block", "S": "minecraft:stick"}),
+        "................"], ["GIG", " S ", " S "], {"G": "minecraft:gold_block", "I": "minecraft:iron_block", "S": ["minecraft:stick", "minecraft:iron_ingot"]}),
     "valayas_ward": ("Valaya's Ward", [
         "................",
         ".....dddddd.....",
@@ -345,7 +353,7 @@ GOD_ITEMS = {
         "...ddGGGGGGdd...",
         ".....dddddd.....",
         "................",
-        "................"], ["GIG", "ISI", "GIG"], {"G": "minecraft:gold_ingot", "I": "minecraft:iron_ingot", "S": "minecraft:shield"}),
+        "................"], ["GIG", "ISI", "GIG"], {"G": "minecraft:gold_ingot", "I": "minecraft:iron_ingot", "S": ["minecraft:shield", "minecraft:iron_block"]}),
     "grimnirs_fury": ("Grimnir's Fury", [
         "........f.......",
         ".......fFf......",

@@ -9,7 +9,10 @@
   "key": {
     "G": "minecraft:gold_block",
     "I": "minecraft:iron_block",
-    "S": "minecraft:stick"
+    "S": [
+      "minecraft:stick",
+      "minecraft:iron_ingot"
+    ]
   },
   "result": {
     "id": "khazuk:grungnis_hammer",

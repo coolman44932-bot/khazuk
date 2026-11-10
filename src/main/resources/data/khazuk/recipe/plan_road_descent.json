@@ -3,8 +3,15 @@
   "category": "misc",
   "ingredients": [
     "minecraft:deepslate_brick_stairs",
-    "minecraft:lantern",
-    "minecraft:paper"
+    [
+      "minecraft:lantern",
+      "minecraft:coal"
+    ],
+    [
+      "minecraft:paper",
+      "minecraft:cobblestone",
+      "minecraft:cobbled_deepslate"
+    ]
   ],
   "result": {
     "id": "khazuk:plan_road_descent",

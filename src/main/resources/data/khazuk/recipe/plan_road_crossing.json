@@ -3,9 +3,16 @@
   "category": "misc",
   "ingredients": [
     "minecraft:deepslate_bricks",
-    "minecraft:lantern",
+    [
+      "minecraft:lantern",
+      "minecraft:coal"
+    ],
     "minecraft:compass",
-    "minecraft:paper"
+    [
+      "minecraft:paper",
+      "minecraft:cobblestone",
+      "minecraft:cobbled_deepslate"
+    ]
   ],
   "result": {
     "id": "khazuk:plan_road_crossing",

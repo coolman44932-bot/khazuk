@@ -2,9 +2,19 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:stone_bricks",
-    "minecraft:barrel",
-    "minecraft:paper"
+    [
+      "minecraft:stone_bricks",
+      "minecraft:polished_deepslate"
+    ],
+    [
+      "minecraft:barrel",
+      "minecraft:cauldron"
+    ],
+    [
+      "minecraft:paper",
+      "minecraft:cobblestone",
+      "minecraft:cobbled_deepslate"
+    ]
   ],
   "result": {
     "id": "khazuk:plan_brewery",

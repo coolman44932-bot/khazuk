@@ -2,10 +2,20 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:stone_bricks",
-    "minecraft:iron_axe",
+    [
+      "minecraft:stone_bricks",
+      "minecraft:polished_deepslate"
+    ],
+    [
+      "minecraft:iron_axe",
+      "minecraft:redstone"
+    ],
     "minecraft:gold_ingot",
-    "minecraft:paper"
+    [
+      "minecraft:paper",
+      "minecraft:cobblestone",
+      "minecraft:cobbled_deepslate"
+    ]
   ],
   "result": {
     "id": "khazuk:plan_slayer_shrine",
