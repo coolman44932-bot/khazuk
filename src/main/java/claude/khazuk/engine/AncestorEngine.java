@@ -275,8 +275,15 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         if (owner == null) {
             owner = player.getUUID();
         }
-        player.setYRot(getYRot());
-        player.setXRot(getXRot());
+        // he is turned to face as his engine does, on his own screen too: the turn was set on the server alone, his client kept its own
+        // facing and the engine swung round to that as it rose (the detail session's filming, 2026-11-10: mounted from its front, it
+        // spun half round)
+        if (player instanceof ServerPlayer sp) {
+            sp.forceSetRotation(getYRot(), false, 0f, false);
+        } else {
+            player.setYRot(getYRot());
+            player.setXRot(0f);
+        }
         player.startRiding(this);
         return InteractionResult.SUCCESS;
     }
@@ -295,6 +302,9 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
     @Override
     protected void tickRidden(Player controller, Vec3 riddenInput) {
         super.tickRidden(controller, riddenInput);
+        if (level().isClientSide() ? rising > 0 : manned < RISE_TICKS) {
+            return;                                              // heaving up, it faces as it stood: it turns with him once it stands
+        }
         Vec2 rot = new Vec2(controller.getXRot() * 0.5f, controller.getYRot());
         setRot(rot.y, rot.x);
         yRotO = yBodyRot = yHeadRot = getYRot();
@@ -595,15 +605,25 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         return hit != null && hit.getEntity() instanceof LivingEntity l ? l : null;
     }
 
+    /** How far from the engine's middle, level, a block may be for the axe to dig it (its bite lands 1.9 ahead). */
+    public static final double AXE_REACH = 3.3;
+
     /** The block the axe would dig now: the one the rider looks at within {@value #DIG_REACH}, if it {@link #digs}. */
     @Nullable
     private BlockPos digFace(ServerLevel level, ServerPlayer rider) {
-        Vec3 from = rider.getEyePosition(), to = from.add(rider.getLookAngle().scale(DIG_REACH));
+        Vec3 from = rider.getEyePosition(), to = from.add(rider.getLookAngle().scale(DIG_REACH + 1.5));
         BlockHitResult hit = level.clip(new ClipContext(from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, rider));
         if (hit.getType() != HitResult.Type.BLOCK) {
             return null;
         }
         BlockPos pos = hit.getBlockPos();
+        // within the axe's own reach of the engine, not only of his eye 2.7 blocks up: the block that broke was up to 5 blocks from his
+        // eye, a block beyond and above where the axe fell (the detail session's filming, 2026-11-10)
+        double dx = pos.getX() + 0.5 - getX(), dz = pos.getZ() + 0.5 - getZ();
+        int up = pos.getY() - blockPosition().getY();
+        if (dx * dx + dz * dz > AXE_REACH * AXE_REACH || up < -1 || up > 3) {
+            return null;
+        }
         return digs(level, pos, level.getBlockState(pos)) ? pos : null;
     }
 
