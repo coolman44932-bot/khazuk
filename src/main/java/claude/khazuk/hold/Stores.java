@@ -39,7 +39,10 @@ import java.util.Map;
  * a Mine {@value #MINE_ROLLS} rolls of its depth's ores (the engine's MineWork#roll: a deeper Mine, better ore; raw gold as the hold's
  * gold) and {@value #MINE_STONE} cobble; a Brewery {@value #BREWERY_ALE} ale with no wheat brought; a Treasury {@value #TREASURY_GOLD}
  * gold; an Engineers' Guild {@value #GUILD_POWDER} black powder; a Runic Forge smelts up to {@value #FORGE_SMELTS} raw iron, copper
- * or gold in the Storeroom into ingots.</li>
+ * or gold in the Storeroom into ingots; a Great Hall's hearth lays a feast, {@value #HALL_BREAD} bread and {@value #HALL_MEAT} roast
+ * beef, into the Storeroom's Food bay while it has room (the user, 2026-11-10: "and what about food for me?": a god in a hold under
+ * the rock had nothing to eat but what he carried down, and neither had the hold): there the Dawi eat it (the engine's larder) and
+ * their god takes what he wants; with no Storeroom it is eaten at the tables, the hold's food kept up to {@value #FEAST_KEEP}.</li>
  * </ul>
  * Goods go into the Storeroom (their own bay, then Spoils, then anywhere), and with no Storeroom yet onto the pile at the Shrine (the
  * engine's spoils, {@value Settlement#MAX_SPOIL_STACKS} stacks), which the haul carries to the first Storeroom dug. With nowhere left
@@ -50,6 +53,12 @@ public final class Stores {
 
     public static final int PRODUCE_SECONDS = 60;
     public static final int MINE_ROLLS = 2, MINE_STONE = 4, BREWERY_ALE = 6, TREASURY_GOLD = 1, FORGE_SMELTS = 8, GUILD_POWDER = 2;
+    /** A Great Hall's feast each round: 56 points of food, a minute's eating for some 46 Dawi (a point each per 50 s). */
+    public static final int HALL_BREAD = 8, HALL_MEAT = 2;
+    /** With no Storeroom the feast goes straight to the hold's food, while it holds less than this. */
+    public static final int FEAST_KEEP = 400;
+    /** The Food bay's name: the engine's section. */
+    public static final String FOOD_BAY = HoardWork.Kind.FOOD.bin;
     /** Cobble waiting for the next second at most (a big dig cuts hundreds of cells a second with a big crew). */
     static final int CUT_STONE_MAX = 4096;
     /** Stacks on the pile at the Shrine before its god is told to dig a Storeroom. */
@@ -126,13 +135,43 @@ public final class Stores {
 
     /** The barrels of the Stone bay, in every Storeroom of the hold that is loaded. */
     private static List<BlockPos> stoneBay(ServerLevel level, ShrineBlockEntity hold) {
+        return bay(level, hold, STONE_BAY);
+    }
+
+    /** The barrels of the bay of this name, in every Storeroom of the hold that is loaded. */
+    private static List<BlockPos> bay(ServerLevel level, ShrineBlockEntity hold, String name) {
         List<BlockPos> out = new ArrayList<>();
         for (HoardWork h : hold.works().all(HoardWork.class)) {
             if (level.isLoaded(h.box().getCenter())) {
-                out.addAll(Bins.named(level, h.box(), STONE_BAY));
+                out.addAll(Bins.named(level, h.box(), name));
             }
         }
         return out;
+    }
+
+    /**
+     * A Great Hall's feast: bread and roast into the Food bay, as much as it has room for (a full bay: the tables are laid already), where
+     * the hold eats it and its god helps himself; with no Storeroom, straight to the hold's food while that is under {@value #FEAST_KEEP}.
+     */
+    private static void feast(ServerLevel level, ShrineBlockEntity hold, String name) {
+        ItemStack[] dishes = {new ItemStack(Items.BREAD, HALL_BREAD), new ItemStack(Items.COOKED_BEEF, HALL_MEAT)};
+        if (hold.works().all(HoardWork.class).isEmpty()) {
+            for (ItemStack dish : dishes) {
+                if (hold.food() < FEAST_KEEP) {
+                    hold.addFood(hold.foodValue(claude.settlementcore.food.Fare.nutrition(dish)) * dish.getCount(),
+                            claude.settlementcore.food.Fare.grade(dish), name);
+                }
+            }
+            return;
+        }
+        List<BlockPos> food = bay(level, hold, FOOD_BAY);
+        boolean laid = false;
+        for (ItemStack dish : dishes) {
+            laid |= Bins.insert(level, food, dish.copy()).getCount() < dish.getCount();
+        }
+        if (laid) {
+            hold.larderStores().changed();                       // counted at the hold's next look, not a recount later
+        }
     }
 
     /**
@@ -194,6 +233,8 @@ public final class Stores {
                 put(level, hold, new ItemStack(Items.GUNPOWDER, GUILD_POWDER), name);
             } else if (f == HoldRooms.RUNIC_FORGE) {
                 smelt(level, hold, name);
+            } else if (f == HoldRooms.GREAT_HALL) {
+                feast(level, hold, name);
             }
         }
     }

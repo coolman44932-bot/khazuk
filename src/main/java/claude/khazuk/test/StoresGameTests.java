@@ -240,6 +240,31 @@ public class StoresGameTests {
         h.succeed();
     }
 
+    /**
+     * The Great Hall's hearth (the user, 2026-11-10: "and what about food for me?"). With no Storeroom its feast is eaten at the tables:
+     * the hold's food goes up and nothing lies on the pile. With a Storeroom the bread and the roast stand in the Food bay, the hold's
+     * food by the engine's larder, and its god's to take.
+     */
+    @GameTest(template = "field", timeoutTicks = 200, batch = "khazuk")
+    public static void theGreatHallsHearthFeedsTheHoldAndItsGod(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        ShrineBlockEntity hold = hold(h);
+        give(h, hold, "dawi_grand_hall", 2);
+        int f0 = hold.food();
+        hold.stores().produce(level, hold);
+        h.assertTrue(hold.food() > f0 && hold.spoils().isEmpty(), "a Great Hall and no Storeroom: the hold's food " + f0 + " then " + hold.food()
+                + ", the pile " + hold.spoils());
+        PlanPlacement pl = storeroom(h, hold);
+        hold.larderStores().changed();
+        int f1 = hold.food();
+        hold.stores().produce(level, hold);
+        List<BlockPos> food = bay(h, pl, "Food");
+        h.assertTrue(in(h, food, Items.BREAD) == Stores.HALL_BREAD && in(h, food, Items.COOKED_BEEF) == Stores.HALL_MEAT, "the feast in the Food bay: "
+                + in(h, food, Items.BREAD) + " bread and " + in(h, food, Items.COOKED_BEEF) + " roast, not " + Stores.HALL_BREAD + " and " + Stores.HALL_MEAT);
+        h.assertTrue(hold.food() > f1, "the feast in the Food bay is not the hold's food: " + f1 + " then " + hold.food());
+        h.succeed();
+    }
+
     /** Food in the Storeroom's barrels is the hold's food (the engine's larder counts its Hoard): bread set in the Food bay feeds it. */
     @GameTest(template = "field", timeoutTicks = 200, batch = "khazuk")
     public static void foodInTheStoreroomFeedsTheHold(GameTestHelper h) {

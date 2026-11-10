@@ -22,8 +22,9 @@ its gold, brew its ale, keep the Book of Grudges and fight for it.
   and work faster, a Treasury makes gold draw gold, and the Runesmith strikes runes into its kit.
 - **The stores:** a Storeroom of barrels in five bays (metals and gems, stone, food, timber, spoils). What the Miners cut out of the
   rock is carried there, and every hall adds its own goods each minute with nobody at work in it: a mine its ore, a brewery its ale, a
-  treasury its gold, the Engineers' Guild its black powder, and the Runic Forge smelts the raw ore into ingots. Food in its barrels
-  feeds the hold.
+  treasury its gold, the Engineers' Guild its black powder, the Runic Forge smelts the raw ore into ingots, and the Great Hall's hearth
+  lays bread and roast in the Food bay. Food in its barrels feeds the hold, and its god. Every plan is carved from stone and metal: a
+  hold under the rock needs no paper, wood or leather.
 - **The Book of Grudges (Dammaz Kron):** what kills a Dwarf, breaks the hold or steals its gold is written down. Settle a grudge for
   gold, ale and runes, and the hold hits that foe harder from then on.
 - **The units:** Miners, Dwarf Warriors, Quarrellers, Thunderers, Longbeards (with great weapons too), the Runesmith and the Runelord

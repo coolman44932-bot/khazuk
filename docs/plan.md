@@ -129,8 +129,8 @@ hatred, and the "war between your own races" idea on the roadmap. Not planned ye
 - **The stores** (the user, 2026-11-09: "is there a storage room", "make the buildings passively add ore and whatever they produce").
   **DONE in 0.14.2** (hold/Stores, the hall "dawi_storeroom" = the engine's Hoard): what the digs cut (ore drops, cobble while the Stone
   bay has room) and what the halls make each minute (Mine 2 ore rolls + cobble, Brewery 6 ale, Treasury 1 gold, Engineers' Guild 2
-  powder, Runic Forge smelts 8) go to the Storeroom, or the pile at the Shrine until one is dug. Not done: a hearth's food from the
-  Great Hall (offered).
+  powder, Runic Forge smelts 8, Great Hall 8 bread + 2 roast into the Food bay) go to the Storeroom, or the pile at the Shrine until
+  one is dug (the feast: the hold's food). Every recipe has an underground way (2026-11-10: no paper, wood or leather).
 - **D4, the Book of Grudges.** **DONE in 0.6.0** (2026-11-03; hold/Grudges, GrudgeEvents, the Dammaz Kron item; settled grudges make the
   Dawi grudgebearers: +25% against that kind).
 - **D5, runes:** the Runesmith (a showpiece) and the runic forge. **DONE in 0.7.0** (2026-11-03; hold/Runes, RuneEvents, Runesmith on a fast

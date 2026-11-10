@@ -80,7 +80,8 @@ public final class HoldRooms {
             new Rooms.Room("dawi_grand_hall", "Great Hall", 30, GREAT_HALL,     // 0.13.0: the Great Hall rebuilt grand, under its own id so the
                     // halls dug before keep their own box and template (the review of 31991f2); the Great Hall's plan digs this one
                     "The hold's heart under the mountain: ancestor kings carved on gold-banded pillars, a stepped vault, a long hearth between "
-                            + "the feasting tables, and the high seat on the dais under the Ancestors' face.",
+                            + "the feasting tables, and the high seat on the dais under the Ancestors' face. Its hearth lays a feast "
+                            + "every minute: bread and roast for the hold, and for its god.",
                     33, 17, 25, 0, 1, 12, List.of(), List.of(), List.of()),
             new Rooms.Room("dawi_throne_room", "King's Throne Room", 25, KEEP,  // 0.13.0: the hold's keep, dug (it was a surface Keep)
                     "Eight ancestor kings in their niches, banners and braziers, and a red runner to the dais where Thorgrim's Throne of Power stands.",
