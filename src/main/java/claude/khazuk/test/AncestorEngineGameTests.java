@@ -321,12 +321,15 @@ public class AncestorEngineGameTests {
         h.assertTrue(level0.size() == 9 && !level0.contains(floor) && level0.contains(foot) && !level0.contains(over),
                 "looking level the face is " + level0.size() + " blocks, not the 9 of its own height: " + level0);
         god.setXRot(40f);
-        h.assertTrue(e.face(level, god).contains(floor) && !e.face(level, god).contains(h.absolutePos(AT.offset(0, 2, 2))),
-                "looking down the face doesn't take the floor before it and leave the top row: " + e.face(level, god));
+        h.assertTrue(e.face(level, god).contains(floor) && e.face(level, god).contains(h.absolutePos(AT.offset(0, 2, 2))),
+                "looking down the face doesn't take the floor before it and its own height over it: " + e.face(level, god));
         god.setXRot(-40f);
         h.assertTrue(!e.face(level, god).contains(foot) && e.face(level, god).contains(over),
                 "looking up the face doesn't leave the block at its feet as a step and take the row over its head: " + e.face(level, god));
+        h.setBlock(AT.offset(0, 0, 1), Blocks.TORCH);            // a torch before it is in nobody's way: not hewn
         god.setXRot(0f);
+        h.assertTrue(!e.face(level, god).contains(h.absolutePos(AT.offset(0, 0, 1))), "the face takes a torch standing before the engine");
+        h.setBlock(AT.offset(0, 0, 1), Blocks.AIR);
         h.startSequence()
                 .thenIdle(AncestorEngine.RISE_TICKS + 2)         // it heaves up first
                 .thenExecute(() -> AncestorEngine.keysFrom(god, keys(true, false, false)))
@@ -346,6 +349,84 @@ public class AncestorEngineGameTests {
                             + " cobblestone of the face's 9");
                 })
                 .thenSucceed();
+    }
+
+    /** Rock all round an engine at AT (4 blocks out, from the floor under it to a row over its head), its own 3 x 3 x 3 left open. */
+    private static void entomb(GameTestHelper h) {
+        for (int x = -4; x <= 4; x++) {
+            for (int z = -4; z <= 4; z++) {
+                for (int y = -1; y <= 3; y++) {
+                    boolean own = Math.abs(x) <= 1 && Math.abs(z) <= 1 && y >= 0 && y <= 2;
+                    h.setBlock(AT.offset(x, y, z), own ? Blocks.AIR : Blocks.STONE);
+                }
+            }
+        }
+    }
+
+    /** An engine walled in rock, facing {@code yaw}, its god looking {@code pitch}: after one bite, {@code then} is asked. */
+    private static void hewOnce(GameTestHelper h, float yaw, float pitch, java.util.function.BiConsumer<AncestorEngine, Vec3> then) {
+        var god = h.makeMockServerPlayerInLevel();
+        entomb(h);
+        AncestorEngine e = parked(h);
+        e.snapTo(e.getX(), e.getY(), e.getZ(), yaw, 0f);
+        e.setYBodyRot(yaw);
+        e.setYHeadRot(yaw);
+        e.setOwner(god.getUUID());
+        e.interact(god, InteractionHand.MAIN_HAND, e.position());
+        Vec3 ahead = Vec3.directionFromRotation(0, yaw);
+        h.startSequence()
+                .thenIdle(AncestorEngine.RISE_TICKS + 2)         // it heaves up first
+                .thenExecute(() -> {
+                    god.setYRot(yaw);
+                    god.setXRot(pitch);
+                    AncestorEngine.keysFrom(god, keys(true, false, false));
+                })
+                .thenExecuteAfter(AncestorEngine.BITE_AT + 3, () -> {
+                    h.assertTrue(Math.abs(net.minecraft.util.Mth.wrapDegrees(e.getYRot() - yaw)) < 1f, "the engine faces " + e.getYRot() + ", not " + yaw);
+                    then.accept(e, ahead);
+                })
+                .thenSucceed();
+    }
+
+    private static boolean fits(AncestorEngine e, Vec3 by) {
+        return e.level().noCollision(e, e.getBoundingBox().move(by));
+    }
+
+    /**
+     * The face is one its engine walks through, whichever way it faces (the review of eaf2d15: a 3-wide cut left corners that caught
+     * the hull off the axes): walled in rock, after one bite its hull can go a block on along its heading, a quarter at a time,
+     * facing down an axis and facing down the diagonal.
+     */
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
+    public static void theFaceLetsItsHullThroughDownAnAxis(GameTestHelper h) {
+        hewOnce(h, 0f, 0f, (e, ahead) -> {
+            for (double d = 0.25; d <= 1.0; d += 0.25) {
+                h.assertTrue(fits(e, ahead.scale(d)), "after one bite the hull is stopped " + d + " blocks on, facing " + e.getYRot());
+            }
+        });
+    }
+
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
+    public static void theFaceLetsItsHullThroughDownTheDiagonal(GameTestHelper h) {
+        hewOnce(h, -45f, 0f, (e, ahead) -> {
+            for (double d = 0.25; d <= 1.0; d += 0.25) {
+                h.assertTrue(fits(e, ahead.scale(d)), "after one bite the hull is stopped " + d + " blocks on, facing " + e.getYRot());
+            }
+        });
+    }
+
+    /** Looking down, one bite lets it walk on and drop a block; looking up, one bite lets it climb the step before it. */
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
+    public static void lookingDownTheTunnelGoesDownAStep(GameTestHelper h) {
+        // (a block and a half on, its hull is clear of the floor it stood on and over the floor the bite took)
+        hewOnce(h, 0f, 40f, (e, ahead) -> h.assertTrue(fits(e, ahead.scale(1.5)) && fits(e, ahead.scale(1.5).add(0, -1, 0)),
+                "looking down, after one bite the hull " + (fits(e, ahead.scale(1.5)) ? "can't drop into the step before it" : "can't walk on over it")));
+    }
+
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
+    public static void lookingUpTheTunnelClimbsAStep(GameTestHelper h) {
+        hewOnce(h, 0f, -40f, (e, ahead) -> h.assertTrue(fits(e, new Vec3(0, 1, 0)) && fits(e, ahead.add(0, 1, 0)),
+                "looking up, after one bite the hull " + (fits(e, new Vec3(0, 1, 0)) ? "can't go on over the step" : "has no room over it to climb the step")));
     }
 
     @GameTest(template = "arena", timeoutTicks = 140, batch = "khazuk")

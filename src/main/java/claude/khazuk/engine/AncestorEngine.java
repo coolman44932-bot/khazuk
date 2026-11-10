@@ -567,7 +567,14 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
             refused = null;
         }
         // (where the face would not be bitten, it is not hewn at again until he lets the key go or moves on)
-        List<BlockPos> face = foe || !attackDown || blockPosition().equals(refused) ? List.of() : face(level, rider);
+        List<BlockPos> face;
+        if (foe || !attackDown || blockPosition().equals(refused)) {
+            face = hewing = List.of();
+        } else if (working() && digTick > 0 && digTick + 1 != BITE_AT) {
+            face = hewing;                                       // mid-swing, rooted: the face is as it was, looked at afresh for the bite
+        } else {
+            face = hewing = face(level, rider);
+        }
         if (face.isEmpty()) {
             setWorking(false);
             if (attackFresh || foe) {
@@ -598,41 +605,60 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         }
     }
 
-    /** The face's depth before the engine's middle, its half width, its height in blocks, and the look up or down that tilts it. */
+    /** The face's depth before the engine's middle, its half width, and the look up or down that tilts it. */
     public static final double FACE_FROM = 0.5, FACE_TO = 2.6, FACE_HALF = 1.5;
-    public static final int FACE_HIGH = 3;
     public static final float FACE_TILT = 25f;
 
+    /** The face being hewn this swing (looked at when the swing begins and again for its bite). */
+    private List<BlockPos> hewing = List.of();
+
     /**
-     * The face the axe hews: every block that {@link #digs} in a slab before the engine, as wide as it is (every block its 2-block hull
-     * would touch walking on) and {@value #FACE_HIGH} high from its feet, from its own front to {@value #FACE_TO} blocks out (the axe's
-     * bite lands 1.9 ahead): a tunnel it walks through as it hews. Looking more than {@value #FACE_TILT} degrees down, the face is a
-     * block lower (it takes the floor before it too, and the tunnel goes down a block a step); up, a block higher (the floor before it
-     * is left as a step, which it climbs). Empty: nothing before it to hew.
+     * The face the axe hews: every block in its way that {@link #digs}, in a slab before the engine, from its own front to
+     * {@value #FACE_TO} blocks out (the axe's bite lands 1.9 ahead), as wide as its hull's path and as high as the hull from where it
+     * stands: a tunnel it walks through as it hews. The hull is a 2-block square set to the world's axes whichever way it faces, so
+     * seen along its heading it is wider and deeper off the axes; the slab is that much wider and deeper (the review of eaf2d15: at
+     * 45 degrees the corners of a 3-wide cut caught the hull). What nothing bumps into (a torch, a crop, a rail, grass) is left.
+     * <ul>
+     * <li>Looking more than {@value #FACE_TILT} degrees down, it takes the floor before it too, its full height still above (the
+     * tunnel goes down a block a step).</li>
+     * <li>Looking up, it leaves the block at its feet as a step and takes a row more overhead, over itself too (it climbs the step:
+     * that needs the room over where it stands).</li>
+     * </ul>
+     * Empty: nothing before it to hew.
      */
     public List<BlockPos> face(ServerLevel level, Player rider) {
         Vec3 ahead = ahead();
+        double wide = Math.abs(ahead.x) + Math.abs(ahead.z);     // 1 along an axis, 1.41 on the diagonal
         float pitch = rider.getXRot();
-        int y0 = blockPosition().getY() + (pitch > FACE_TILT ? -1 : pitch < -FACE_TILT ? 1 : 0);
-        int bx = net.minecraft.util.Mth.floor(getX()), bz = net.minecraft.util.Mth.floor(getZ()), r = (int) Math.ceil(FACE_TO) + 1;
+        int tilt = pitch > FACE_TILT ? -1 : pitch < -FACE_TILT ? 1 : 0;
+        // the rows its hull stands in: from the first whole row over its feet (on a slab, the row over the slab) to its top's row
+        int feet = net.minecraft.util.Mth.ceil(getY() - 1e-3), head = net.minecraft.util.Mth.floor(getY() + getBbHeight() - 1e-3);
+        int lo = tilt < 0 ? feet - 1 : tilt > 0 ? feet + 1 : feet, hi = tilt > 0 ? head + 1 : head;
+        int bx = net.minecraft.util.Mth.floor(getX()), bz = net.minecraft.util.Mth.floor(getZ()), r = (int) Math.ceil(FACE_TO * wide) + 1;
+        double half = getBbWidth() / 2 + 0.5;                    // a block this near its middle, on an axis, touches the hull
         List<BlockPos> out = new ArrayList<>();
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
         for (int dx = -r; dx <= r; dx++) {
             for (int dz = -r; dz <= r; dz++) {
                 double cx = bx + dx + 0.5 - getX(), cz = bz + dz + 0.5 - getZ();
                 double out1 = cx * ahead.x + cz * ahead.z, side = cz * ahead.x - cx * ahead.z;
-                if (out1 < FACE_FROM || out1 > FACE_TO || Math.abs(side) > FACE_HALF - 1e-4) {
-                    continue;
-                }
-                for (int dy = 0; dy < FACE_HIGH; dy++) {
-                    p.set(bx + dx, y0 + dy, bz + dz);
-                    if (digs(level, p, level.getBlockState(p))) {
-                        out.add(p.immutable());
+                if (out1 >= FACE_FROM && out1 <= FACE_TO * wide && Math.abs(side) < FACE_HALF * wide - 1e-4) {
+                    for (int y = lo; y <= hi; y++) {
+                        hewn(level, p.set(bx + dx, y, bz + dz), out);
                     }
+                } else if (tilt > 0 && Math.abs(cx) < half - 1e-4 && Math.abs(cz) < half - 1e-4) {
+                    hewn(level, p.set(bx + dx, head + 1, bz + dz), out);    // over itself: the room to climb the step
                 }
             }
         }
         return out;
+    }
+
+    private static void hewn(ServerLevel level, BlockPos.MutableBlockPos p, List<BlockPos> out) {
+        BlockState s = level.getBlockState(p);
+        if (!s.isAir() && !s.getCollisionShape(level, p).isEmpty() && digs(level, p, s)) {
+            out.add(p.immutable());
+        }
     }
 
     private boolean foeInReach(ServerLevel level, ServerPlayer rider) {
