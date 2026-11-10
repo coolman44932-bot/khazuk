@@ -44,6 +44,7 @@ import java.util.Map;
  * Goods go into the Storeroom (their own bay, then Spoils, then anywhere), and with no Storeroom yet onto the pile at the Shrine (the
  * engine's spoils, {@value Settlement#MAX_SPOIL_STACKS} stacks), which the haul carries to the first Storeroom dug. With nowhere left
  * to put them they are not made: nothing is ever thrown on the floor. Buffs only: a hold with no Storeroom is as it was, plus the pile.
+ * The Storeroom takes no Dawi from the hold (StoreWork: a Hoard with no keeper).
  */
 public final class Stores {
 
@@ -135,25 +136,26 @@ public final class Stores {
     }
 
     /**
-     * Into the stores: the Storeroom (its own bay, Spoils, anywhere), else the pile at the Shrine while it has room. False, and nothing
-     * done, when neither has room: goods are never dropped on the floor (Works#stow would, at the Shrine).
+     * Into the stores: the Storeroom (its own bay, Spoils, anywhere), else the pile at the Shrine while it has room. Goods are never
+     * dropped on the floor: Works#stow is used only while the pile has a free stack to take whatever the Storeroom doesn't (it would
+     * drop the rest at the Shrine); with the pile full the goods go straight into the Storeroom's barrels, and what fits nowhere is
+     * not kept (the review of 14bf2c9: a part-filled stack's room for 3 of 10 dropped the other 7). False when none of it was kept.
      */
     public static boolean put(ServerLevel level, ShrineBlockEntity hold, ItemStack s, String from) {
         if (s.isEmpty()) {
             return true;
         }
-        boolean room = hold.spoils().size() < Settlement.MAX_SPOIL_STACKS;
+        if (hold.spoils().size() < Settlement.MAX_SPOIL_STACKS) {
+            hold.works().stow(level, s, from);                   // one stack at most: a free stack on the pile takes all of it
+            return true;
+        }
+        ItemStack rest = s.copy();
         for (HoardWork h : hold.works().all(HoardWork.class)) {
-            if (room) {
-                break;
+            if (!rest.isEmpty() && level.isLoaded(h.box().getCenter())) {
+                rest = h.put(level, rest);
             }
-            room = level.isLoaded(h.box().getCenter()) && h.hasRoom(level, s);
         }
-        if (!room) {
-            return false;
-        }
-        hold.works().stow(level, s, from);
-        return true;
+        return rest.getCount() < s.getCount();
     }
 
     /** One round of the halls' goods, now (the tests call it too). */
@@ -185,7 +187,7 @@ public final class Stores {
                 }
                 Bins.insert(level, stoneBay, new ItemStack(y < 0 ? Items.COBBLED_DEEPSLATE : Items.COBBLESTONE, MINE_STONE));
             } else if (f == HoldRooms.BREWERY) {
-                hold.brew().addAle(BREWERY_ALE);
+                hold.brew().brewed(hold, BREWERY_ALE);
             } else if (f == HoldRooms.TREASURY) {
                 hold.addCurrency(TREASURY_GOLD, name);
             } else if (f == HoldRooms.ENGINEERS_GUILD) {
@@ -214,10 +216,7 @@ public final class Stores {
                 ItemStack raw = Bins.take(level, barrels, st -> st.is(s[0]), left);
                 if (!raw.isEmpty()) {
                     left -= raw.getCount();
-                    ItemStack rest = h.put(level, new ItemStack(s[1], raw.getCount()));   // room for it: the ore just came out
-                    if (!rest.isEmpty()) {
-                        hold.works().stow(level, rest, name);
-                    }
+                    put(level, hold, new ItemStack(s[1], raw.getCount()), name);          // room for it: the ore just came out
                 }
             }
         }

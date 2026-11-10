@@ -46,6 +46,11 @@ public final class HoldRooms {
      * off a sealed door like the halls, each ending in sealed doors of its own, so the hold grows hall to road to hall (tools/gen_halls.py).
      */
     public static final Rooms.Function ROAD = Rooms.Function.of("DAWI_ROAD");
+    /**
+     * The Storeroom (the user, 2026-11-09): the hold's stores, the engine's Hoard under a function of its own so its work is
+     * {@link StoreWork} (a Hoard with no keeper taken from the hold's few Miners); hold/Stores.
+     */
+    public static final Rooms.Function STORES = Rooms.Function.of("DAWI_STORES");
 
     public static final List<Rooms.Room> RAISED = List.of(
             new Rooms.Room("dawi_hold_gate", "Hold Gate", 40, GATE,
@@ -99,7 +104,7 @@ public final class HoldRooms {
                     "Grimnir in blackstone with an axe in each fist and a crest of fire, an oath altar between braziers, fire under iron in the floor, "
                             + "skulls and orange banners: the hold's Troll Slayers swear their oath here.",
                     17, 10, 15, 0, 1, 7, List.of(), List.of(), List.of(new Rooms.Station("oath", 9, 1, 7, Direction.EAST))),
-            new Rooms.Room("dawi_storeroom", "Storeroom", 15, Rooms.Function.HOARD,   // the engine's Hoard (hold/Stores)
+            new Rooms.Room("dawi_storeroom", "Storeroom", 15, STORES,                 // the engine's Hoard (hold/Stores, StoreWork)
                     "The hold's stores: racks of barrels in five bays, for metals and gems, stone, food, timber and spoils. What the "
                             + "Miners cut and what the halls make is carried here, and the food in its barrels feeds the hold.",
                     17, 8, 15, 0, 1, 7, List.of(), List.of(), List.of()),
@@ -135,6 +140,7 @@ public final class HoldRooms {
     /** The hold's buildings under the mod's namespace: the dug ones as the plans' rooms, the raised ones as raised. */
     public static void register() {
         Rooms.register(Khazuk.MODID, new Rooms.Catalog(DUG, List.of(), List.of(), Set.of(), 0, RAISED));
+        claude.settlementcore.work.RoomWorks.register(STORES, StoreWork::new);
     }
 
     /** The building of this id, or null. */

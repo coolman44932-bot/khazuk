@@ -67,6 +67,19 @@ public final class Brewhouse {
         dirty = true;
     }
 
+    /**
+     * Ale the Brewery makes of itself, no wheat brought (hold/Stores, every minute): into the barrels, and a dry hold is told its first
+     * barrel is tapped as when malt is first brewed (the review of 14bf2c9: this ale came first, so that word was never said).
+     */
+    public void brewed(ShrineBlockEntity hold, int amount) {
+        boolean wasDry = ale == 0;
+        addAle(amount);
+        if (wasDry && ale > 0) {
+            hold.tellOwner(hold.settlementName() + ": the first barrel is tapped. The Dawi drink, and work and fight the better for it.",
+                    ChatFormatting.GOLD);
+        }
+    }
+
     public boolean takeDirty() {
         boolean d = dirty;
         dirty = false;

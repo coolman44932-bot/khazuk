@@ -59,7 +59,7 @@ public class StoresGameTests {
             }
         }
         Rooms.Room room = HoldRooms.room("dawi_storeroom");
-        h.assertTrue(room != null && room.function() == Rooms.Function.HOARD, "no Storeroom among the hold's rooms, or it is not the engine's Hoard");
+        h.assertTrue(room != null && room.function() == HoldRooms.STORES, "no Storeroom among the hold's rooms");
         PlanPlacement pl = AncestorPlan.aimedAt(level, room, door.above(), 0, Direction.WEST);
         for (BlockPos p : BlockPos.betweenClosed(pl.box().minX(), pl.box().minY(), pl.box().minZ(), pl.box().maxX(), pl.box().maxY(), pl.box().maxZ())) {
             if (p.getX() > door.getX() && level.getBlockState(p).isAir()) {
@@ -70,7 +70,7 @@ public class StoresGameTests {
         h.assertTrue(AncestorPlan.dig(hold, level, pl, true, c -> told.add(c.getString())), "the Storeroom through the seal was refused: " + told);
         hold.works().digs().forEach(d -> d.job().finishAll(level));
         hold.works().second(level, 303);
-        h.assertTrue(hold.works().digs().isEmpty() && hold.has(Rooms.Function.HOARD), "the Storeroom wasn't dug: digs " + hold.works().digs().size());
+        h.assertTrue(hold.works().digs().isEmpty() && hold.has(HoldRooms.STORES), "the Storeroom wasn't dug: digs " + hold.works().digs().size());
         return pl;
     }
 
@@ -98,6 +98,8 @@ public class StoresGameTests {
         ShrineBlockEntity hold = hold(h);
         PlanPlacement pl = storeroom(h, hold);
         h.assertTrue(hold.works().all(HoardWork.class).size() == 1, "the hold has " + hold.works().all(HoardWork.class).size() + " hoards at work, not 1");
+        h.assertTrue(hold.works().all(HoardWork.class).get(0).crewWanted() == 0, "the Storeroom takes "
+                + hold.works().all(HoardWork.class).get(0).crewWanted() + " of the hold's Dawi off their work for a keeper");
         String[] bays = {"Metals & Gems", "Stone", "Food", "Timber", "Spoils"};
         int[] want = {18, 18, 18, 18, 27};
         for (int i = 0; i < bays.length; i++) {
@@ -199,6 +201,31 @@ public class StoresGameTests {
         }
         h.assertTrue(hold.brew().ale() >= ale1 + Stores.BREWERY_ALE, Stores.PRODUCE_SECONDS + " of the Shrine's seconds made no round: ale " + ale1
                 + " then " + hold.brew().ale());
+        h.succeed();
+    }
+
+    /**
+     * Goods are never thrown on the floor: with no Storeroom and the pile at the Shrine full the stores keep nothing more, and with a
+     * Storeroom they go straight into its barrels past the full pile.
+     */
+    @GameTest(template = "field", timeoutTicks = 200, batch = "khazuk")
+    public static void aFullPileDropsNothingOnTheFloor(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        ShrineBlockEntity hold = hold(h);
+        for (int i = 0; i < claude.settlementcore.settlement.Settlement.MAX_SPOIL_STACKS; i++) {
+            hold.addSpoil(new ItemStack(Items.STICK, 64));
+        }
+        int pile = hold.spoils().size();
+        h.assertTrue(pile == claude.settlementcore.settlement.Settlement.MAX_SPOIL_STACKS, "the set-up's pile holds " + pile + " stacks");
+        h.assertTrue(!Stores.put(level, hold, new ItemStack(Items.GUNPOWDER, 10), "the test"), "a full pile and no Storeroom, and the stores "
+                + "said they kept the powder");
+        PlanPlacement pl = storeroom(h, hold);
+        h.assertTrue(Stores.put(level, hold, new ItemStack(Items.GUNPOWDER, 10), "the test"), "a Storeroom with room refused the powder past a full pile");
+        List<BlockPos> all = hold.works().all(HoardWork.class).get(0).barrels(level);
+        h.assertTrue(in(h, all, Items.GUNPOWDER) == 10, "the powder in the Storeroom: " + in(h, all, Items.GUNPOWDER) + " of 10");
+        var box = new net.minecraft.world.phys.AABB(h.absolutePos(SHRINE)).inflate(48);
+        int dropped = level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box).size();
+        h.assertTrue(dropped == 0, dropped + " stacks lie on the floor round the Shrine");
         h.succeed();
     }
 
