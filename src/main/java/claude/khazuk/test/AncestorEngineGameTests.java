@@ -277,35 +277,22 @@ public class AncestorEngineGameTests {
     }
 
     /**
-     * The axe digs what it reaches, not what its rider can see (the detail session's filming, 2026-11-10: the block that broke was one
-     * past where the axe fell): stone under his eye 5 blocks ahead is left alone and the engine does not hew at the air before it;
-     * mounted from its front, he is turned to face as his engine does and it keeps its facing while it rises.
+     * Mounted from its front, its god is turned to face as his engine does, and the engine keeps its facing while it rises (the detail
+     * session's filming, 2026-11-10: it spun half round). On a server this only shows the turn is made; that his own screen turns with
+     * it (the rotation sent to his client) is what the filming checks.
      */
-    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazuk")
-    public static void theAxeDigsOnlyWhatItReachesAndTheEngineKeepsItsFacingAsItRises(GameTestHelper h) {
-        ServerLevel level = h.getLevel();
+    @GameTest(template = "arena", timeoutTicks = 60, batch = "khazuk")
+    public static void mountedFromItsFrontItsGodFacesAsHisEngineDoes(GameTestHelper h) {
         var god = h.makeMockServerPlayerInLevel();
         AncestorEngine e = parked(h);
         e.setOwner(god.getUUID());
-        god.snapTo(e.getX(), e.getY(), e.getZ() + 3, 180f, 0f);  // before it, facing back at it
+        god.snapTo(e.getX(), e.getY(), e.getZ() + 3, 180f, 30f);  // before it, facing back at it and down
         e.interact(god, InteractionHand.MAIN_HAND, e.position());
-        h.assertTrue(god.getVehicle() == e && Math.abs(net.minecraft.util.Mth.wrapDegrees(god.getYRot() - e.getYRot())) < 1f,
-                "mounted from its front, its god faces " + god.getYRot() + " and his engine " + e.getYRot());
-        BlockPos far = AT.offset(0, 1, 5);
-        BlockPos abs = h.absolutePos(far);
-        h.setBlock(far, Blocks.STONE);
+        h.assertTrue(god.getVehicle() == e && Math.abs(net.minecraft.util.Mth.wrapDegrees(god.getYRot() - e.getYRot())) < 1f && Math.abs(god.getXRot()) < 1f,
+                "mounted from its front, its god faces " + god.getYRot() + " / " + god.getXRot() + " and his engine " + e.getYRot());
         h.startSequence()
                 .thenExecuteAfter(4, () -> h.assertTrue(Math.abs(net.minecraft.util.Mth.wrapDegrees(e.getYRot())) < 1f,
                         "heaving up, the engine turned to " + e.getYRot() + " from the 0 it stood at"))
-                .thenIdle(AncestorEngine.RISE_TICKS)
-                .thenExecute(() -> {
-                    e.positionRider(god);
-                    god.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(abs));
-                    AncestorEngine.keysFrom(god, keys(true, false, false));
-                })
-                .thenExecuteAfter(2 * AncestorEngine.WORK_LOOP, () -> h.assertTrue(level.getBlockState(abs).is(Blocks.STONE) && !e.working(),
-                        "stone 5 blocks ahead, out of the axe's reach (" + AncestorEngine.AXE_REACH + "): " + level.getBlockState(abs)
-                                + (e.working() ? ", and the engine hews at it" : "")))
                 .thenSucceed();
     }
 

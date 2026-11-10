@@ -605,25 +605,17 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         return hit != null && hit.getEntity() instanceof LivingEntity l ? l : null;
     }
 
-    /** How far from the engine's middle, level, a block may be for the axe to dig it (its bite lands 1.9 ahead). */
-    public static final double AXE_REACH = 3.3;
-
     /** The block the axe would dig now: the one the rider looks at within {@value #DIG_REACH}, if it {@link #digs}. */
     @Nullable
     private BlockPos digFace(ServerLevel level, ServerPlayer rider) {
-        Vec3 from = rider.getEyePosition(), to = from.add(rider.getLookAngle().scale(DIG_REACH + 1.5));
+        Vec3 from = rider.getEyePosition(), to = from.add(rider.getLookAngle().scale(DIG_REACH));
         BlockHitResult hit = level.clip(new ClipContext(from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, rider));
         if (hit.getType() != HitResult.Type.BLOCK) {
             return null;
         }
         BlockPos pos = hit.getBlockPos();
-        // within the axe's own reach of the engine, not only of his eye 2.7 blocks up: the block that broke was up to 5 blocks from his
-        // eye, a block beyond and above where the axe fell (the detail session's filming, 2026-11-10)
-        double dx = pos.getX() + 0.5 - getX(), dz = pos.getZ() + 0.5 - getZ();
-        int up = pos.getY() - blockPosition().getY();
-        if (dx * dx + dz * dz > AXE_REACH * AXE_REACH || up < -1 || up > 3) {
-            return null;
-        }
+        // (the detail session's filming, 2026-11-10: from eyes 2.7 blocks up, the block that breaks can be one beyond and above where
+        // the axe falls. Left as it is: a shorter reach would be the engine made weaker, and how it digs is its god's to say first.)
         return digs(level, pos, level.getBlockState(pos)) ? pos : null;
     }
 
