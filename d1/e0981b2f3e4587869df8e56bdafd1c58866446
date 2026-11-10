@@ -1,0 +1,1 @@
+REVIEW PASS d1e0981b: the rewritten test sets up the real part-fit (61 gunpowder, full pile) and fails on 14bf2c9's put() via the 7 dropped at the Shrine inside the 6-block box; it passes on the new put(); no flake found. d1e0981b2f3e4587869df8e56bdafd1c58866446
