@@ -1,0 +1,1 @@
+REVIEW PASS ea619f0c: the scaled slab, the hull-row logic and the cache are correct, and the new tests fail on eaf2d15 for the right reasons (diagonal depth, down-tilt top row, up-tilt headroom). Only cave-in and cobweb notes remain. ea619f0cf065498b905dc1c184c6a68fc1ec2553
