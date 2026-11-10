@@ -465,7 +465,12 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
         }
         if (blow == null) {
             Input in = rider.getLastClientInput();
-            if (ventAsked && heat() >= 1f) {
+            // the vent key is kept until the engine is free to answer it (the review of 3fe3e69: it was wiped every tick, and with the
+            // attack key held a blow is under way all but one tick in twelve, so the vent was dead in the fight it is for); a cold
+            // boiler's press is spent here too
+            boolean vent = ventAsked;
+            ventAsked = false;
+            if (vent && heat() >= 1f) {
                 begin(Blow.VENT);
             } else if (in.jump() && !in.forward() && !in.backward() && !in.left() && !in.right()) {
                 begin(Blow.STOMP);
@@ -477,7 +482,6 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
                 setWorking(false);
             }
         }
-        ventAsked = false;
         tellHeat(rider);
     }
 
@@ -502,7 +506,11 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
     private void begin(Blow b) {
         blow = b;
         blowTick = 0;
-        attackFresh = useFresh = false;
+        if (b == Blow.CHOP) {
+            attackFresh = false;                                 // its own press is answered; one made for the other arm during this blow waits
+        } else if (b == Blow.CRUSH) {
+            useFresh = false;
+        }
         setWorking(false);
         setRooted(b == Blow.STOMP);
         triggerAnim("attack", b.clip);
@@ -537,8 +545,15 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
      * is dug, a bite each loop of the work clip; else a fresh press chops the air, and held on nothing the axe waits for a foe.
      */
     private void chopOrDig(ServerLevel level, ServerPlayer rider) {
-        boolean foe = foeInReach(level, rider) || looksAt(level, rider, DIG_REACH) != null;
+        // a foe the axe can reach: one out past it (looked at across the cave) doesn't keep the axe from the rock in front of him
+        boolean foe = foeInReach(level, rider) || looksAt(level, rider, CHOP_AHEAD + CHOP_HALF) != null;
+        if (!attackDown) {
+            refused = null;
+        }
         BlockPos face = foe || !attackDown ? null : digFace(level, rider);
+        if (face != null && face.equals(refused)) {
+            face = null;                                         // it would not bite here: not hewn at again until he lets the key go
+        }
         if (face == null) {
             setWorking(false);
             if (attackFresh || foe) {
@@ -551,8 +566,12 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
             setWorking(true);
         }
         digTick++;
-        if (digTick == BITE_AT) {
-            bite(level, rider, face);
+        if (digTick == BITE_AT && !bite(level, rider, face)) {
+            // a claim or a rule refused it (the review of 3fe3e69: the engine stood rooted, hewing for ever at a block that never broke)
+            refused = face.immutable();
+            setWorking(false);
+            rider.sendOverlayMessage(Component.literal("The axe will not bite here.").withStyle(ChatFormatting.GRAY));
+            return;
         }
         if (digTick >= WORK_LOOP) {
             digTick = 0;
@@ -636,21 +655,37 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
     }
 
     /** The work clip's bite: the block is broken as its rider's own, its drops as a diamond tool's. A claim or a rule may refuse it. */
-    private void bite(ServerLevel level, ServerPlayer rider, BlockPos pos) {
+    private boolean bite(ServerLevel level, ServerPlayer rider, BlockPos pos) {
         BlockState s = level.getBlockState(pos);
         if (!digs(level, pos, s) || !level.mayInteract(rider, pos)) {
-            return;
+            return false;
         }
         var asked = new net.neoforged.neoforge.event.level.block.BreakBlockEvent(level, pos, s, rider);
         asked.setCanceled(rider.blockActionRestricted(level, pos, rider.gameMode()));
         if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(asked).isCanceled()) {
-            return;
+            return false;
         }
         ItemStack tool = new ItemStack(s.is(BlockTags.MINEABLE_WITH_AXE) ? Items.DIAMOND_AXE
                 : s.is(BlockTags.MINEABLE_WITH_SHOVEL) ? Items.DIAMOND_SHOVEL : Items.DIAMOND_PICKAXE);
         if (level.destroyBlock(pos, false, rider)) {
             Block.dropResources(s, level, pos, null, rider, tool);
         }
+        return true;
+    }
+
+    /** The block that last refused the axe: left alone until the attack key is let go. */
+    @Nullable private BlockPos refused;
+
+    /**
+     * What the engine's blows all round it (the stomp, the vent) fall on: foes, anything that has turned on its god or his own, and
+     * another player he may harm. A cow by the gate, a villager, a golem: spared (the review of 3fe3e69: a tap of the jump key beside
+     * his farm killed his herd). The chop and the claw are aimed, and fall on whatever he aims them at.
+     */
+    private boolean threat(@Nullable Player rider, LivingEntity t) {
+        if (t instanceof Player) {
+            return true;                                         // (one he may not harm is spared already)
+        }
+        return t instanceof Mob m && (Muster.foe(m) || m.getTarget() != null && (m.getTarget() == rider || spares(rider, m.getTarget())));
     }
 
     // ------------------------------------------------------------------ its blows
@@ -713,7 +748,8 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
             case STOMP -> {
                 int hit = 0;
                 double out = STOMP_REACH - getBbWidth() / 2;
-                for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(out, 0.5, out), t -> !spares(rider, t))) {
+                for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(out, 0.5, out),
+                        t -> !spares(rider, t) && threat(rider, t))) {
                     if (strike(level, t, src, STOMP * power)) {
                         hit++;
                         Vec3 away = t.position().subtract(position());
@@ -738,7 +774,8 @@ public class AncestorEngine extends PathfinderMob implements GeoEntity {
                 float spent = heat();
                 float dmg = VENT_LEAST + (VENT_FULL - VENT_LEAST) * spent / MAX_HEAT;
                 double out = VENT_REACH - getBbWidth() / 2;
-                for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(out, 0.5, out), t -> !spares(rider, t))) {
+                for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(out, 0.5, out),
+                        t -> !spares(rider, t) && threat(rider, t))) {
                     strike(level, t, src, dmg);
                 }
                 setHeat(0f);

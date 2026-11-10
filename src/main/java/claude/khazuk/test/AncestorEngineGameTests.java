@@ -94,6 +94,9 @@ public class AncestorEngineGameTests {
             throw h.assertionException("no Shrine's block entity at " + h.absolutePos(HEART));
         }
         heart.claim(god, "Karak Test");
+        // among the level's loaded holds now: a Shrine just set down joins them on its first tick (SettlementBlockEntity#onLoad comes a
+        // tick late), and the engine's keep-out of a hold's halls looks there (the laptop's first run: the hall test, all on tick 0)
+        claude.settlementcore.settlement.SettlementSpawns.add(h.getLevel(), heart);
         return heart;
     }
 
@@ -250,6 +253,29 @@ public class AncestorEngineGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * The vent in the thick of it (the review of 3fe3e69): the attack key held on a husk in the axe's reach, a chop under way, the boiler
+     * hot, and the vent key pressed mid-swing. The press is kept, and the vent begins when the chop ends. Before: the press was wiped the
+     * tick it came, so with the axe swinging the vent never fired.
+     */
+    @GameTest(template = "arena", timeoutTicks = 100, batch = "khazukhostile")
+    public static void theVentPressedMidSwingIsAnsweredWhenTheBlowEnds(GameTestHelper h) {
+        var god = h.makeMockServerPlayerInLevel();
+        AncestorEngine e = engine(h, god);
+        foe(h, AT.offset(0, 0, 2));
+        h.startSequence()
+                .thenIdle(AncestorEngine.RISE_TICKS + 2)         // it heaves up first
+                .thenExecute(() -> AncestorEngine.keysFrom(god, keys(true, false, false)))
+                .thenExecuteAfter(3, () -> {
+                    h.assertTrue("CHOP".equals(String.valueOf(e.blow())), "the attack key held on a husk in reach began " + e.blow() + ", not a chop");
+                    e.setHeat(80f);
+                    AncestorEngine.keysFrom(god, keys(true, false, true));
+                })
+                .thenWaitUntil(() -> h.assertTrue("VENT".equals(String.valueOf(e.blow())), "the vent pressed mid-chop has not begun: the engine is at "
+                        + e.blow() + ", its boiler at " + e.heat()))
+                .thenSucceed();
+    }
+
     @GameTest(template = "arena", timeoutTicks = 140, batch = "khazuk")
     public static void theAxeDigsStoneAndNotBedrockAChestOrAHoldsHall(GameTestHelper h) {
         ServerLevel level = h.getLevel();
@@ -327,6 +353,7 @@ public class AncestorEngineGameTests {
                     h.assertTrue(god.getHealth() == god.getMaxHealth() && god.isAlive(), "the burst hurt its god: " + god.getHealth());
                     h.assertTrue(AncestorEngine.landsUnhurt(god), "thrown clear, its god would be hurt by the fall");
                     h.assertTrue(god.getY() > e.getY() + 0.5, "its god left the wreck at its feet, not from his seat");
+                    h.assertTrue(god.getDeltaMovement().y > 0.3, "its god was set down, not thrown: his speed upward is " + god.getDeltaMovement().y);
                     h.assertTrue(FOE_HEALTH - near.getHealth() >= AncestorEngine.BURST * 0.8f && near.isOnFire(), "the burst took "
                             + (FOE_HEALTH - near.getHealth()) + " off a husk 3 blocks off" + (near.isOnFire() ? "" : " and didn't set it burning"));
                 })

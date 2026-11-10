@@ -54,9 +54,9 @@ public class HoldLedger extends Item {
         if (hold == null) {
             // only a loaded hold answers (ShrineBlockEntity#ownedAt): a god far from his hold, or in another realm, has one all the same
             // (the review of e2b33f6: "you have no hold" was said to him too)
-            boolean has = claude.khazuk.god.Waking.god(sp).holds() > 0;
-            sp.sendSystemMessage(Component.literal(has ? "The Hold Ledger's pages are blank here: your hold is too far off to answer. Open it in the hold's land."
-                    : "The Hold Ledger's pages are blank: you have no hold to keep its stores.").withStyle(ChatFormatting.GRAY));
+            // (one line for both: the god's count of holds only ever goes up, so it can't tell a far hold from a lost one)
+            sp.sendSystemMessage(Component.literal("The Hold Ledger's pages are blank here: no hold of yours is near enough to answer.")
+                    .withStyle(ChatFormatting.GRAY));
             return InteractionResult.SUCCESS;
         }
         LedgerMenu.open(sp, hold, p -> p.getMainHandItem().getItem() instanceof HoldLedger || p.getOffhandItem().getItem() instanceof HoldLedger);
@@ -96,7 +96,7 @@ public class HoldLedger extends Item {
             BlockPos at = e.getPos().immutable();
             ShrineBlockEntity hold = storeroomOf(level, p, at);
             if (hold == null || p.isSecondaryUseActive()) {
-                return;                                          // sneaking, it is a lectern: a book set on it or taken off (the review of e2b33f6)
+                return;                                          // sneaking, it is a plain lectern again (the review of e2b33f6)
             }
             e.setCanceled(true);
             e.setCancellationResult(InteractionResult.SUCCESS);
