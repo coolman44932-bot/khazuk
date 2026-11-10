@@ -53,6 +53,7 @@ def main():
     plan_item()
     throne_item()
     book_item()
+    ledger_item()
     runesmith_egg()
     anvil_items()
     god_items()
@@ -179,6 +180,46 @@ def book_item():
     with open(lang, encoding="utf-8") as f:
         d = json.load(f)
     d["item.khazuk.dammaz_kron"] = "Dammaz Kron, the Book of Grudges"
+    out("assets/khazuk/lang/en_us.json", d)
+
+
+def ledger_item():
+    """The Hold Ledger: a thick tally book bound in slate-blue leather, gold corners and clasp, ruled lines of gold on its cover. Its item
+    files, recipe (a book or a rune stone, a gold ingot, redstone: all from under the rock) and name."""
+    import json
+    r = random.Random(29)
+    im = Image.new("RGBA", (16, 16))
+    BLUE, BLUE_D, PAGE = (58, 74, 98), (36, 46, 64), (232, 220, 190)
+    def px(x, y, c):
+        f = 0.92 + 0.16 * r.random()
+        im.putpixel((x, y), tuple(min(255, int(v * f)) for v in c) + (255,))
+    for y in range(2, 14):
+        for x in range(3, 13):
+            px(x, y, BLUE_D if x in (3, 12) or y in (2, 13) else BLUE)
+    for y in range(3, 13):                                      # the pages' edge on the right
+        px(13, y, PAGE)
+    px(14, 4, PAGE)
+    px(14, 11, PAGE)
+    for x, y in ((3, 2), (4, 2), (3, 3), (11, 2), (12, 2), (12, 3), (3, 12), (3, 13), (4, 13), (12, 12), (11, 13), (12, 13)):
+        px(x, y, GOLD)                                           # gold corners
+    for y in range(6, 10):                                      # the clasp
+        px(13, y, GOLD_D)
+        px(14, y, GOLD)
+    for y in (5, 7, 9):                                         # the tally's ruled lines, a coin at the foot
+        for x in range(5, 11):
+            px(x, y, GOLD_L if x < 9 or y != 9 else BLUE)
+    for x, y in ((7, 11), (8, 11)):
+        px(x, y, GOLD_L)
+    im.save(os.path.join(RES, "assets", "khazuk", "textures", "item", "hold_ledger.png"))
+    out("assets/khazuk/items/hold_ledger.json", {"model": {"type": "minecraft:model", "model": "khazuk:item/hold_ledger"}})
+    out("assets/khazuk/models/item/hold_ledger.json", {"parent": "minecraft:item/generated", "textures": {"layer0": "khazuk:item/hold_ledger"}})
+    out("data/khazuk/recipe/hold_ledger.json", {"type": "minecraft:crafting_shapeless", "category": "misc",
+                                               "ingredients": [ANY_BOOK, "minecraft:gold_ingot", "minecraft:redstone"],
+                                               "result": {"id": "khazuk:hold_ledger", "count": 1}})
+    lang = os.path.join(RES, "assets", "khazuk", "lang", "en_us.json")
+    with open(lang, encoding="utf-8") as f:
+        d = json.load(f)
+    d["item.khazuk.hold_ledger"] = "Hold Ledger"
     out("assets/khazuk/lang/en_us.json", d)
 
 

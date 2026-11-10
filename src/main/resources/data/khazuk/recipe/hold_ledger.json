@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    [
+      "minecraft:book",
+      "minecraft:chiseled_deepslate"
+    ],
+    "minecraft:gold_ingot",
+    "minecraft:redstone"
+  ],
+  "result": {
+    "id": "khazuk:hold_ledger",
+    "count": 1
+  }
+}
