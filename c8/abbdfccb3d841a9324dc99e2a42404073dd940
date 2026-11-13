@@ -1,0 +1,1 @@
+REVIEW PASS WITH NOTES b337ddf,c8abbdf,6b53433,e69197d,36f1c91,e3fcd4b,57f8e3c,58be724: no blocking finding. The recipe is a pure addition (a buff). stillRising matches Founding's Hall state. Every sprint is stopped by an @AfterBatch. The merge must re-pin the engine to 74d01b9 or later first. c8abbdfccb3d841a9324dc99e2a42404073dd940
