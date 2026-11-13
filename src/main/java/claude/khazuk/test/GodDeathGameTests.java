@@ -1,5 +1,6 @@
 package claude.khazuk.test;
 
+import claude.settlementcore.test.TestPos;
 import claude.khazuk.KRegistry;
 import claude.khazuk.Khazuk;
 import claude.khazuk.ShrineBlockEntity;
@@ -74,7 +75,7 @@ public class GodDeathGameTests {
                 })
                 .thenExecute(() -> {
                     w[0] = h.getLevel().getEntitiesOfClass(Warrior.class, round).get(0);
-                    god.moveTo(BlockPos.containing(h.relativeVec(w[0].position())).offset(-1, 0, 0));
+                    god.moveTo(BlockPos.containing(TestPos.relative(h, w[0].position())).offset(-1, 0, 0));
                     god.useOnEntity(w[0]);                       // his order: work, then follow
                     h.assertTrue(w[0].getMode() == SettlerMob.Mode.FOLLOW, "his order left the Warrior at " + w[0].getMode() + ": told "
                             + SurvivalPlay.last(god, 2));
@@ -111,7 +112,7 @@ public class GodDeathGameTests {
                     h.assertTrue(hold.devotion().devotion() < devotion[0] && AncestorPowers.warded(w[0]), "the Ward's token, called after his death,"
                             + " did nothing: devotion " + devotion[0] + " -> " + hold.devotion().devotion() + ", the Warrior warded " + AncestorPowers.warded(w[0])
                             + ", told " + SurvivalPlay.last(god, 2));
-                    god.moveTo(BlockPos.containing(h.relativeVec(w[0].position())).offset(-1, 0, 0));
+                    god.moveTo(BlockPos.containing(TestPos.relative(h, w[0].position())).offset(-1, 0, 0));
                     god.useOnEntity(w[0]);                       // follow, then hold
                     h.assertTrue(w[0].getMode() == SettlerMob.Mode.GUARD, "the Warrior didn't take the respawned god's order: " + w[0].getMode());
                 })

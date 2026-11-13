@@ -1,5 +1,6 @@
 package claude.khazuk.test;
 
+import claude.settlementcore.test.TestPos;
 import claude.khazuk.Ironbreaker;
 import claude.khazuk.KRegistry;
 import claude.khazuk.Khazuk;
@@ -92,7 +93,7 @@ public class SurvivalHoldGameTests {
         // god looks that way as he uses the plan. The first laptop runs had the gate's dais at (32,5,44) in one run and (-32,5,-44) in the other.
         Direction east = h.getAbsoluteDirection(Direction.EAST);
         PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(DOOR_GROUND), east);
-        BlockPos heart = h.relativePos(Founding.heartSpot(pl));
+        BlockPos heart = TestPos.relative(h, Founding.heartSpot(pl));
         BoundingBox bounds = SurvivalPlay.bounds(h);
 
         Run r = new Run();
@@ -334,7 +335,7 @@ public class SurvivalHoldGameTests {
 
     /** The god walks to the arch, takes the plan in hand and uses it on the seal (its face toward him): the Miners' dig, paid. */
     static void order(GameTestHelper h, SurvivalGod god, ShrineBlockEntity hold, PlanPlacement p, Item plan, BlockPos heart) {
-        BlockPos seal = h.relativePos(p.door().above());
+        BlockPos seal = TestPos.relative(h, p.door().above());
         god.moveTo(SurvivalPlay.standNear(h, seal, 4.0, heart));
         god.hold(plan).useOn(seal, p.facing().getOpposite());
         h.assertTrue(hold.works().digs().stream().anyMatch(d -> d.job().door.equals(p.door())), "the " + p.room().displayName()

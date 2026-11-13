@@ -1,5 +1,6 @@
 package claude.khazuk.test;
 
+import claude.settlementcore.test.TestPos;
 import claude.khazuk.KRegistry;
 import claude.khazuk.Khazuk;
 import claude.khazuk.ShrineBlockEntity;
@@ -102,7 +103,7 @@ final class SurvivalPlay {
         if (best == null) {
             throw h.assertionException("nowhere for the god to stand within " + maxEye + " of " + target + " (" + level.getBlockState(t) + ")");
         }
-        return h.relativePos(best);
+        return TestPos.relative(h, best);
     }
 
     /** The god hands the Shrine at {@code shrine} every {@code item} he carries, a stack a click (its block's own use). How many. */

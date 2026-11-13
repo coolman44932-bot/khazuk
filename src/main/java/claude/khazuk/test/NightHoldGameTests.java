@@ -1,5 +1,6 @@
 package claude.khazuk.test;
 
+import claude.settlementcore.test.TestPos;
 import claude.khazuk.Dawi;
 import claude.khazuk.KRegistry;
 import claude.khazuk.Khazuk;
@@ -70,7 +71,7 @@ public class NightHoldGameTests {
         // spawns within 24 of it: the first run had the held hollow 4 blocks from it. So the hollows go in the far corner from the spawn: the
         // layout below is for a spawn at the plot's (0, 0) corner and is mirrored when the spawn is nearer another (the plot is 72 wide).
         Vec3 spawnAt = Vec3.atCenterOf(level.getRespawnData().pos());
-        Vec3 spawnRel = h.relativeVec(spawnAt);
+        Vec3 spawnRel = TestPos.relative(h, spawnAt);
         boolean flipX = spawnRel.x > 36, flipZ = spawnRel.z > 36;
         SurvivalPlay.fill(h, new BlockPos(0, 3, 0), new BlockPos(71, 14, 71), Blocks.STONE.defaultBlockState());
         BlockPos[] heldCorners = mirrored(flipX, flipZ, 56, 4, 4, 64, 6, 12);
@@ -90,9 +91,9 @@ public class NightHoldGameTests {
         Vec3 godAt = god.player().position();
         for (AABB box : List.of(held, outside)) {
             double toSpawn = Math.sqrt(box.distanceToSqr(spawnAt)), toGod = Math.sqrt(box.distanceToSqr(godAt));
-            h.assertTrue(toSpawn > 24.5 && toGod > 25, "a hollow (" + h.relativeVec(box.getCenter()) + ") is within 24 of the world spawn or the god: nothing would spawn there"
+            h.assertTrue(toSpawn > 24.5 && toGod > 25, "a hollow (" + TestPos.relative(h, box.getCenter()) + ") is within 24 of the world spawn or the god: nothing would spawn there"
                     + " whatever the hold: " + toSpawn + " from the spawn at " + spawnRel + " (absolute " + spawnAt + "), " + toGod + " from the god at "
-                    + h.relativeVec(godAt) + " (absolute " + godAt + ")");
+                    + TestPos.relative(h, godAt) + " (absolute " + godAt + ")");
         }
         boolean[] seen = {false};
         h.onEachTick(() -> {
@@ -101,7 +102,7 @@ public class NightHoldGameTests {
             }
             for (Mob m : level.getEntitiesOfClass(Mob.class, god.player().getBoundingBox().inflate(160), m -> m instanceof Enemy && m.isAlive())) {
                 if (m.getBoundingBox().intersects(held)) {
-                    h.fail("a " + m.getType().toShortString() + " spawned in the hall the hold holds, at " + h.relativeVec(m.position()));
+                    h.fail("a " + m.getType().toShortString() + " spawned in the hall the hold holds, at " + TestPos.relative(h, m.position()));
                 } else if (m.getBoundingBox().intersects(outside)) {
                     seen[0] = true;
                 } else {
@@ -217,7 +218,7 @@ public class NightHoldGameTests {
                     z[0] = nightZombie(h, HEART.offset(9, 0, 0));
                 })
                 .thenWaitUntil(() -> {
-                    h.assertTrue(z[0].isDeadOrDying(), "the zombie still stands at " + z[0].getHealth() + " at " + h.relativeVec(z[0].position())
+                    h.assertTrue(z[0].isDeadOrDying(), "the zombie still stands at " + z[0].getHealth() + " at " + TestPos.relative(h, z[0].position())
                             + "; alarm " + heart.muster().alarmed() + ", defenders " + heart.muster().defenderIds().size());
                     h.assertTrue(zombiesNear(h, z[0]).isEmpty(), "Hard's reinforcements are still up by the hold");
                 })

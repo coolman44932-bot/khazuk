@@ -1,5 +1,6 @@
 package claude.khazuk.test;
 
+import claude.settlementcore.test.TestPos;
 import claude.khazuk.KRegistry;
 import claude.khazuk.Khazuk;
 import claude.khazuk.Miner;
@@ -116,7 +117,7 @@ public class WalkAwayGameTests {
                         cells++;
                         if (is != want.getBlock() && !(want.isAir() && level.getBlockState(p).getCollisionShape(level, p).isEmpty())) {
                             if (lost.size() < 12) {
-                                lost.add(h.relativePos(p).toShortString() + " is " + is + ", not " + want.getBlock());
+                                lost.add(TestPos.relative(h, p).toShortString() + " is " + is + ", not " + want.getBlock());
                             } else if (lost.size() == 12) {
                                 lost.add("...");
                             }
@@ -129,7 +130,7 @@ public class WalkAwayGameTests {
                     int nowPeople = now.peopleCount() + now.reserve();
                     h.assertTrue(nowPeople >= people[0], "the hold had " + people[0] + " Dawi as he left, " + nowPeople + " after");
                     for (Miner m : level.getEntitiesOfClass(Miner.class, new AABB(h.absolutePos(SHRINE)).inflate(40))) {
-                        h.assertTrue(!m.isInWall(), "a Miner is stuck in the stone at " + h.relativeVec(m.position()) + ": " + m.runningGoals());
+                        h.assertTrue(!m.isInWall(), "a Miner is stuck in the stone at " + TestPos.relative(h, m.position()) + ": " + m.runningGoals());
                     }
                     SurvivalPlay.line(h, TAG, now, "the Barracks dug out " + (h.getTick() - t[0]) + " ticks after he came back; " + cells + " cells as the template has them");
                     level.getServer().tickRateManager().stopSprinting();
