@@ -1,0 +1,1 @@
+REVIEW PASS 353e8cc: test-only template and a visibility change; the spawner stays live in the test world but the template is unreachable from worldgen or loot. 353e8ccaad6e69b4e844d2e592cadf03179589d0
