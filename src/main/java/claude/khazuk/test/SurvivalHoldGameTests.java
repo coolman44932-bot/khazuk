@@ -88,13 +88,16 @@ public class SurvivalHoldGameTests {
         SurvivalGod god = SurvivalGod.join(h, START);
         god.give(Items.IRON_PICKAXE, 1).give(Items.GOLD_INGOT, 2).give(Items.COOKED_BEEF, 16);
         Rooms.Room gate = HoldRooms.room("dawi_hold_gate");
-        PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(DOOR_GROUND), Direction.EAST);
+        // A test's own directions are test-relative: when the runner turns a test (its rotation), east in the plot is another way in the world, and the
+        // god looks that way as he uses the plan. The first laptop runs had the gate's dais at (32,5,44) in one run and (-32,5,-44) in the other.
+        Direction east = h.getAbsoluteDirection(Direction.EAST);
+        PlanPlacement pl = AncestorPlan.placement(gate, h.absolutePos(DOOR_GROUND), east);
         BlockPos heart = h.relativePos(Founding.heartSpot(pl));
         BoundingBox bounds = SurvivalPlay.bounds(h);
 
         Run r = new Run();
         // the strike: a gold ingot on the deep rock, a right-click
-        god.hold(Items.GOLD_INGOT).useOn(STRIKE, Direction.NORTH);
+        god.hold(Items.GOLD_INGOT).useOn(STRIKE, h.getAbsoluteDirection(Direction.NORTH));
         h.assertTrue(Waking.waking(god.player().getUUID()) && god.wasTold("The deep rock answers"), "striking the deep rock woke nothing: told "
                 + SurvivalPlay.last(god, 3));
         r.mark(h, "strike", null, "the god strikes his gold on the deep rock");
@@ -140,6 +143,8 @@ public class SurvivalHoldGameTests {
             // ---- the founding: the Hold Gate's plan on the rock before him, and Grungni carves it
             if (!r.at.containsKey("founding")) {
                 god.hold(KRegistry.PLAN_HOLD_GATE.get()).useOn(DOOR_GROUND, Direction.UP);
+                h.assertTrue(god.player().getDirection() == east, "the god faces " + god.player().getDirection() + " as he uses the Hold Gate's plan, not " + east
+                        + " (the test's east, rotation " + h.getTestRotation() + "): the gate runs where he looks, so the dais isn't where the test reads it");
                 h.assertTrue(god.wasTold("Grungni carves") && Founding.of(level).rising(pl.door()), "the Hold Gate's plan carved nothing: told "
                         + SurvivalPlay.last(god, 3));
                 r.mark(h, "founding", null, "the Hold Gate's plan used on the rock: Grungni carves the gate");
@@ -362,7 +367,7 @@ public class SurvivalHoldGameTests {
         h.assertTrue(Waking.deepRock(h.getBlockState(rock), h.absolutePos(rock)), "the digsite's rock isn't deep rock at y " + h.absolutePos(rock).getY());
         SurvivalGod god = SurvivalGod.join(h, new BlockPos(7, 2, 4));
         god.give(Items.GOLD_INGOT, 1);
-        god.hold(Items.GOLD_INGOT).useOn(rock, Direction.WEST);
+        god.hold(Items.GOLD_INGOT).useOn(rock, h.getAbsoluteDirection(Direction.WEST));
         h.assertTrue(Waking.waking(god.player().getUUID()), "the strike began no waking: told " + god.chat());
         h.assertTrue(god.count(Items.GOLD_INGOT) == 1, "the struck ingot went at the strike, not at the waking");
         h.startSequence()

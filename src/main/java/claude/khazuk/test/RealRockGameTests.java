@@ -113,8 +113,8 @@ public class RealRockGameTests {
         god.moveTo(c);
         SurvivalPlay.line(h, TAG, hold, (besideCave ? "shallow" : "deep") + ": " + gold + " gold handed, the Mine and the Barracks ordered (" + paid + " gold)");
 
-        PlanPlacement mineAbs = PlanPlacement.compute(site.mine().room(), h.absolutePos(site.mine().door()), site.mine().facing());
-        PlanPlacement barAbs = PlanPlacement.compute(site.barracks().room(), h.absolutePos(site.barracks().door()), site.barracks().facing());
+        PlanPlacement mineAbs = PlanPlacement.compute(site.mine().room(), h.absolutePos(site.mine().door()), h.getAbsoluteDirection(site.mine().facing()));
+        PlanPlacement barAbs = PlanPlacement.compute(site.barracks().room(), h.absolutePos(site.barracks().door()), h.getAbsoluteDirection(site.barracks().facing()));
         BoundingBox chamber = BoundingBox.fromCorners(h.absolutePos(c.offset(-2, 0, -2)), h.absolutePos(c.offset(2, 2, 2)));
         Map<String, Long> at = new LinkedHashMap<>();
         long ordered = h.getTick();
@@ -178,7 +178,7 @@ public class RealRockGameTests {
     /** The god stands at {@code stand} before the chamber's wall and uses the plan on the wall at his feet: the hall runs on from there. */
     private static void dig(GameTestHelper h, SurvivalGod god, ShrineBlockEntity hold, PlanPlacement p, Item plan, BlockPos stand) {
         god.moveTo(stand);
-        god.hold(plan).useOn(p.door(), p.facing().getOpposite());
+        god.hold(plan).useOn(p.door(), h.getAbsoluteDirection(p.facing().getOpposite()));
         BlockPos door = h.absolutePos(p.door());
         h.assertTrue(hold.works().digs().stream().anyMatch(d -> d.job().door.equals(door)), "the " + p.room().displayName() + "'s plan on the wall at "
                 + p.door() + " began no dig: told " + SurvivalPlay.last(god, 3));

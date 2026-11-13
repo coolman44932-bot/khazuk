@@ -57,22 +57,42 @@ public class NightHoldGameTests {
 
     // ------------------------------------------------------------------ khazuknight
 
+    /** The two corners (test-relative, inclusive) of a box laid out for a spawn at the plot's (0, 0) corner, mirrored across the 72-wide plot as asked. */
+    private static BlockPos[] mirrored(boolean flipX, boolean flipZ, int x0, int y0, int z0, int x1, int y1, int z1) {
+        int ax = flipX ? 71 - x0 : x0, bx = flipX ? 71 - x1 : x1, az = flipZ ? 71 - z0 : z0, bz = flipZ ? 71 - z1 : z1;
+        return new BlockPos[]{new BlockPos(Math.min(ax, bx), y0, Math.min(az, bz)), new BlockPos(Math.max(ax, bx), y1, Math.max(az, bz))};
+    }
+
     @GameTest(template = "field", timeoutTicks = 6000, batch = "khazuknight")
     public static void aHeldHallGetsNoMonsterWhereTheRockOutsideTheHoldDoes(GameTestHelper h) {
         ServerLevel level = h.getLevel();
+        // The world's spawn is the first plot's corner (SurvivalHarnessGameTests#aDarkHollowSpawnsAMonsterAndALitOneDoesNot), and no monster
+        // spawns within 24 of it: the first run had the held hollow 4 blocks from it. So the hollows go in the far corner from the spawn: the
+        // layout below is for a spawn at the plot's (0, 0) corner and is mirrored when the spawn is nearer another (the plot is 72 wide).
+        Vec3 spawnAt = Vec3.atCenterOf(level.getRespawnData().pos());
+        Vec3 spawnRel = h.relativeVec(spawnAt);
+        boolean flipX = spawnRel.x > 36, flipZ = spawnRel.z > 36;
         SurvivalPlay.fill(h, new BlockPos(0, 3, 0), new BlockPos(71, 14, 71), Blocks.STONE.defaultBlockState());
-        SurvivalPlay.fill(h, new BlockPos(4, 4, 4), new BlockPos(12, 6, 12), Blocks.AIR.defaultBlockState());       // held
-        SurvivalPlay.fill(h, new BlockPos(58, 4, 58), new BlockPos(66, 6, 66), Blocks.AIR.defaultBlockState());     // outside the hold
-        AABB held = h.absoluteAABB(new AABB(4, 4, 4, 13, 7, 13));
-        AABB outside = h.absoluteAABB(new AABB(58, 4, 58, 67, 7, 67));
+        BlockPos[] heldCorners = mirrored(flipX, flipZ, 56, 4, 4, 64, 6, 12);
+        BlockPos[] outsideCorners = mirrored(flipX, flipZ, 4, 4, 58, 12, 6, 66);
+        SurvivalPlay.fill(h, heldCorners[0], heldCorners[1], Blocks.AIR.defaultBlockState());
+        SurvivalPlay.fill(h, outsideCorners[0], outsideCorners[1], Blocks.AIR.defaultBlockState());
+        AABB held = h.absoluteAABB(new AABB(heldCorners[0].getX(), heldCorners[0].getY(), heldCorners[0].getZ(),
+                heldCorners[1].getX() + 1, heldCorners[1].getY() + 1, heldCorners[1].getZ() + 1));
+        AABB outside = h.absoluteAABB(new AABB(outsideCorners[0].getX(), outsideCorners[0].getY(), outsideCorners[0].getZ(),
+                outsideCorners[1].getX() + 1, outsideCorners[1].getY() + 1, outsideCorners[1].getZ() + 1));
         SurvivalGod god = SurvivalGod.join(h, new BlockPos(36, 15, 36));
-        ShrineBlockEntity hold = SurvivalPlay.shrineFor(h, god, new BlockPos(8, 4, 8), false);
+        BlockPos shrineAt = mirrored(flipX, flipZ, 60, 4, 8, 60, 4, 8)[0];
+        ShrineBlockEntity hold = SurvivalPlay.shrineFor(h, god, shrineAt, false);
         h.assertTrue(hold.inSettlement(BlockPos.containing(held.getCenter())) && !hold.inSettlement(BlockPos.containing(outside.getCenter())),
-                "the held hollow must be in the hold and the other out of it");
-        Vec3 spawn = Vec3.atCenterOf(level.getRespawnData().pos());
+                "the held hollow must be in the hold and the other out of it: shrine at " + shrineAt + ", held " + heldCorners[0] + ".." + heldCorners[1]
+                        + ", outside " + outsideCorners[0] + ".." + outsideCorners[1]);
+        Vec3 godAt = god.player().position();
         for (AABB box : List.of(held, outside)) {
-            h.assertTrue(box.distanceToSqr(spawn) > 24.5 * 24.5 && box.distanceToSqr(god.player().position()) > 25 * 25,
-                    "a hollow is within 24 of the world spawn or the god: nothing would spawn there whatever the hold");
+            double toSpawn = Math.sqrt(box.distanceToSqr(spawnAt)), toGod = Math.sqrt(box.distanceToSqr(godAt));
+            h.assertTrue(toSpawn > 24.5 && toGod > 25, "a hollow (" + h.relativeVec(box.getCenter()) + ") is within 24 of the world spawn or the god: nothing would spawn there"
+                    + " whatever the hold: " + toSpawn + " from the spawn at " + spawnRel + " (absolute " + spawnAt + "), " + toGod + " from the god at "
+                    + h.relativeVec(godAt) + " (absolute " + godAt + ")");
         }
         boolean[] seen = {false};
         h.onEachTick(() -> {
@@ -177,6 +197,11 @@ public class NightHoldGameTests {
     @GameTest(template = "arena", timeoutTicks = 1600, batch = "khazuknightfight")
     public static void aZombieThatWalksInOnTheHoldIsFoughtOffByItsGuards(GameTestHelper h) {
         ShrineBlockEntity heart = hold(h);
+        // the muster watches only a hold with an owner (Muster#second: "h.owner() == null" stands any alarm down and runs none); the hold the
+        // first run set down had none, so its Dawi fought the zombie on their own and the alarm never went up (HallGameTests does the same)
+        @SuppressWarnings("removal")
+        var owner = h.makeMockServerPlayerInLevel();
+        heart.claim(owner, "Karak Test");
         heart.roundForTests(h.getLevel());
         heart.addToReserve(0, 2);
         AABB round = new AABB(h.absolutePos(HEART)).inflate(8);

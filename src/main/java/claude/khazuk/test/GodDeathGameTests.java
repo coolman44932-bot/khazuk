@@ -56,15 +56,22 @@ public class GodDeathGameTests {
         god.give(Items.BREAD, 32);
         SurvivalPlay.handAll(h, god, HEART, Items.BREAD);
         hold.roundForTests(h.getLevel());
-        hold.devotion().add(100);                                 // a hold that has prayed a while
-        god.give(KRegistry.VALAYAS_WARD.get(), 1);               // the power its prayers earned him
+        // a hold that has prayed a while: the Ancestors' gifts (Devotion#gifts, the hold's next second) put each power's token in his pack ONCE,
+        // Grungni's Hammer, Valaya's Ward and Grimnir's Fury, so the test gives him none of its own (a second Ward would be a duplicate no
+        // real game makes; the first run of this test did, and had two Wards fall where he died)
+        hold.devotion().add(100);
         AABB round = new AABB(h.absolutePos(HEART)).inflate(8);
         Warrior[] w = {null};
         ServerPlayer[] before = {null};
         SurvivalGod.Job[] pick = {null};
         int[] devotion = {0};
         h.startSequence()
-                .thenWaitUntil(() -> h.assertTrue(!h.getLevel().getEntitiesOfClass(Warrior.class, round).isEmpty(), "the round's Warrior isn't up"))
+                .thenWaitUntil(() -> {
+                    h.assertTrue(!h.getLevel().getEntitiesOfClass(Warrior.class, round).isEmpty(), "the round's Warrior isn't up");
+                    h.assertTrue(god.count(KRegistry.VALAYAS_WARD.get()) == 1 && god.count(KRegistry.GRUNGNIS_HAMMER.get()) == 1
+                            && god.count(KRegistry.GRIMNIRS_FURY.get()) == 1, "the Ancestors' gifts haven't reached his pack: " + god.contents()
+                            + ", gifted " + hold.devotion().gifted(AncestorPowers.Power.WARD) + ", told " + SurvivalPlay.last(god, 3));
+                })
                 .thenExecute(() -> {
                     w[0] = h.getLevel().getEntitiesOfClass(Warrior.class, round).get(0);
                     god.moveTo(BlockPos.containing(h.relativeVec(w[0].position())).offset(-1, 0, 0));
@@ -91,7 +98,8 @@ public class GodDeathGameTests {
                 })
                 .thenWaitUntil(() -> pick[0].assertDone())
                 .thenExecute(() -> {
-                    h.assertTrue(god.count(KRegistry.VALAYAS_WARD.get()) == 1, "Valaya's Ward wasn't picked up again: " + god.contents());
+                    h.assertTrue(god.count(KRegistry.VALAYAS_WARD.get()) == 1 && god.count(KRegistry.GRUNGNIS_HAMMER.get()) == 1
+                            && god.count(KRegistry.GRIMNIRS_FURY.get()) == 1, "his three tokens weren't picked up again, one each: " + god.contents());
                     god.moveTo(LATER);
                 })
                 .thenWaitUntil(() -> h.assertTrue(w[0].distanceTo(god.player()) < 3.5, "the Warrior doesn't follow the respawned god: "

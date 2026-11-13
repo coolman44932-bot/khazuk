@@ -142,6 +142,11 @@ final class SurvivalPlay {
             throw h.assertionException("no Shrine's block entity at " + at);
         }
         h.assertTrue(p.getUUID().equals(hold.owner()), "the Shrine isn't the god's: owner " + hold.owner());
+        // A block entity set down is registered with the loaded settlements (SettlementSpawns, which ownedAt searches) by its onLoad a tick
+        // later, or by its first second. A player can't use a plan the same tick he places a Shrine (a client's clicks are several ticks
+        // apart), so this puts the tests where he already is, with the hold registered, rather than waiting a tick in every caller.
+        claude.settlementcore.settlement.SettlementSpawns.add(h.getLevel(), hold);
+        h.assertTrue(ShrineBlockEntity.ownedAt(p, h.absolutePos(at)) == hold, "the god's hold isn't found among the loaded ones");
         return hold;
     }
 

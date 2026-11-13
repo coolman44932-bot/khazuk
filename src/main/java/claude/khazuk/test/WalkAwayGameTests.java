@@ -63,12 +63,12 @@ public class WalkAwayGameTests {
         SurvivalPlay.handAll(h, god, SHRINE, Items.GOLD_INGOT);
         int gold = hold.currency();
         god.moveTo(STAND);
-        god.hold(KRegistry.PLAN_BARRACKS.get()).useOn(DOOR, Direction.WEST);
+        god.hold(KRegistry.PLAN_BARRACKS.get()).useOn(DOOR, h.getAbsoluteDirection(Direction.WEST));
         BlockPos door = h.absolutePos(DOOR);
         DigWork dig = hold.works().digs().stream().filter(d -> d.job().door.equals(door)).findFirst().orElse(null);
         h.assertTrue(dig != null && gold - hold.currency() == HoldRooms.room("dawi_barracks").cost(), "the Barracks' plan began no paid dig: told "
                 + SurvivalPlay.last(god, 3));
-        PlanPlacement pl = PlanPlacement.compute(HoldRooms.room("dawi_barracks"), door, Direction.EAST);
+        PlanPlacement pl = PlanPlacement.compute(HoldRooms.room("dawi_barracks"), door, h.getAbsoluteDirection(Direction.EAST));
         SurvivalPlay.line(h, TAG, hold, "the Barracks ordered (" + dig.job().taskCount() + " cells)");
         god.moveTo(SHRINE.offset(0, 0, 2));
 
