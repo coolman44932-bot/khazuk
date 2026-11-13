@@ -108,6 +108,12 @@ public class ShrineBlock extends BaseEntityBlock {
             }
         } else if (p != null && !p.isCreative() && ctx.getLevel() instanceof net.minecraft.server.level.ServerLevel sl
                 && !claude.settlementcore.settlement.Founding.of(sl).spot(ctx.getClickedPos(), p.getUUID())) {
+            if (claude.settlementcore.settlement.Founding.of(sl).stillRising(ctx.getClickedPos(), p.getUUID())) {
+                // the right dais, too early: Grungni hasn't cut the last stone (the laptop's playthrough was told to found the hold first)
+                p.sendSystemMessage(Component.literal("Grungni is still carving the Hold Gate. When the last stone is cut, set the Shrine here.")
+                        .withStyle(ChatFormatting.GOLD));
+                return null;
+            }
             p.sendSystemMessage(Component.literal("A Shrine stands only on the dais inside its Hold Gate. Found the hold first: set the Ancestors' "
                     + "Plan of the Hold Gate down where the hold should be, and when Grungni has raised it, walk its passage and set the Shrine on "
                     + "the dais in the hall at its end.").withStyle(ChatFormatting.RED));

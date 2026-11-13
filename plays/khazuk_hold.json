@@ -190,6 +190,12 @@
    "frame": true
   },
   {
+   "do": "wait",
+   "ticks": 1600,
+   "sprint": true,
+   "name": "Grungni cuts the gate's last stones (the seal stands ~1800 ticks after the plan, the carving ends ~3000: a Shrine set before is refused)"
+  },
+  {
    "do": "tp",
    "to": [
     46.5,
