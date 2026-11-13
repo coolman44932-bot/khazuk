@@ -1,0 +1,626 @@
+{
+ "name": "khazuk_hold",
+ "start": {
+  "project": "khazuk",
+  "world": "khazuk_hold",
+  "type": "normal",
+  "seed": 20261101,
+  "god": true
+ },
+ "steps": [
+  {
+   "do": "command",
+   "cmd": "forceload add 0 -16 80 64",
+   "name": "the hold's land loaded (the gate's site must be)"
+  },
+  {
+   "do": "wait",
+   "ticks": 60
+  },
+  {
+   "do": "command",
+   "cmd": "fill 13 -47 29 21 -41 35 minecraft:deepslate",
+   "name": "rock round the god's way in, whatever the cave there"
+  },
+  {
+   "do": "command",
+   "cmd": "fill 16 -45 31 20 -43 33 minecraft:air",
+   "name": "the pocket before the gate's door"
+  },
+  {
+   "do": "command",
+   "cmd": "fill 14 -45 32 14 -44 32 minecraft:air",
+   "name": "where he stands to dig in"
+  },
+  {
+   "do": "tp",
+   "to": [
+    14.5,
+    -45,
+    32.5
+   ]
+  },
+  {
+   "do": "wait",
+   "ticks": 20
+  },
+  {
+   "do": "give",
+   "item": "minecraft:iron_pickaxe"
+  },
+  {
+   "do": "give",
+   "item": "minecraft:gold_ingot",
+   "count": 2
+  },
+  {
+   "do": "select",
+   "item": "minecraft:iron_pickaxe"
+  },
+  {
+   "do": "mine",
+   "at": [
+    15,
+    -45,
+    32
+   ],
+   "name": "he digs in: the first block"
+  },
+  {
+   "do": "mine",
+   "at": [
+    15,
+    -44,
+    32
+   ],
+   "name": "he digs in: the second",
+   "frame": true
+  },
+  {
+   "do": "expect",
+   "all": [
+    {
+     "block": [
+      15,
+      -45,
+      32
+     ],
+     "is": "air"
+    },
+    {
+     "block": [
+      15,
+      -44,
+      32
+     ],
+     "is": "air"
+    }
+   ]
+  },
+  {
+   "do": "walk",
+   "to": [
+    18.5,
+    32.5
+   ],
+   "within": 0.8,
+   "name": "into the pocket"
+  },
+  {
+   "do": "keys",
+   "click": [
+    "key.swapOffhand"
+   ],
+   "ticks": 2,
+   "name": "the pickaxe to his off hand: the hotbar free for the kit"
+  },
+  {
+   "do": "select",
+   "item": "minecraft:gold_ingot"
+  },
+  {
+   "do": "use",
+   "at": [
+    17,
+    -45,
+    34
+   ],
+   "name": "the strike: gold on the deep rock"
+  },
+  {
+   "do": "wait",
+   "ticks": 100,
+   "name": "the rock cracks"
+  },
+  {
+   "do": "route",
+   "route": "screen",
+   "args": {
+    "close": true
+   },
+   "optional": true,
+   "name": "the hold's name kept as the Dawi gave it"
+  },
+  {
+   "do": "expect",
+   "all": [
+    {
+     "inventory": "khazuk:ancestor_shrine",
+     "count": "== 1"
+    },
+    {
+     "inventory": "khazuk:plan_hold_gate",
+     "count": "== 1"
+    },
+    {
+     "inventory": "minecraft:gold_ingot",
+     "count": "== 91"
+    },
+    {
+     "inventory": "minecraft:bread",
+     "count": "== 16"
+    }
+   ],
+   "name": "the kit in his pack"
+  },
+  {
+   "do": "select",
+   "item": "khazuk:plan_hold_gate"
+  },
+  {
+   "do": "use",
+   "at": [
+    20,
+    -46,
+    32
+   ],
+   "name": "the Hold Gate's plan on the rock: Grungni carves it"
+  },
+  {
+   "do": "until",
+   "block": [
+    49,
+    -42,
+    21
+   ],
+   "is": "khazuk:hall_seal",
+   "timeout": 8000,
+   "sprint": true,
+   "name": "the gate carved (its Shrine hall's north seal stands)",
+   "frame": true
+  },
+  {
+   "do": "tp",
+   "to": [
+    46.5,
+    -42,
+    32.5
+   ],
+   "name": "down the passage to the dais"
+  },
+  {
+   "do": "wait",
+   "ticks": 10
+  },
+  {
+   "do": "select",
+   "item": "khazuk:ancestor_shrine"
+  },
+  {
+   "do": "use",
+   "at": [
+    48,
+    -43,
+    32
+   ],
+   "name": "the Shrine set on the dais from his hotbar"
+  },
+  {
+   "do": "expect",
+   "block": [
+    48,
+    -42,
+    32
+   ],
+   "is": "khazuk:ancestor_shrine",
+   "frame": true
+  },
+  {
+   "do": "select",
+   "item": "minecraft:gold_ingot"
+  },
+  {
+   "do": "use",
+   "at": [
+    48,
+    -42,
+    32
+   ],
+   "name": "a stack of gold handed to the Shrine"
+  },
+  {
+   "do": "select",
+   "item": "minecraft:gold_ingot"
+  },
+  {
+   "do": "use",
+   "at": [
+    48,
+    -42,
+    32
+   ],
+   "name": "the rest of the gold"
+  },
+  {
+   "do": "select",
+   "item": "minecraft:bread"
+  },
+  {
+   "do": "use",
+   "at": [
+    48,
+    -42,
+    32
+   ],
+   "name": "the kit's bread"
+  },
+  {
+   "do": "expect",
+   "inventory": "minecraft:gold_ingot",
+   "count": "== 0"
+  },
+  {
+   "do": "expect",
+   "route": "settlementcore/settlement",
+   "args": {
+    "pos": [
+     48,
+     -42,
+     32
+    ]
+   },
+   "path": "rooms",
+   "contains": "dawi_hold_gate",
+   "name": "the hold owns its carved gate"
+  },
+  {
+   "do": "tp",
+   "to": [
+    49.5,
+    -43,
+    24.5
+   ]
+  },
+  {
+   "do": "wait",
+   "ticks": 10
+  },
+  {
+   "do": "select",
+   "item": "khazuk:plan_great_hall"
+  },
+  {
+   "do": "use",
+   "at": [
+    49,
+    -42,
+    21
+   ],
+   "name": "the Great Hall's plan on the north seal"
+  },
+  {
+   "do": "tp",
+   "to": [
+    49.5,
+    -43,
+    40.5
+   ]
+  },
+  {
+   "do": "wait",
+   "ticks": 10
+  },
+  {
+   "do": "select",
+   "item": "khazuk:plan_mine"
+  },
+  {
+   "do": "use",
+   "at": [
+    49,
+    -42,
+    43
+   ],
+   "name": "the Mine's plan on the south seal"
+  },
+  {
+   "do": "until",
+   "all": [
+    {
+     "block": [
+      49,
+      -42,
+      21
+     ],
+     "not": "khazuk:hall_seal"
+    },
+    {
+     "block": [
+      49,
+      -42,
+      43
+     ],
+     "not": "khazuk:hall_seal"
+    }
+   ],
+   "timeout": 2400,
+   "sprint": true,
+   "name": "both seals opened: the Miners are in"
+  },
+  {
+   "do": "tp",
+   "to": [
+    46.5,
+    -42,
+    32.5
+   ]
+  },
+  {
+   "do": "stats",
+   "name": "the digs begun"
+  },
+  {
+   "do": "wait",
+   "ticks": 1200,
+   "sprint": true,
+   "name": "a minute's digging"
+  },
+  {
+   "do": "restart",
+   "name": "save, quit and reload mid-dig",
+   "frame": true
+  },
+  {
+   "do": "expect",
+   "all": [
+    {
+     "block": [
+      48,
+      -42,
+      32
+     ],
+     "is": "khazuk:ancestor_shrine"
+    },
+    {
+     "route": "settlementcore/settlement",
+     "args": {
+      "pos": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "path": "rooms",
+     "contains": "dawi_hold_gate"
+    },
+    {
+     "route": "settlementcore/settlement",
+     "args": {
+      "pos": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "path": "works",
+     "exists": true
+    }
+   ],
+   "name": "the hold and its digs came back"
+  },
+  {
+   "do": "wait",
+   "until": "midnight",
+   "sprint": true,
+   "name": "night falls"
+  },
+  {
+   "do": "expect",
+   "all": [
+    {
+     "entities": {
+      "type": "zombie",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "skeleton",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "creeper",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "spider",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "zombie_villager",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "witch",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "enderman",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "cave_spider",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    },
+    {
+     "entities": {
+      "type": "slime",
+      "radius": 24,
+      "near": [
+       48,
+       -42,
+       32
+      ]
+     },
+     "count": "== 0"
+    }
+   ],
+   "name": "no monster in the hold at midnight"
+  },
+  {
+   "do": "expect",
+   "route": "settlementcore/settlement",
+   "args": {
+    "pos": [
+     48,
+     -42,
+     32
+    ]
+   },
+   "path": "people",
+   "contains": "/",
+   "name": "the hold's people at midnight"
+  },
+  {
+   "do": "stats",
+   "name": "midnight"
+  },
+  {
+   "do": "wait",
+   "until": "dawn",
+   "sprint": true,
+   "name": "he survives the night"
+  },
+  {
+   "do": "expect",
+   "player": "health",
+   "test": "> 0"
+  },
+  {
+   "do": "restart",
+   "process": true,
+   "name": "the game itself restarted mid-dig"
+  },
+  {
+   "do": "expect",
+   "block": [
+    48,
+    -42,
+    32
+   ],
+   "is": "khazuk:ancestor_shrine"
+  },
+  {
+   "do": "until",
+   "route": "settlementcore/settlement",
+   "args": {
+    "pos": [
+     48,
+     -42,
+     32
+    ]
+   },
+   "path": "rooms",
+   "contains": "dawi_grand_hall",
+   "timeout": 48000,
+   "sprint": true,
+   "every": 200,
+   "name": "the Great Hall dug out after both restarts",
+   "frame": true
+  },
+  {
+   "do": "until",
+   "route": "settlementcore/settlement",
+   "args": {
+    "pos": [
+     48,
+     -42,
+     32
+    ]
+   },
+   "path": "rooms",
+   "contains": "dawi_mine",
+   "timeout": 24000,
+   "sprint": true,
+   "every": 200,
+   "name": "the Mine dug out"
+  },
+  {
+   "do": "stats",
+   "max_mspt": 50,
+   "max_entities": 800,
+   "name": "end stats"
+  }
+ ]
+}

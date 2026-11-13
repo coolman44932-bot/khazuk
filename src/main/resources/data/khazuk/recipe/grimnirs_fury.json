@@ -9,7 +9,10 @@
   "key": {
     "B": "minecraft:blaze_powder",
     "G": "minecraft:gold_ingot",
-    "A": "minecraft:iron_axe"
+    "A": [
+      "minecraft:iron_axe",
+      "minecraft:iron_ingot"
+    ]
   },
   "result": {
     "id": "khazuk:grimnirs_fury",
