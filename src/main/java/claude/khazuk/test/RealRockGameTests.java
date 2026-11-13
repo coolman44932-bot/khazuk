@@ -194,7 +194,7 @@ public class RealRockGameTests {
     // ------------------------------------------------------------------ the cut, closed and read
 
     /** The cut's outermost shell: air and fluid there become deepslate, as the rock round it in the world was. */
-    private static void seal(GameTestHelper h, int sx, int sy, int sz) {
+    static void seal(GameTestHelper h, int sx, int sy, int sz) {
         ServerLevel level = h.getLevel();
         BlockState rock = Blocks.DEEPSLATE.defaultBlockState();
         for (BlockPos p : BlockPos.betweenClosed(0, 0, 0, sx - 1, sy - 1, sz - 1)) {
