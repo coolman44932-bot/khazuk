@@ -192,6 +192,15 @@ final class SurvivalPlay {
      * A cave, an aquifer or the god's pocket reached any other way is a hole: a hall leaning on the rock to close it.
      */
     static @Nullable String leak(ServerLevel level, PlanPlacement pl, List<BlockPos> mouths) {
+        return leak(level, pl, mouths, List.of());
+    }
+
+    /**
+     * As above, and {@code joined} are the halls dug through this hall's own sealed arches: its open space may also run out through such an
+     * arch into the joined hall's doorway (the cell at the joined hall's door plane, up to 3 either side of its door, entered heading the way
+     * the joined hall runs). That is the connection the seal exists for, not a leak; any other cell of the joined hall's box is still a hole.
+     */
+    static @Nullable String leak(ServerLevel level, PlanPlacement pl, List<BlockPos> mouths, List<PlanPlacement> joined) {
         BoundingBox box = pl.box();
         Direction f = pl.facing();
         Direction side = f.getClockWise();
@@ -227,6 +236,18 @@ final class SurvivalPlay {
                 int across = (p.getX() - door.getX()) * side.getStepX() + (p.getZ() - door.getZ()) * side.getStepZ();
                 if (along == 0 && Math.abs(across) <= 3 && d == f.getOpposite()) {
                     continue;                                    // its doorway, out into the space it was dug from
+                }
+                boolean viaArch = false;
+                for (PlanPlacement j : joined) {
+                    Direction jf = j.facing();
+                    Direction jside = jf.getClockWise();
+                    BlockPos jd = j.door();
+                    int jAlong = (n.getX() - jd.getX()) * jf.getStepX() + (n.getZ() - jd.getZ()) * jf.getStepZ();
+                    int jAcross = (n.getX() - jd.getX()) * jside.getStepX() + (n.getZ() - jd.getZ()) * jside.getStepZ();
+                    viaArch |= j.box().isInside(n) && jAlong == 0 && Math.abs(jAcross) <= 3 && d == jf;
+                }
+                if (viaArch) {
+                    continue;
                 }
                 boolean mouth = false;
                 for (BlockPos m : mouths) {

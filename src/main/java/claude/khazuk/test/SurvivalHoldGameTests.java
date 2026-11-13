@@ -282,8 +282,11 @@ public class SurvivalHoldGameTests {
             if (two && r.at.containsKey("barracks") && r.at.containsKey("first_marksman") && r.at.containsKey("first_longbeard")
                     && r.at.containsKey("first_ironbreaker") && r.at.containsKey("ore_gold")) {
                 for (PlanPlacement dug : List.of(r.great, r.mine, r.barracks)) {
-                    String leak = SurvivalPlay.leak(level, dug, dug == r.mine ? SurvivalPlay.mouths(dug) : List.of());
-                    h.assertTrue(leak == null, "the " + dug.room().displayName() + " isn't closed by its own walls: " + leak);
+                    String leak = SurvivalPlay.leak(level, dug, dug == r.mine ? SurvivalPlay.mouths(dug) : List.of(),
+                            dug == r.great ? List.of(r.barracks) : List.of());
+                    h.assertTrue(leak == null, "the " + dug.room().displayName() + " isn't closed by its own walls: " + leak + " (its box " + dug.box()
+                            + ", door " + dug.door() + " running " + dug.facing() + "; the Barracks' box " + r.barracks.box() + ", door " + r.barracks.door()
+                            + " running " + r.barracks.facing() + ")");
                 }
                 SurvivalPlay.line(h, TAG, hold, "the run's end: " + r.at);
                 level.getServer().tickRateManager().stopSprinting();
