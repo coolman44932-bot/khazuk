@@ -1,0 +1,1 @@
+REVIEW PASS 74da6739: the pin's sha256 matches the committed jar, it names 74d01b9, the version range accepts 0.5.7, and only the jar and pin changed. 74da67397df76a0b2be2fea7fcfd693a5bbddb82
