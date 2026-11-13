@@ -197,7 +197,7 @@ final class SurvivalPlay {
 
     /**
      * As above, and {@code joined} are the halls dug through this hall's own sealed arches: its open space may also run out through such an
-     * arch into the joined hall's doorway (the cell at the joined hall's door plane, up to 3 either side of its door, entered heading the way
+     * arch into the joined hall's doorway (the joined hall's first cell past its door plane, or the plane itself, up to 3 either side of its door, entered heading the way
      * the joined hall runs). That is the connection the seal exists for, not a leak; any other cell of the joined hall's box is still a hole.
      */
     static @Nullable String leak(ServerLevel level, PlanPlacement pl, List<BlockPos> mouths, List<PlanPlacement> joined) {
@@ -244,7 +244,9 @@ final class SurvivalPlay {
                     BlockPos jd = j.door();
                     int jAlong = (n.getX() - jd.getX()) * jf.getStepX() + (n.getZ() - jd.getZ()) * jf.getStepZ();
                     int jAcross = (n.getX() - jd.getX()) * jside.getStepX() + (n.getZ() - jd.getZ()) * jside.getStepZ();
-                    viaArch |= j.box().isInside(n) && jAlong == 0 && Math.abs(jAcross) <= 3 && d == jf;
+                    // the joined hall's door stands in this hall's wall (the arch), so the cell the flood enters is its first one past the door
+                    // plane, or the plane itself where the door stands outside: the laptop's run of e69197d left by (along 1, across 1)
+                    viaArch |= j.box().isInside(n) && (jAlong == 0 || jAlong == 1) && Math.abs(jAcross) <= 3 && d == jf;
                 }
                 if (viaArch) {
                     continue;
