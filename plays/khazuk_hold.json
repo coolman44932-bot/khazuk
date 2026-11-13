@@ -215,7 +215,7 @@
   {
    "do": "use",
    "at": [
-    49,
+    48,
     -43,
     32
    ],
@@ -224,7 +224,7 @@
   {
    "do": "expect",
    "block": [
-    49,
+    48,
     -42,
     32
    ],
@@ -238,7 +238,7 @@
   {
    "do": "use",
    "at": [
-    49,
+    48,
     -42,
     32
    ],
@@ -251,7 +251,7 @@
   {
    "do": "use",
    "at": [
-    49,
+    48,
     -42,
     32
    ],
@@ -264,7 +264,7 @@
   {
    "do": "use",
    "at": [
-    49,
+    48,
     -42,
     32
    ],
@@ -280,7 +280,7 @@
    "route": "settlementcore/settlement",
    "args": {
     "pos": [
-     49,
+     48,
      -42,
      32
     ]
@@ -391,7 +391,7 @@
    "all": [
     {
      "block": [
-      49,
+      48,
       -42,
       32
      ],
@@ -401,7 +401,7 @@
      "route": "settlementcore/settlement",
      "args": {
       "pos": [
-       49,
+       48,
        -42,
        32
       ]
@@ -413,7 +413,7 @@
      "route": "settlementcore/settlement",
      "args": {
       "pos": [
-       49,
+       48,
        -42,
        32
       ]
@@ -438,7 +438,7 @@
       "type": "zombie",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -450,7 +450,7 @@
       "type": "skeleton",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -462,7 +462,7 @@
       "type": "creeper",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -474,7 +474,7 @@
       "type": "spider",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -486,7 +486,7 @@
       "type": "zombie_villager",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -498,7 +498,7 @@
       "type": "witch",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -510,7 +510,7 @@
       "type": "enderman",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -522,7 +522,7 @@
       "type": "cave_spider",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -534,7 +534,7 @@
       "type": "slime",
       "radius": 24,
       "near": [
-       49,
+       48,
        -42,
        32
       ]
@@ -549,7 +549,7 @@
    "route": "settlementcore/settlement",
    "args": {
     "pos": [
-     49,
+     48,
      -42,
      32
     ]
@@ -581,7 +581,7 @@
   {
    "do": "expect",
    "block": [
-    49,
+    48,
     -42,
     32
    ],
@@ -592,7 +592,7 @@
    "route": "settlementcore/settlement",
    "args": {
     "pos": [
-     49,
+     48,
      -42,
      32
     ]
@@ -610,7 +610,7 @@
    "route": "settlementcore/settlement",
    "args": {
     "pos": [
-     49,
+     48,
      -42,
      32
     ]
